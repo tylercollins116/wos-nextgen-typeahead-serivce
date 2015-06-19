@@ -1,7 +1,33 @@
-@(message: String)
+@(query: String)
 
 @main("Welcome to Play") {
+		<div class="container">
+		<p class="lead">What are you look for?</p>
+		
+		<form>
+	    <div id="remote" class="input-group">
+  			<input class="typeahead" type="text" name="q" class="span6" value="@query">
+			<button type="submit"">Submit</button>
+		</div>
+		
+		</form>
+		</div>
 
-    @play20.welcome(message, style = "Java")
-
+        <script>
+        	var bestPictures = new Bloodhound({
+        	  datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
+        	  queryTokenizer: Bloodhound.tokenizers.whitespace,
+        	  remote: {
+        	    url: '/suggest/%QUERY',
+        	    wildcard: '%QUERY'
+        	  }
+        	});
+        	 
+        	$('#remote .typeahead').typeahead(null, {
+        	  name: 'best-pictures',
+        	  display: 'value',
+        	  source: bestPictures
+        	});
+        </script>
+        
 }
