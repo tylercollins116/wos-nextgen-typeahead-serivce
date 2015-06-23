@@ -1,0 +1,128 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'distribution'
+apply plugin: 'java-library-distribution'
+apply plugin: 'os-package'
+
+sourceCompatibility = 1.8
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.2'
+}
+
+def chosenEnv
+if ( System.getenv("POC_ENVIRONMENT") ) { chosenEnv = System.getenv("POC_ENVIRONMENT") } else { chosenEnv = "integration" }
+
+configurations.all {     
+	resolutionStrategy.cacheDynamicVersionsFor 1, 'hours'     
+	resolutionStrategy.cacheChangingModulesFor 1, 'hours' 
+}
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.netflix.nebula:gradle-ospackage-plugin:2.2.0'
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src/main/java'
+        }
+        resources {
+            srcDir 'src/main/resources'
+        }
+    }
+    test {
+        java {
+            srcDir 'src/test/java'
+        }
+        resources {
+            srcDir 'src/test/resources'
+        }
+    }
+}
+
+test {
+  //enable to see logging during gradle build
+  //testLogging.showStandardStreams = true
+  testLogging {
+        events "passed", "skipped", "failed"
+  }
+}
+
+repositories {
+   mavenCentral()
+   jcenter()
+    maven {
+      url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/thirdparty/"
+    }
+    maven {
+      url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/snapshots/"
+    }
+    maven {
+      url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/releases/"
+    }
+}
+
+eclipse {
+    classpath {
+        downloadSources = true
+    }
+}
+
+idea {
+    module {
+        jdkName = '1.8'
+        downloadSources = true
+    }
+}
+
+dependencies {
+  compile group: 'com.thomsonreuters', name: '1p-service-lib', version: '0.10.+'
+  compile 'org.apache.lucene:lucene-core:5.2.1'
+  compile 'org.apache.lucene:lucene-suggest:5.2.1'
+  testCompile group:  'junit', name: 'junit-dep', version: '4.11'
+  // Jersey test framework
+  testCompile 'com.sun.jersey.jersey-test-framework:jersey-test-framework-core:1.11'
+  testCompile 'com.sun.jersey.jersey-test-framework:jersey-test-framework-external:1.11'
+}
+
+//eiddo repo is the same as project name by default but you can change it
+def eiddoRepo = rootProject.name
+
+import org.apache.tools.ant.filters.ReplaceTokens
+distributions {
+  main{
+		baseName = rootProject.name
+		
+		 contents {
+      from ( 'scripts' ) {
+          fileMode = 0755
+          filter(ReplaceTokens, tokens: [ 'PROJECT_NAME': baseName, 'VERSION': version, 'EIDDO_REPO' : eiddoRepo])
+      }
+    }
+  }
+}
+ospackage {
+  version = '0.0.1-SNAPSHOT'
+  requires('oracle-java8-installer')
+  requires('git')
+  requires('awscli')
+  postInstall("echo 'export JAVA_OPTS=\"-DdisableEmbeddedCassandra=true -Deiddo.client.repoChain=1p-common," + eiddoRepo + " -Deureka.environment=${chosenEnv} -Darchaius.deployment.environment=${chosenEnv}\"' >> /opt/"+ name +"-"+ version +"/setenv.sh")
+  postInstall("echo 'JAVA_HOME=/usr/lib/jvm/java-8-oracle'  >> /opt/"+ name +"-"+ version +"/setenv.sh")
+
+  from( zipTree("build/distributions/"+ name +"-"+ version +".zip") ) {
+    into('/opt')
+  }
+  postInstall("rm -f /etc/init.d/jetty8")
+  postInstall("mkdir -p /opt/"+ name +"-"+ version +"/log && chown ubuntu:ubuntu /opt/"+ name +"-"+ version +"/log")
+  postInstall("mkdir -p /opt/"+ name +"-"+ version +"/conf && chown ubuntu:ubuntu /opt/"+ name +"-"+ version +"/conf")
+  link("/etc/init/"+ name +".conf", "/opt/"+ name +"-"+ version +"/daemon.sh")
+}
