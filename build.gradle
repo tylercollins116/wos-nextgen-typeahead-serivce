@@ -118,7 +118,7 @@ distributions {
 }
 ospackage {
       packageName = permanentPackageName
-      release = 0.0.1
+      release = rpmRelease
       arch = NOARCH
       os = LINUX
       from(file('root/etc/reuters/karyon')) {
