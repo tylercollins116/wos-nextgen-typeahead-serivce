@@ -18,12 +18,8 @@ public class Suggester {
 	
 	private Suggester() throws FileNotFoundException, IOException {
 		SimpleAnalyzer analyzer = new SimpleAnalyzer();
-		suggester = new FuzzySuggester(analyzer,analyzer, FuzzySuggester.EXACT_FIRST | FuzzySuggester.PRESERVE_SEP, 
-				256, -1, true, FuzzySuggester.DEFAULT_MAX_EDITS, FuzzySuggester.DEFAULT_TRANSPOSITIONS,
-		         0, FuzzySuggester.DEFAULT_MIN_FUZZY_LENGTH, FuzzySuggester.DEFAULT_UNICODE_AWARE);
+		suggester = new FuzzySuggester(analyzer);
 		suggester.build(new FileDictionary(new GZIPInputStream(ClassLoader.class.getResourceAsStream("/data/kw.txt.gz"))));
-
-		
 	}
 	synchronized static Suggester getInstance() {
 		if (instance==null) {
