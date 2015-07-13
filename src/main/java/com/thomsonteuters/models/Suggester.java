@@ -11,13 +11,15 @@ import org.apache.lucene.search.suggest.FileDictionary;
 import org.apache.lucene.search.suggest.Lookup.LookupResult;
 import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
 import org.apache.lucene.search.suggest.analyzing.FuzzySuggester;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 
 public class Suggester {
 	private static Suggester instance=null;
 	AnalyzingSuggester suggester =null;
 	
 	private Suggester() throws FileNotFoundException, IOException {
-		SimpleAnalyzer analyzer = new SimpleAnalyzer();
+		//SimpleAnalyzer analyzer = new SimpleAnalyzer();
+		StandardAnalyzer analyzer = new StandardAnalyzer();
 		suggester = new FuzzySuggester(analyzer);
 		suggester.build(new FileDictionary(new GZIPInputStream(ClassLoader.class.getResourceAsStream("/data/kw.txt.gz"))));
 	}
