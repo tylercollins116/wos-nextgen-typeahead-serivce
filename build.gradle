@@ -91,7 +91,10 @@ idea {
 }
 
 dependencies {
-  compile group: 'com.thomsonreuters', name: '1p-service-lib', version: '0.10.+'
+  //compile group: 'com.thomsonreuters', name: '1p-service-lib', version: '0.10.+'
+  compile group: 'com.thomsonreuters', name: '1p-service-lib', version: '0.30.+'
+  compile group: 'com.thomsonreuters', name: '1p-service-swagger', version: '0.30.+'
+  
   compile 'org.apache.lucene:lucene-core:5.2.1'
   compile 'org.apache.lucene:lucene-suggest:5.2.1'
   testCompile group:  'junit', name: 'junit-dep', version: '4.11'
