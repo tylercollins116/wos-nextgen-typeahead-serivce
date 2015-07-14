@@ -27,8 +27,6 @@ import com.thomsonreuters.injection.SwaggerHystrixModule;
 import com.thomsonreuters.injection.module.MainModule;
 import com.thomsonreuters.rest.service.SuggestorTest.TestInjectionModule.TestModule;
 
-/*TODO write more test */
-
 public class SuggestorTest extends JerseyTest {
 	private static final int PORT = 7001;
 	private static final String baseUrl = "http://localhost:" + PORT + "/";

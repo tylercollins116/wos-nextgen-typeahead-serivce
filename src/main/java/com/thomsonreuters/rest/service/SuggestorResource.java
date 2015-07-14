@@ -23,7 +23,7 @@ import com.google.common.base.Suppliers;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.governator.annotations.Configuration;
-import com.thomsonteuters.models.Suggester;
+import com.thomsonreuters.models.Suggester;
 
 @Singleton
 @Api(value = "/suggest", description = "Suggest WS entry point")

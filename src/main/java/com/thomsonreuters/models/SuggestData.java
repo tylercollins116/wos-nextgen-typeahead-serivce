@@ -1,4 +1,4 @@
-package com.thomsonteuters.models;
+package com.thomsonreuters.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
