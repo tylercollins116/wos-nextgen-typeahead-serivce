@@ -1,5 +1,10 @@
 package com.thomsonreuters.rest.service;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+
 import java.io.IOException;
 
 import javax.ws.rs.GET;
@@ -21,6 +26,7 @@ import com.netflix.governator.annotations.Configuration;
 import com.thomsonteuters.models.Suggester;
 
 @Singleton
+@Api(value = "/suggest", description = "Suggest WS entry point")
 @Path("/suggest")
 public class SuggestorResource {
 
@@ -34,6 +40,9 @@ public class SuggestorResource {
 
   }
 
+  
+  @ApiOperation(value = "Suggest check", notes = "Returns list of suggestion for query prefix")
+  @ApiResponses(value = { @ApiResponse(code = 200, message = "RESPONSE_OK") })
   @Path("{query}")
   @GET
   @Produces(MediaType.APPLICATION_JSON)
