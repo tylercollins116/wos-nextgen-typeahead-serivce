@@ -21,6 +21,8 @@ public class SuggestorTest {
 		wordsToCheck.put("random fore", "random forest");
 		wordsToCheck.put("ashm", "ashma");
 		wordsToCheck.put("camara", "camera");
+		wordsToCheck.put("2000	", "2000");
+
 		
 		for (Map.Entry<String, String> entry : wordsToCheck.entrySet()) {
 			String word=entry.getKey();
@@ -47,6 +49,8 @@ public class SuggestorTest {
 			if (result!=null && result.size()>=1) {
 				Assert.assertFalse("Profanity filter failed on word "+badword,badword.equals(result.get(0).value));
 			}
+			else Assert.fail("Fail to find suggestion for "+badword);
+			
 		}
 	}
 	

@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
-import org.apache.lucene.analysis.core.StopAnalyzer;
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.util.CharArraySet;
 import org.apache.lucene.analysis.util.WordlistLoader;
@@ -22,7 +22,7 @@ public class Suggester {
 	AnalyzingSuggester suggester =null;
 	
 	
-	private static final CharArraySet stopSet = new CharArraySet(StopAnalyzer.ENGLISH_STOP_WORDS_SET, false);  
+	private static final CharArraySet stopSet = new CharArraySet(CharArraySet.EMPTY_SET, false);  
 	static {	
 		try {
 			stopSet.addAll(WordlistLoader.getWordSet(
@@ -34,14 +34,14 @@ public class Suggester {
 	
 	
 	private Suggester() throws FileNotFoundException, IOException {
-		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
-		suggester = new FuzzySuggester(analyzer);
+		Analyzer indexAnalyzer = new StandardAnalyzer(stopSet);
+		Analyzer queryAnalyzer = new StandardAnalyzer(CharArraySet.EMPTY_SET);
+		suggester = new FuzzySuggester(indexAnalyzer,queryAnalyzer);
 		suggester.build(new FileDictionary(new GZIPInputStream(ClassLoader.class.getResourceAsStream("/data/kw.txt.gz"))));
 	}
 	synchronized static Suggester getInstance() {
 		if (instance==null) {
 			try {
-				System.out.println("loading...");
 				instance=new Suggester();
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
