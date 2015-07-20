@@ -140,3 +140,13 @@ ospackage {
 }
 
 buildRpm.dependsOn installDist
+
+sonarRunner {
+  sonarProperties {
+    property "sonar.host.url", "http://sonar.oneplatform.build"
+    property "sonar.jdbc.url", "jdbc:mysql://sonar.c35w2xq4gxyh.us-west-2.rds.amazonaws.com:3306/sonar?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true"
+    property "sonar.jdbc.driverClassName", "com.mysql.jdbc.Driver"
+    property "sonar.jdbc.username", "$System.env.sonarUsername"
+    property "sonar.jdbc.password", "$System.env.sonarPassword"
+  }
+}
