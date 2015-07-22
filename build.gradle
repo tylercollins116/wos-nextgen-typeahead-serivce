@@ -4,6 +4,7 @@ apply plugin: 'idea'
 apply plugin: 'distribution'
 apply plugin: 'java-library-distribution'
 apply plugin: 'os-package'
+apply plugin: 'sonar-runner'
 
 sourceCompatibility = 1.8
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
