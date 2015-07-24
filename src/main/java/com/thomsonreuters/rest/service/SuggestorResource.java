@@ -30,30 +30,54 @@ import com.thomsonreuters.models.Suggester;
 @Path("/suggest")
 public class SuggestorResource {
 
-  private static final Logger logger = LoggerFactory.getLogger(SuggestorResource.class);
+	private static final Logger logger = LoggerFactory
+			.getLogger(SuggestorResource.class);
 
-  @Configuration("1p.service.name")
-  private Supplier<String> appName = Suppliers.ofInstance("One Platform");
+	@Configuration("1p.service.name")
+	private Supplier<String> appName = Suppliers.ofInstance("One Platform");
 
-  @Inject
-  public SuggestorResource() {
+	@Inject
+	public SuggestorResource() {
 
-  }
+	}
 
-  
-  @ApiOperation(value = "Suggest check", notes = "Returns list of suggestion for query prefix")
-  @ApiResponses(value = { @ApiResponse(code = 200, message = "RESPONSE_OK") })
-  @Path("{query}")
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  public Response helloTo(@PathParam("query") String query) {
-    try {
-    	ObjectMapper mapper = new ObjectMapper(  );
-    	return Response.ok(mapper.writeValueAsString(Suggester.lookup(query, 10))).build();
-    } catch (IOException e) {
-      logger.error("Error creating json response.", e);
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-    }
-  }
+	@ApiOperation(value = "Suggest check", notes = "Returns list of suggestion for query prefix")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "RESPONSE_OK") })
+	@Path("{path}/{query}")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response helloTo(@PathParam("path") String path,
+			@PathParam("query") String query) {
+		try {
+
+			ObjectMapper mapper = new ObjectMapper();
+			return Response
+					.ok(mapper.writeValueAsString(Suggester.lookup(path, query,
+							10))).build();
+		} catch (IOException e) {
+			logger.error("Error creating json response.", e);
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.build();
+		}
+	}
+
+	@ApiOperation(value = "Suggest check", notes = "Returns list of suggestion for query prefix")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "RESPONSE_OK") })
+	@Path("{query}")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response searchQuery(@PathParam("query") String query) {
+		try {
+
+			ObjectMapper mapper = new ObjectMapper();
+			return Response.ok(
+					mapper.writeValueAsString(Suggester.lookup("wos",
+							query, 10))).build();
+		} catch (IOException e) {
+			logger.error("Error creating json response.", e);
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.build();
+		}
+	}
 
 }
