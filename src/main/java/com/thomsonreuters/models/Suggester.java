@@ -109,6 +109,26 @@ public class Suggester {
 
 	}
 
+	public static List<SuggestData> lookup(String query, int n) {
+		List<SuggestData> results = new ArrayList<SuggestData>();
+
+		AnalyzingSuggester suggester = getInstance().suggesterList.get("wos");
+
+		try {
+
+			if (suggester == null) {
+				suggester = getInstance().suggesterList.get(WOS_DEFAULT);
+			}
+
+			for (LookupResult result : suggester.lookup(query, false, n)) {
+				results.add(new SuggestData(result.key.toString()));
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return results;
+	}
+
 	public static List<SuggestData> lookup(String path, String query, int n) {
 		List<SuggestData> results = new ArrayList<SuggestData>();
 

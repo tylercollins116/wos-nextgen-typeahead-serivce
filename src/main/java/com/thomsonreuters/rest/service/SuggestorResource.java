@@ -71,8 +71,8 @@ public class SuggestorResource {
 
 			ObjectMapper mapper = new ObjectMapper();
 			return Response.ok(
-					mapper.writeValueAsString(Suggester.lookup("wos",
-							query, 10))).build();
+					mapper.writeValueAsString(Suggester.lookup(query, 10)))
+					.build();
 		} catch (IOException e) {
 			logger.error("Error creating json response.", e);
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
