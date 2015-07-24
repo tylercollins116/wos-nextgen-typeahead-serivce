@@ -27,7 +27,7 @@ public class SuggestorTest {
 		for (Map.Entry<String, String> entry : wordsToCheck.entrySet()) {
 			String word=entry.getKey();
 			String value=entry.getValue();
-			List<SuggestData> result=Suggester.lookup(word, 1);
+			List<SuggestData> result=Suggester.lookup("wos",word, 1);
 			if (result!=null && result.size()>=1) {
 				Assert.assertFalse("Failed on word "+word+". Lookup("+word+")="+value,word.equals(value));
 			}
@@ -45,7 +45,7 @@ public class SuggestorTest {
 				);
 
 		for (String badword : badWords) {
-			List<SuggestData> result=Suggester.lookup(badword, 1);
+			List<SuggestData> result=Suggester.lookup("wos",badword, 1);
 			if (result!=null && result.size()>=1) {
 				Assert.assertFalse("Profanity filter failed on word "+badword,badword.equals(result.get(0).value));
 			}
