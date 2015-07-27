@@ -26,8 +26,8 @@ import com.netflix.config.ConfigurationManager;
 public class Suggester {
 
 	private static Suggester instance = null;
-	private static final String DICTIONARY_PATH = "dictionary.path.";
-	private static final String WOS_DEFAULT = "WOS_DEFAULT";
+	private static final String DICTIONARY_PATH_PREFIX = "dictionary.path.";
+	private static final String DEFAULT_DICTIONARY = "DEFAULT_DICTIONARY";
 	private static final HashMap<String, AnalyzingSuggester> suggesterList = new HashMap<String, AnalyzingSuggester>();
 
 	private static final CharArraySet stopSet = new CharArraySet(
@@ -52,7 +52,7 @@ public class Suggester {
 			AnalyzingSuggester suggester = new FuzzySuggester(indexAnalyzer,
 					queryAnalyzer);
 			suggester.build(prepareDefaultDictionary());
-			suggesterList.put(WOS_DEFAULT, suggester);
+			suggesterList.put(DEFAULT_DICTIONARY, suggester);
 		}
 
 		Iterator<String> keys = ConfigurationManager.getConfigInstance()
@@ -61,12 +61,12 @@ public class Suggester {
 		while (keys.hasNext()) {
 			String key = keys.next();
 
-			if (key.startsWith(DICTIONARY_PATH)) {
+			if (key.startsWith(DICTIONARY_PATH_PREFIX)) {
 
 				String dictionaryPath = ConfigurationManager
 						.getConfigInstance().getString(key);
 
-				String restPathName = key.replace(DICTIONARY_PATH, "");
+				String endPoint = key.replace(DICTIONARY_PATH_PREFIX, "");
 
 				FileDictionary fileDictionary = null;
 
@@ -77,7 +77,7 @@ public class Suggester {
 
 					if (fileDictionary != null) {
 						suggester.build(fileDictionary);
-						suggesterList.put(restPathName, suggester);
+						suggesterList.put(endPoint, suggester);
 					}
 
 				} catch (Exception e) {
@@ -110,35 +110,20 @@ public class Suggester {
 	}
 
 	public static List<SuggestData> lookup(String query, int n) {
-		List<SuggestData> results = new ArrayList<SuggestData>();
-
-		AnalyzingSuggester suggester = getInstance().suggesterList.get("wos");
-
-		try {
-
-			if (suggester == null) {
-				suggester = getInstance().suggesterList.get(WOS_DEFAULT);
-			}
-
-			for (LookupResult result : suggester.lookup(query, false, n)) {
-				results.add(new SuggestData(result.key.toString()));
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return results;
+		return lookup("default", query, n);
 	}
 
 	public static List<SuggestData> lookup(String path, String query, int n) {
 		List<SuggestData> results = new ArrayList<SuggestData>();
 
-		AnalyzingSuggester suggester = getInstance().suggesterList.get(path);
+		AnalyzingSuggester suggester = null;
 
 		try {
 
-			if (suggester == null
-					&& (path != null && path.trim().toLowerCase().equals("wos"))) {
-				suggester = getInstance().suggesterList.get(WOS_DEFAULT);
+			if ((suggester = getInstance().suggesterList.get(path)) == null
+					&& (path != null && path.trim().toLowerCase()
+							.equals("default"))) {
+				suggester = getInstance().suggesterList.get(DEFAULT_DICTIONARY);
 			}
 
 			for (LookupResult result : suggester.lookup(query, false, n)) {
