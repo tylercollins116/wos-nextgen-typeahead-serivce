@@ -91,9 +91,6 @@ public class Suggester {
 
 	synchronized static Suggester getInstance() {
 		if (instance == null) {
-			synchronized (Suggester.class) {
-				if (instance == null) { // second time lock
-
 					try {
 						instance = new Suggester();
 					} catch (FileNotFoundException e) {
@@ -101,8 +98,7 @@ public class Suggester {
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
-				}
-			}
+			 
 
 		}
 		return instance;
