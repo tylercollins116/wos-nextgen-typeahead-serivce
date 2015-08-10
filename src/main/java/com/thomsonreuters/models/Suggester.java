@@ -94,7 +94,7 @@ public class Suggester {
 			for (LookupResult result : suggester.lookup(query, false, n)) {
 				results.add(new SuggestData(result.key.toString()));
 			}
-		} catch (IOException e) {			 
+		} catch (Exception e) {			 
 		}
 
 		return results;
