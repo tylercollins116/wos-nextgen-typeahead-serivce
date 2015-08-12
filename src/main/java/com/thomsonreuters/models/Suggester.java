@@ -11,6 +11,8 @@ import org.apache.commons.configuration.event.ConfigurationEvent;
 import org.apache.commons.configuration.event.ConfigurationListener;
 import org.apache.lucene.search.suggest.Lookup.LookupResult;
 import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.netflix.config.ConfigurationManager;
 import com.thomsonreuters.models.services.async.Job;
@@ -19,8 +21,11 @@ import com.thomsonreuters.models.services.async.WaitingBlockingQueue;
 import com.thomsonreuters.models.services.suggesterOperation.DictionaryLoader;
 import com.thomsonreuters.models.services.suggesterOperation.SuggesterFactory;
 import com.thomsonreuters.models.services.suggesters.BlankSuggester;
+import com.thomsonreuters.models.services.suggesters.S3BucketFromS3IAMRole;
 
 public class Suggester {
+	
+	private static final Logger log = LoggerFactory.getLogger(Suggester.class);
 
 	private static Suggester instance;
 
@@ -50,6 +55,8 @@ public class Suggester {
 						@Override
 						public void configurationChanged(
 								ConfigurationEvent event) {
+							
+							log.info("reloding  dictionary "+event.getPropertyName());
 
 							Job<AnalyzingSuggester> job = new Job<AnalyzingSuggester>(
 									dictionaryReader, event.getPropertyName());

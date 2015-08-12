@@ -7,12 +7,15 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.S3Object;
 import com.netflix.config.ConfigurationManager;
+import com.thomsonreuters.handler.HealthCheck;
 import com.thomsonreuters.models.services.suggesterOperation.DictionaryLoader;
 import com.thomsonreuters.models.services.suggesterOperation.SuggesterHelper;
 import com.thomsonreuters.models.services.util.Blockable;
@@ -22,6 +25,8 @@ import com.thomsonreuters.models.services.util.PropertyValue;
 
 public class S3BucketFromS3IAMRole extends SuggesterHelper implements
 		DictionaryLoader<AnalyzingSuggester> {
+	
+	private static final Logger log = LoggerFactory.getLogger(S3BucketFromS3IAMRole.class);
 
 	private final Blockable<String, AnalyzingSuggester> suggesterList = new BlockingHashTable<String, AnalyzingSuggester>();
 
@@ -56,7 +61,10 @@ public class S3BucketFromS3IAMRole extends SuggesterHelper implements
 			if (property.isBucketName()) {
 				bucketName = ConfigurationManager.getConfigInstance()
 						.getString(key);
-			} else if (property.isDictionaryPathRelated()) {
+				log.info("path to bucket : "+bucketName);
+				
+			} else if (property.isDictionaryPathRelated()) {				
+				log.info("path to dictionary : "+property.toString());
 				dictionaryProperties.add(property.toString());
 			}
 		}
@@ -69,6 +77,9 @@ public class S3BucketFromS3IAMRole extends SuggesterHelper implements
 						.getString(property.toString());
 
 				S3Object s3file = s3Client.getObject(bucketName, value);
+				
+				log.info("Successfully got access to S3 bucket : "+bucketName);
+				
 				InputStream is = s3file.getObjectContent();
 
 				AnalyzingSuggester suggester = createAnalyzingSuggester(is);
