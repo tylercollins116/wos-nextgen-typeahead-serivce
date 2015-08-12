@@ -15,7 +15,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.S3Object;
 import com.netflix.config.ConfigurationManager;
-import com.thomsonreuters.handler.HealthCheck;
 import com.thomsonreuters.models.services.suggesterOperation.DictionaryLoader;
 import com.thomsonreuters.models.services.suggesterOperation.SuggesterHelper;
 import com.thomsonreuters.models.services.util.Blockable;
@@ -25,8 +24,9 @@ import com.thomsonreuters.models.services.util.PropertyValue;
 
 public class S3BucketFromS3IAMRole extends SuggesterHelper implements
 		DictionaryLoader<AnalyzingSuggester> {
-	
-	private static final Logger log = LoggerFactory.getLogger(S3BucketFromS3IAMRole.class);
+
+	private static final Logger log = LoggerFactory
+			.getLogger(S3BucketFromS3IAMRole.class);
 
 	private final Blockable<String, AnalyzingSuggester> suggesterList = new BlockingHashTable<String, AnalyzingSuggester>();
 
@@ -61,10 +61,10 @@ public class S3BucketFromS3IAMRole extends SuggesterHelper implements
 			if (property.isBucketName()) {
 				bucketName = ConfigurationManager.getConfigInstance()
 						.getString(key);
-				log.info("path to bucket : "+bucketName);
-				
-			} else if (property.isDictionaryPathRelated()) {				
-				log.info("path to dictionary : "+property.toString());
+				log.info("path to bucket : " + bucketName);
+
+			} else if (property.isDictionaryPathRelated()) {
+				log.info("path to dictionary : " + property.toString());
 				dictionaryProperties.add(property.toString());
 			}
 		}
@@ -76,21 +76,36 @@ public class S3BucketFromS3IAMRole extends SuggesterHelper implements
 				String value = ConfigurationManager.getConfigInstance()
 						.getString(property.toString());
 
-				S3Object s3file = s3Client.getObject(bucketName, value);
-				
-				log.info("Successfully got access to S3 bucket : "+bucketName);
-				
-				InputStream is = s3file.getObjectContent();
+				log.info(" Loading dictionary for " + dictionaryProperty
+						+ " BucketName : " + bucketName + "  ,Path : " + value);
+				try {
 
-				AnalyzingSuggester suggester = createAnalyzingSuggester(is);
+					S3Object s3file = s3Client.getObject(bucketName, value);
 
-				suggesterList.put(property.getDictionayName(), suggester);
+					log.info("Successfully got access to S3 bucket : "
+							+ bucketName);
+
+					InputStream is = s3file.getObjectContent();
+
+					AnalyzingSuggester suggester = createAnalyzingSuggester(is);
+
+					suggesterList.put(property.getDictionayName(), suggester);
+
+				} catch (Exception e) {
+
+					log.info(" fail loading dictionary for "
+							+ dictionaryProperty);
+
+					e.printStackTrace();
+				}
 			}
 		}
 
 	}
 
 	public void reloadDictionary(String propertyName) throws IOException {
+
+		log.info("loading dictionary of " + propertyName + " starting");
 
 		Property bucketProperty = PropertyValue.getProperty(Property.S3_BUCKET);
 		String bucketName = ConfigurationManager.getConfigInstance().getString(
@@ -108,6 +123,8 @@ public class S3BucketFromS3IAMRole extends SuggesterHelper implements
 		AnalyzingSuggester suggester = createAnalyzingSuggester(is);
 
 		suggesterList.put(property.getDictionayName(), suggester);
+
+		log.info("loading dictionary of " + propertyName + " completed");
 	}
 
 	public AmazonS3 getAmazonS3() {

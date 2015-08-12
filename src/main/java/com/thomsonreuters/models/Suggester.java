@@ -101,7 +101,8 @@ public class Suggester {
 			for (LookupResult result : suggester.lookup(query, false, n)) {
 				results.add(new SuggestData(result.key.toString()));
 			}
-		} catch (Exception e) {			 
+		} catch (Exception e) {		
+			log.info("cannot find the suggester ");
 		}
 
 		return results;
