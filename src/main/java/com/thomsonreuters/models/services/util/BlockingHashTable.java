@@ -13,6 +13,7 @@ public class BlockingHashTable<String, K> extends Hashtable<String, K>
 	public K put(String key, K value) {
 		synchronized (lock) {
 			this.requireLock = true;
+			super.remove(key);
 			K k = super.put(key, value);
 			this.requireLock = false;
 			return k;
@@ -31,13 +32,6 @@ public class BlockingHashTable<String, K> extends Hashtable<String, K>
 			}
 
 		}
-	}
-
-	@Override
-	public void removeObject(String key) {
-
-		super.remove(key);
-
 	}
 
 }

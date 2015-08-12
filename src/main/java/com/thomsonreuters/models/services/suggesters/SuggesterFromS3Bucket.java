@@ -71,7 +71,7 @@ public class SuggesterFromS3Bucket extends SuggesterHelper implements
 				InputStream is = s3file.getObjectContent();
 				
 				AnalyzingSuggester suggester=createAnalyzingSuggester(is);
-				suggesterList.removeObject(property.getDictionayName());
+				 
 				suggesterList.put(property.getDictionayName(),suggester);
 			}
 		}
@@ -109,11 +109,7 @@ public class SuggesterFromS3Bucket extends SuggesterHelper implements
 
 		AnalyzingSuggester suggester = createAnalyzingSuggester(is);
 
-		// removing and add should be together else throws exception
-		// remove it first.. to be on safe side .. memory cleaning
-		suggesterList.removeObject(property.getDictionayName());
-
-		suggesterList.put(property.getDictionayName(), suggester);
+		 suggesterList.put(property.getDictionayName(), suggester);
 	}
 
 	class AWSCredentialsImpl implements AWSCredentials {

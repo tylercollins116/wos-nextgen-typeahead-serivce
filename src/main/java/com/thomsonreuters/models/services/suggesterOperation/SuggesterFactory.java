@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
 
+import com.thomsonreuters.models.services.suggesters.S3BucketFromS3IAMRole;
 import com.thomsonreuters.models.services.suggesters.SuggesterFromS3Bucket;
 
 /**
@@ -32,6 +33,8 @@ public class SuggesterFactory {
 
 		if (type.equals("S3")) {
 			return new SuggesterFromS3Bucket();
+		} else if (type.equals("S3IAM")) {
+			return new S3BucketFromS3IAMRole();
 		}
 
 		return new SuggesterFromS3Bucket();

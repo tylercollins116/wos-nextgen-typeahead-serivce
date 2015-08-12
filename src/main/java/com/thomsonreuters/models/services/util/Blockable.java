@@ -6,6 +6,5 @@ public interface Blockable<String, K> {
 
 	public K get(Object key);
 
-	public void removeObject(String key);
-
+	 
 }
