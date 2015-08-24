@@ -21,10 +21,9 @@ import com.thomsonreuters.models.services.async.WaitingBlockingQueue;
 import com.thomsonreuters.models.services.suggesterOperation.DictionaryLoader;
 import com.thomsonreuters.models.services.suggesterOperation.SuggesterFactory;
 import com.thomsonreuters.models.services.suggesters.BlankSuggester;
-import com.thomsonreuters.models.services.suggesters.S3BucketFromS3IAMRole;
 
 public class Suggester {
-	
+
 	private static final Logger log = LoggerFactory.getLogger(Suggester.class);
 
 	private static Suggester instance;
@@ -33,40 +32,44 @@ public class Suggester {
 
 	private ExecutorService reloadExecutor;
 
+	public DictionaryLoader<AnalyzingSuggester> getDictionaryReader() {
+		return dictionaryReader;
+	}
+
 	private Suggester() {
 
 		try {
 
 			reloadExecutor = new ThreadPoolExecutor(1, 6, 0L,
-					TimeUnit.MICROSECONDS, new WaitingBlockingQueue<Runnable>(),
+					TimeUnit.MICROSECONDS,
+					new WaitingBlockingQueue<Runnable>(),
 					new NamedThreadFactory("Suggester"));
 
 			dictionaryReader = SuggesterFactory.createSuggesters("S3IAM");
-			 
+
 		} catch (Exception e) {
 			e.printStackTrace();
 
 			dictionaryReader = new BlankSuggester();
 		}
 
-			ConfigurationManager.getConfigInstance().addConfigurationListener(
-					new ConfigurationListener() {
+		ConfigurationManager.getConfigInstance().addConfigurationListener(
+				new ConfigurationListener() {
 
-						@Override
-						public void configurationChanged(
-								ConfigurationEvent event) {
-							
-							log.info("reloding  dictionary "+event.getPropertyName());
+					@Override
+					public void configurationChanged(ConfigurationEvent event) {
 
-							Job<AnalyzingSuggester> job = new Job<AnalyzingSuggester>(
-									dictionaryReader, event.getPropertyName());
-							reloadExecutor.execute(job.inputTask);
-							;
+						log.info("reloding  dictionary "
+								+ event.getPropertyName());
 
-						}
-					});
+						Job<AnalyzingSuggester> job = new Job<AnalyzingSuggester>(
+								dictionaryReader, event.getPropertyName());
+						reloadExecutor.execute(job.inputTask);
+						;
 
-		
+					}
+				});
+
 	}
 
 	public static Suggester getInstance() {
@@ -101,7 +104,7 @@ public class Suggester {
 			for (LookupResult result : suggester.lookup(query, false, n)) {
 				results.add(new SuggestData(result.key.toString()));
 			}
-		} catch (Exception e) {		
+		} catch (Exception e) {
 			log.info("cannot find the suggester ");
 		}
 
