@@ -24,6 +24,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.governator.annotations.Configuration;
 import com.thomsonreuters.models.Suggester;
+import com.thomsonreuters.models.SuggesterHandler;
 
 @Singleton
 @Api(value = "/suggest", description = "Suggest WS entry point")
@@ -36,9 +37,11 @@ public class SuggestorResource {
 	@Configuration("1p.service.name")
 	private Supplier<String> appName = Suppliers.ofInstance("One Platform");
 
-	@Inject
-	public SuggestorResource() {
+	private final SuggesterHandler suggesterHandler;
 
+	@Inject
+	public SuggestorResource(SuggesterHandler suggesterHandler) {
+		this.suggesterHandler = suggesterHandler;
 	}
 
 	@ApiOperation(value = "Suggest check", notes = "Returns list of suggestion for query prefix")
@@ -52,7 +55,7 @@ public class SuggestorResource {
 
 			ObjectMapper mapper = new ObjectMapper();
 			return Response
-					.ok(mapper.writeValueAsString(Suggester.lookup(path, query,
+					.ok(mapper.writeValueAsString(suggesterHandler.lookup(path, query,
 							10))).build();
 		} catch (IOException e) {
 			logger.error("Error creating json response.", e);
@@ -71,7 +74,7 @@ public class SuggestorResource {
 
 			ObjectMapper mapper = new ObjectMapper();
 			return Response.ok(
-					mapper.writeValueAsString(Suggester.lookup(query, 10)))
+					mapper.writeValueAsString(suggesterHandler.lookup(query, 10)))
 					.build();
 		} catch (IOException e) {
 			logger.error("Error creating json response.", e);

@@ -20,44 +20,53 @@ import com.netflix.config.ConfigurationManager;
 import com.thomsonreuters.eiddo.client.EiddoClient;
 import com.thomsonreuters.eiddo.client.EiddoListener;
 import com.thomsonreuters.models.Suggester;
+import com.thomsonreuters.models.SuggesterConfigurationHandler;
 import com.thomsonreuters.models.services.util.BlockingHashTable;
 import com.thomsonreuters.models.services.util.Property;
 import com.thomsonreuters.models.services.util.PropertyValue;
 
 @Singleton
 public class HealthCheck implements HealthCheckHandler {
-    private static final Logger log = LoggerFactory.getLogger(HealthCheck.class);
+	private static final Logger log = LoggerFactory
+			.getLogger(HealthCheck.class);
 
-    private final EiddoClient eiddo;
-    private boolean eiddoCorrupted = false;
-    
-    @Inject
-    public HealthCheck(EiddoClient eiddo) {
-      this.eiddo = eiddo;
-      eiddo.addListener(new EiddoListener() {
-        
-        @Override
-        public void onRepoChainUpdated(List<File> repoDir) {
-          // TODO Auto-generated method stub
-          
-        }
-        
-        @Override
-        public void onError(Throwable error, boolean fatal) {
-          if (fatal) {
-            eiddoCorrupted = true;
-          }
-          
-        }
-      });
-    }
-    
-    @PostConstruct
-    public void init() {
-        log.info("Health check initialized.");
-    }
+	private final EiddoClient eiddo;
+	private boolean eiddoCorrupted = false;
 
-    @Override
+	private final SuggesterConfigurationHandler suggesterConfigurationHandler;
+
+	@Inject
+	public HealthCheck(EiddoClient eiddo,
+			SuggesterConfigurationHandler suggesterConfigurationHandler) {
+		
+		
+		this.eiddo = eiddo;
+		this.suggesterConfigurationHandler=suggesterConfigurationHandler;
+		
+		eiddo.addListener(new EiddoListener() {
+
+			@Override
+			public void onRepoChainUpdated(List<File> repoDir) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void onError(Throwable error, boolean fatal) {
+				if (fatal) {
+					eiddoCorrupted = true;
+				}
+
+			}
+		});
+	}
+
+	@PostConstruct
+	public void init() {
+		log.info("Health check initialized.");
+	}
+
+	@Override
 	public int getStatus() {
 		log.info("Health check called.");
 		if (eiddoCorrupted) {
@@ -98,14 +107,13 @@ public class HealthCheck implements HealthCheckHandler {
 			return 500;
 		}
 
-		BlockingHashTable<String, AnalyzingSuggester> suggesters = (BlockingHashTable<String, AnalyzingSuggester>) Suggester
-				.getInstance().getDictionaryReader().getSuggesterList();
+		BlockingHashTable<String, AnalyzingSuggester> suggesters = (BlockingHashTable<String, AnalyzingSuggester>) suggesterConfigurationHandler.getDictionaryAnalyzer().getSuggesterList();
 
 		Set<String> dictionaryNames = suggesters.keySet();
 
 		boolean allSet = true;
 
-		for (String dictionaryName : dictionaryProperties) { 
+		for (String dictionaryName : dictionaryProperties) {
 
 			if ((!dictionaryNames.contains(dictionaryName))
 					|| (suggesters.get(dictionaryName) == null)) {
