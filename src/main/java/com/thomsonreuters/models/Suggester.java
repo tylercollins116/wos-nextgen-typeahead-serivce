@@ -48,5 +48,42 @@ public class Suggester implements SuggesterHandler {
 
 		return results;
 	}
+	
+	/**added**/
+	@Override
+	public List<SuggestData> lookup(String query, List<String> sources,
+			List<String> infos) {
+		 
+		List<SuggestData> allSuggestions = new ArrayList<SuggestData>();
+
+		if (query != null && query.trim().length() > 0) {
+
+			SuggestData suggestion = new SuggestData(query);
+			allSuggestions.add(suggestion);
+		}
+
+		if (sources != null && sources.size() > 0) {
+
+			for (String suggest : sources) {
+				SuggestData suggestion = new SuggestData(suggest);
+				allSuggestions.add(suggestion);
+
+			}
+
+		}
+
+		if (infos != null && infos.size() > 0) {
+
+			for (String suggest : infos) {
+				SuggestData suggestion = new SuggestData(suggest);
+				allSuggestions.add(suggestion);
+
+			}
+
+		}
+
+		return allSuggestions;
+	}
+
 
 }
