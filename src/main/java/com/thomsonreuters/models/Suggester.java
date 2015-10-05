@@ -1,103 +1,41 @@
 package com.thomsonreuters.models;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.configuration.event.ConfigurationEvent;
-import org.apache.commons.configuration.event.ConfigurationListener;
 import org.apache.lucene.search.suggest.Lookup.LookupResult;
 import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.netflix.config.ConfigurationManager;
-import com.thomsonreuters.models.services.async.Job;
-import com.thomsonreuters.models.services.async.NamedThreadFactory;
-import com.thomsonreuters.models.services.async.WaitingBlockingQueue;
-import com.thomsonreuters.models.services.suggesterOperation.DictionaryLoader;
-import com.thomsonreuters.models.services.suggesterOperation.SuggesterFactory;
-import com.thomsonreuters.models.services.suggesters.BlankSuggester;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 
-public class Suggester {
+
+@Singleton
+public class Suggester implements SuggesterHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(Suggester.class);
 
-	private static Suggester instance;
+	private final SuggesterConfigurationHandler suggesterConfigurationHandler;
 
-	private DictionaryLoader<AnalyzingSuggester> dictionaryReader = null;
-
-	private ExecutorService reloadExecutor;
-
-	public DictionaryLoader<AnalyzingSuggester> getDictionaryReader() {
-		return dictionaryReader;
+	@Inject
+	public Suggester(SuggesterConfigurationHandler suggesterConfigurationHandler) {
+		this.suggesterConfigurationHandler = suggesterConfigurationHandler;
 	}
 
-	private Suggester() {
+	@Override
+	public List<SuggestData> lookup(String query, int n) {
 
-		try {
-
-			reloadExecutor = new ThreadPoolExecutor(1, 6, 0L,
-					TimeUnit.MICROSECONDS,
-					new WaitingBlockingQueue<Runnable>(),
-					new NamedThreadFactory("Suggester"));
-
-			dictionaryReader = SuggesterFactory.createSuggesters("S3IAM");
-
-		} catch (Exception e) {
-			e.printStackTrace();
-
-			dictionaryReader = new BlankSuggester();
-		}
-
-		ConfigurationManager.getConfigInstance().addConfigurationListener(
-				new ConfigurationListener() {
-
-					@Override
-					public void configurationChanged(ConfigurationEvent event) {
-
-						log.info("reloding  dictionary "
-								+ event.getPropertyName());
-
-						Job<AnalyzingSuggester> job = new Job<AnalyzingSuggester>(
-								dictionaryReader, event.getPropertyName());
-						reloadExecutor.execute(job.inputTask);
-						;
-
-					}
-				});
-
+		return lookup("wos", query, n);
 	}
 
-	public static Suggester getInstance() {
-		if (instance == null) {
+	@Override
+	public List<SuggestData> lookup(String path, String query, int n) {
 
-			synchronized (Suggester.class) {
-
-				if (instance == null) {
-
-					instance = new Suggester();
-				}
-
-			}
-
-		}
-		return instance;
-
-	}
-
-	public static List<SuggestData> lookup(String query, int n) {
-
-		return lookup("default", query, n);
-	}
-
-	public static List<SuggestData> lookup(String path, String query, int n) {
 		List<SuggestData> results = new ArrayList<SuggestData>();
 
-		AnalyzingSuggester suggester = Suggester.getInstance().dictionaryReader
+		AnalyzingSuggester suggester = suggesterConfigurationHandler.getDictionaryAnalyzer()
 				.getSuggesterList().get(path);
 
 		try {
@@ -110,16 +48,42 @@ public class Suggester {
 
 		return results;
 	}
+	
+	/**added**/
+	@Override
+	public List<SuggestData> lookup(String query, List<String> sources,
+			List<String> infos) {
+		 
+		List<SuggestData> allSuggestions = new ArrayList<SuggestData>();
 
-	public static void main(String[] args) throws IOException {
+		if (query != null && query.trim().length() > 0) {
 
-		Suggester object = Suggester.getInstance();
-		List<SuggestData> results = object.lookup("default", "chi", 10);
-
-		for (SuggestData data : results) {
-			System.out.println(data.getValue());
+			SuggestData suggestion = new SuggestData(query);
+			allSuggestions.add(suggestion);
 		}
 
+		if (sources != null && sources.size() > 0) {
+
+			for (String suggest : sources) {
+				SuggestData suggestion = new SuggestData(suggest);
+				allSuggestions.add(suggestion);
+
+			}
+
+		}
+
+		if (infos != null && infos.size() > 0) {
+
+			for (String suggest : infos) {
+				SuggestData suggestion = new SuggestData(suggest);
+				allSuggestions.add(suggestion);
+
+			}
+
+		}
+
+		return allSuggestions;
 	}
+
 
 }

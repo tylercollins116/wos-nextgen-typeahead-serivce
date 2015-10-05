@@ -26,7 +26,7 @@ public class SuggesterFromS3Bucket extends SuggesterHelper implements
 
 	public SuggesterFromS3Bucket() throws IOException {	
 		
-		suggesterList.put("default", createDefaultAnalyzingSuggester());
+//		suggesterList.put("default", createDefaultAnalyzingSuggester());
 		
 		initializeSuggesterList();
 	}

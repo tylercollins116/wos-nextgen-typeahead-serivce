@@ -32,7 +32,7 @@ public class S3BucketFromS3IAMRole extends SuggesterHelper implements
 
 	public S3BucketFromS3IAMRole() throws IOException {
 
-		suggesterList.put("default", createDefaultAnalyzingSuggester());
+	//	suggesterList.put("default", createDefaultAnalyzingSuggester());
 
 		initializeSuggesterList();
 	}

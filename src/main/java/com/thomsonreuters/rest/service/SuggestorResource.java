@@ -6,11 +6,13 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 
 import java.io.IOException;
+import java.util.List;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -23,7 +25,7 @@ import com.google.common.base.Suppliers;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.governator.annotations.Configuration;
-import com.thomsonreuters.models.Suggester;
+import com.thomsonreuters.models.SuggesterHandler;
 
 @Singleton
 @Api(value = "/suggest", description = "Suggest WS entry point")
@@ -36,9 +38,11 @@ public class SuggestorResource {
 	@Configuration("1p.service.name")
 	private Supplier<String> appName = Suppliers.ofInstance("One Platform");
 
-	@Inject
-	public SuggestorResource() {
+	private final SuggesterHandler suggesterHandler;
 
+	@Inject
+	public SuggestorResource(SuggesterHandler suggesterHandler) {
+		this.suggesterHandler = suggesterHandler;
 	}
 
 	@ApiOperation(value = "Suggest check", notes = "Returns list of suggestion for query prefix")
@@ -51,9 +55,9 @@ public class SuggestorResource {
 		try {
 
 			ObjectMapper mapper = new ObjectMapper();
-			return Response
-					.ok(mapper.writeValueAsString(Suggester.lookup(path, query,
-							10))).build();
+			return Response.ok(
+					mapper.writeValueAsString(suggesterHandler.lookup(path,
+							query, 10))).build();
 		} catch (IOException e) {
 			logger.error("Error creating json response.", e);
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -71,8 +75,37 @@ public class SuggestorResource {
 
 			ObjectMapper mapper = new ObjectMapper();
 			return Response.ok(
-					mapper.writeValueAsString(Suggester.lookup(query, 10)))
+					mapper.writeValueAsString(suggesterHandler
+							.lookup(query, 10))).build();
+		} catch (IOException e) {
+			logger.error("Error creating json response.", e);
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
 					.build();
+		}
+	}
+
+	@ApiOperation(value = "Suggest check", notes = "Returns list of suggestion for query prefix")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "RESPONSE_OK") })
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response searchWithQueryParam(@QueryParam("query") String query,
+			@QueryParam("sources") List<String> sources,
+			@QueryParam("infos") List<String> infos) {
+
+		/**
+		 * example of executing endpoints
+		 * 
+		 * http://localhost:7001/suggest?query=medi
+		 * &sources=wos&sources=countries&info=health&info=sports
+		 * 
+		 * **/
+
+		try {
+
+			ObjectMapper mapper = new ObjectMapper();
+			return Response.ok(
+					mapper.writeValueAsString(suggesterHandler.lookup(query,
+							sources, infos))).build();
 		} catch (IOException e) {
 			logger.error("Error creating json response.", e);
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
