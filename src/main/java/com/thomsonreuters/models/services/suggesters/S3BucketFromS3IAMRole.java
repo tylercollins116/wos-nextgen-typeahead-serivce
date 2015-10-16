@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,28 +18,35 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.netflix.config.ConfigurationManager;
 import com.thomsonreuters.models.services.suggesterOperation.DictionaryLoader;
 import com.thomsonreuters.models.services.suggesterOperation.SuggesterHelper;
+import com.thomsonreuters.models.services.suggesterOperation.ext.AnalyzingSuggesterExt;
+import com.thomsonreuters.models.services.suggesterOperation.models.ArticleEntry;
+import com.thomsonreuters.models.services.suggesterOperation.models.CategoryEntry;
+import com.thomsonreuters.models.services.suggesterOperation.models.KeywordEntry;
 import com.thomsonreuters.models.services.util.Blockable;
 import com.thomsonreuters.models.services.util.BlockingHashTable;
 import com.thomsonreuters.models.services.util.Property;
 import com.thomsonreuters.models.services.util.PropertyValue;
 
 public class S3BucketFromS3IAMRole extends SuggesterHelper implements
-		DictionaryLoader<AnalyzingSuggester> {
+		DictionaryLoader<Lookup> {
 
 	private static final Logger log = LoggerFactory
 			.getLogger(S3BucketFromS3IAMRole.class);
 
-	private final Blockable<String, AnalyzingSuggester> suggesterList = new BlockingHashTable<String, AnalyzingSuggester>();
+	private final Blockable<String, Lookup> suggesterList = new BlockingHashTable<String, Lookup>();
 
 	public S3BucketFromS3IAMRole() throws IOException {
 
-	//	suggesterList.put("default", createDefaultAnalyzingSuggester());
+		// suggesterList.put("default", createDefaultAnalyzingSuggester());
 
 		initializeSuggesterList();
+
+		System.gc();
+		System.gc();
 	}
 
 	@Override
-	public Blockable<String, AnalyzingSuggester> getSuggesterList() {
+	public Blockable<String, Lookup> getSuggesterList() {
 
 		return suggesterList;
 	}
@@ -87,10 +95,42 @@ public class S3BucketFromS3IAMRole extends SuggesterHelper implements
 
 					InputStream is = s3file.getObjectContent();
 
-					AnalyzingSuggester suggester = createAnalyzingSuggester(is);
+					/********** Important code to work on ************************/
 
-					suggesterList.put(property.getDictionayName(), suggester);
+					if (property.getDictionayName().equalsIgnoreCase(
+							"organization")) {
 
+						AnalyzingSuggesterExt suggester = createAnalyzingSuggesterForOrganization(is);
+						suggesterList.put(property.getDictionayName(),
+								suggester);
+
+					} else if (property.getDictionayName().equalsIgnoreCase(
+							"article")) {
+
+						AnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
+								is, ArticleEntry.class);
+						suggesterList.put(property.getDictionayName(),
+								suggester);
+					} else if (property.getDictionayName().equalsIgnoreCase(
+							"wos")) {
+
+						AnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
+								is, KeywordEntry.class);
+						suggesterList.put(property.getDictionayName(),
+								suggester);
+					} else if (property.getDictionayName().equalsIgnoreCase(
+							"categories")) {
+						AnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
+								is, CategoryEntry.class);
+						suggesterList.put(property.getDictionayName(),
+								suggester);
+
+					}
+
+					/***************************** End **********************************/
+
+					log.info("Loading dictionary for " + dictionaryProperty
+							+ " completed successfully.");
 				} catch (Exception e) {
 
 					log.info(" fail loading dictionary for "
@@ -105,7 +145,7 @@ public class S3BucketFromS3IAMRole extends SuggesterHelper implements
 
 	public void reloadDictionary(String propertyName) throws IOException {
 
-		log.info("loading dictionary of " + propertyName + " starting");
+		log.info("reloading dictionary of " + propertyName + " starting");
 
 		Property bucketProperty = PropertyValue.getProperty(Property.S3_BUCKET);
 		String bucketName = ConfigurationManager.getConfigInstance().getString(
@@ -120,11 +160,33 @@ public class S3BucketFromS3IAMRole extends SuggesterHelper implements
 		S3Object s3file = s3Client.getObject(bucketName, dictionaryPath);
 		InputStream is = s3file.getObjectContent();
 
-		AnalyzingSuggester suggester = createAnalyzingSuggester(is);
+		/********** Important code to work on ************************/
 
-		suggesterList.put(property.getDictionayName(), suggester);
+		if (property.getDictionayName().equalsIgnoreCase("organization")) {
 
-		log.info("loading dictionary of " + propertyName + " completed");
+			AnalyzingSuggesterExt suggester = createAnalyzingSuggesterForOrganization(is);
+			suggesterList.put(property.getDictionayName(), suggester);
+
+		} else if (property.getDictionayName().equalsIgnoreCase("article")) {
+
+			AnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
+					is, ArticleEntry.class);
+			suggesterList.put(property.getDictionayName(), suggester);
+		} else if (property.getDictionayName().equalsIgnoreCase("wos")) {
+
+			AnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
+					is, KeywordEntry.class);
+			suggesterList.put(property.getDictionayName(), suggester);
+		} else if (property.getDictionayName().equalsIgnoreCase("categories")) {
+			AnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
+					is, CategoryEntry.class);
+			suggesterList.put(property.getDictionayName(), suggester);
+
+		}
+
+		/***************************** End **********************************/
+
+		log.info("reloading dictionary of " + propertyName + " completed");
 	}
 
 	public AmazonS3 getAmazonS3() {

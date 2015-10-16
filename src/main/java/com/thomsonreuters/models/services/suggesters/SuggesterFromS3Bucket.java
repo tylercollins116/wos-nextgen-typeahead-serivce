@@ -6,7 +6,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.services.s3.AmazonS3Client;
@@ -14,25 +17,34 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.netflix.config.ConfigurationManager;
 import com.thomsonreuters.models.services.suggesterOperation.DictionaryLoader;
 import com.thomsonreuters.models.services.suggesterOperation.SuggesterHelper;
+import com.thomsonreuters.models.services.suggesterOperation.ext.AnalyzingSuggesterExt;
+import com.thomsonreuters.models.services.suggesterOperation.models.ArticleEntry;
+import com.thomsonreuters.models.services.suggesterOperation.models.CategoryEntry;
+import com.thomsonreuters.models.services.suggesterOperation.models.KeywordEntry;
 import com.thomsonreuters.models.services.util.Blockable;
 import com.thomsonreuters.models.services.util.BlockingHashTable;
 import com.thomsonreuters.models.services.util.Property;
 import com.thomsonreuters.models.services.util.PropertyValue;
 
 public class SuggesterFromS3Bucket extends SuggesterHelper implements
-		DictionaryLoader<AnalyzingSuggester> {
+		DictionaryLoader<Lookup> {
 
-	private final Blockable<String, AnalyzingSuggester> suggesterList = new BlockingHashTable<String, AnalyzingSuggester>();
+	private final Blockable<String, Lookup> suggesterList = new BlockingHashTable<String, Lookup>();
 
-	public SuggesterFromS3Bucket() throws IOException {	
-		
-//		suggesterList.put("default", createDefaultAnalyzingSuggester());
-		
+	private static final Logger log = LoggerFactory
+			.getLogger(SuggesterFromS3Bucket.class);
+
+	public SuggesterFromS3Bucket() throws IOException {
+
+		// suggesterList.put("default", createDefaultAnalyzingSuggester());
+
 		initializeSuggesterList();
+		System.gc();
+		System.gc();
 	}
 
 	@Override
-	public Blockable<String, AnalyzingSuggester> getSuggesterList() {
+	public Blockable<String, Lookup> getSuggesterList() {
 
 		return suggesterList;
 	}
@@ -67,12 +79,56 @@ public class SuggesterFromS3Bucket extends SuggesterHelper implements
 				String value = ConfigurationManager.getConfigInstance()
 						.getString(property.toString());
 
-				S3Object s3file = s3Client.getObject(bucketName, value);
-				InputStream is = s3file.getObjectContent();
-				
-				AnalyzingSuggester suggester=createAnalyzingSuggester(is);
-				 
-				suggesterList.put(property.getDictionayName(),suggester);
+				log.info(" Loading dictionary for " + dictionaryProperty
+						+ " BucketName : " + bucketName + "  ,Path : " + value);
+				try {
+
+					S3Object s3file = s3Client.getObject(bucketName, value);
+					InputStream is = s3file.getObjectContent();
+
+					/********** Important code to work on ************************/
+
+					if (property.getDictionayName().equalsIgnoreCase(
+							"organization")) {
+
+						AnalyzingSuggesterExt suggester = createAnalyzingSuggesterForOrganization(is);
+						suggesterList.put(property.getDictionayName(),
+								suggester);
+
+					} else if (property.getDictionayName().equalsIgnoreCase(
+							"article")) {
+
+						AnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
+								is, ArticleEntry.class);
+						suggesterList.put(property.getDictionayName(),
+								suggester);
+					} else if (property.getDictionayName().equalsIgnoreCase(
+							"wos")) {
+
+						AnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
+								is, KeywordEntry.class);
+						suggesterList.put(property.getDictionayName(),
+								suggester);
+					} else if (property.getDictionayName().equalsIgnoreCase(
+							"categories")) {
+						AnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
+								is, CategoryEntry.class);
+						suggesterList.put(property.getDictionayName(),
+								suggester);
+
+					}
+
+					/***************************** End **********************************/
+
+					log.info("Loading dictionary for " + dictionaryProperty
+							+ " completed successfully.");
+				} catch (Exception e) {
+
+					log.info(" fail loading dictionary for "
+							+ dictionaryProperty);
+
+					e.printStackTrace();
+				}
 			}
 		}
 
@@ -85,7 +141,7 @@ public class SuggesterFromS3Bucket extends SuggesterHelper implements
 
 		String awsKeyId = ConfigurationManager.getConfigInstance().getString(
 				Property.AWS_KEY_ID);
-		 
+
 		AWSCredentials credential = new AWSCredentialsImpl(awsKeyId, awsKey);
 
 		return credential;
@@ -107,9 +163,40 @@ public class SuggesterFromS3Bucket extends SuggesterHelper implements
 		S3Object s3file = s3Client.getObject(bucketName, dictionaryPath);
 		InputStream is = s3file.getObjectContent();
 
-		AnalyzingSuggester suggester = createAnalyzingSuggester(is);
+		/********** Important code to work on ************************/
 
-		 suggesterList.put(property.getDictionayName(), suggester);
+		if (property.getDictionayName().equalsIgnoreCase(
+				"organization")) {
+
+			AnalyzingSuggesterExt suggester = createAnalyzingSuggesterForOrganization(is);
+			suggesterList.put(property.getDictionayName(),
+					suggester);
+
+		} else if (property.getDictionayName().equalsIgnoreCase(
+				"article")) {
+
+			AnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
+					is, ArticleEntry.class);
+			suggesterList.put(property.getDictionayName(),
+					suggester);
+		} else if (property.getDictionayName().equalsIgnoreCase(
+				"wos")) {
+
+			AnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
+					is, KeywordEntry.class);
+			suggesterList.put(property.getDictionayName(),
+					suggester);
+		} else if (property.getDictionayName().equalsIgnoreCase(
+				"categories")) {
+			AnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
+					is, CategoryEntry.class);
+			suggesterList.put(property.getDictionayName(),
+					suggester);
+
+		}
+
+		/***************************** End **********************************/
+
 	}
 
 	class AWSCredentialsImpl implements AWSCredentials {

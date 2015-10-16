@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.configuration.event.ConfigurationEvent;
 import org.apache.commons.configuration.event.ConfigurationListener;
-import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
+import org.apache.lucene.search.suggest.Lookup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,15 +18,15 @@ import com.thomsonreuters.models.services.async.WaitingBlockingQueue;
 import com.thomsonreuters.models.services.suggesterOperation.DictionaryLoader;
 import com.thomsonreuters.models.services.suggesterOperation.SuggesterFactory;
 import com.thomsonreuters.models.services.suggesters.BlankSuggester;
-
+import com.thomsonreuters.models.services.util.PropertyValue;
 
 @Singleton
-public class SuggesterConfiguration implements SuggesterConfigurationHandler{
+public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 
 	private static final Logger log = LoggerFactory
 			.getLogger(SuggesterConfiguration.class);
 
-	private DictionaryLoader<AnalyzingSuggester> dictionaryReader = null;
+	private DictionaryLoader<Lookup> dictionaryReader = null;
 
 	private ExecutorService reloadExecutor;
 
@@ -52,21 +52,28 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler{
 
 					@Override
 					public void configurationChanged(ConfigurationEvent event) {
+						
+						String triggredProperty=event.getPropertyName();
 
-						log.info("reloding  dictionary "
-								+ event.getPropertyName());
+						if (PropertyValue.getProperty(triggredProperty)
+								.isDictionaryPathRelated()||PropertyValue.getProperty(triggredProperty)
+								.isBucketName()) {
 
-						Job<AnalyzingSuggester> job = new Job<AnalyzingSuggester>(
-								dictionaryReader, event.getPropertyName());
-						reloadExecutor.execute(job.inputTask);
-						;
+							log.info("reloding  dictionary "
+									+ event.getPropertyName());
+
+							Job<Lookup> job = new Job<Lookup>(dictionaryReader,
+									event.getPropertyName());
+							reloadExecutor.execute(job.inputTask);
+							;
+						}
 
 					}
 				});
 	}
 
 	@Override
-	public DictionaryLoader<AnalyzingSuggester> getDictionaryAnalyzer() {
+	public DictionaryLoader<Lookup> getDictionaryAnalyzer() {
 		return this.dictionaryReader;
 	}
 

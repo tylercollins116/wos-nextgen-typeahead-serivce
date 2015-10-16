@@ -1,5 +1,6 @@
 package com.thomsonreuters.models.services.suggesters;
 
+import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
 
 import com.thomsonreuters.models.services.suggesterOperation.DictionaryLoader;
@@ -8,11 +9,11 @@ import com.thomsonreuters.models.services.util.Blockable;
 import com.thomsonreuters.models.services.util.BlockingHashTable;
 
 public class BlankSuggester extends SuggesterHelper implements
-		DictionaryLoader<AnalyzingSuggester> {
+		DictionaryLoader<Lookup> {
 
 	@Override
-	public Blockable<String, AnalyzingSuggester> getSuggesterList() {
-		return new BlockingHashTable<String, AnalyzingSuggester>();
+	public Blockable<String, Lookup> getSuggesterList() {
+		return new BlockingHashTable<String, Lookup>();
 	}
 
 	@Override
