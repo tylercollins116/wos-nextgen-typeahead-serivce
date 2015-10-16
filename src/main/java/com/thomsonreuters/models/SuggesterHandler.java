@@ -10,6 +10,6 @@ public interface SuggesterHandler {
 	
 		/** added **/
 	public List<SuggestData> lookup(String query, List<String> sources,
-			List<String> infos);
+			List<String> infos,int size);
 
 }

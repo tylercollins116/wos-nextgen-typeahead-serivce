@@ -2,7 +2,10 @@ package com.thomsonreuters.models;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.search.suggest.Lookup.LookupResult;
 import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
 import org.slf4j.Logger;
@@ -10,7 +13,11 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
+import com.thomsonreuters.models.SuggestData.Info;
+import com.thomsonreuters.models.SuggestData.Suggestions;
+import com.thomsonreuters.models.services.suggesterOperation.ext.AnalyzingSuggesterExt;
+import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
+import com.thomsonreuters.models.services.util.PrepareDictionary;
 
 @Singleton
 public class Suggester implements SuggesterHandler {
@@ -33,57 +40,178 @@ public class Suggester implements SuggesterHandler {
 	@Override
 	public List<SuggestData> lookup(String path, String query, int n) {
 
+		long startTime = -1L;
+
 		List<SuggestData> results = new ArrayList<SuggestData>();
 
-		AnalyzingSuggester suggester = suggesterConfigurationHandler.getDictionaryAnalyzer()
-				.getSuggesterList().get(path);
+		Lookup suggester = suggesterConfigurationHandler
+				.getDictionaryAnalyzer().getSuggesterList().get(path);
 
-		try {
-			for (LookupResult result : suggester.lookup(query, false, n)) {
-				results.add(new SuggestData(result.key.toString()));
+		if (suggester instanceof AnalyzingSuggester) {
+
+			if (path.equalsIgnoreCase("wos")) {
+
+				startTime = System.currentTimeMillis();
+
+				SuggestData suggestData = new SuggestData();
+				suggestData.source = path;
+
+				try {
+					for (LookupResult result : ((AnalyzingSuggester) suggester)
+							.lookup(query, false, n)) {
+
+						Suggestions suggestions = suggestData.new Suggestions();
+						suggestions.keyword = result.key.toString();
+
+						suggestData.suggestions.add(suggestions);
+
+					}
+
+				} catch (Exception e) {
+					log.info("cannot find the suggester ");
+				}
+
+				suggestData.took = (System.currentTimeMillis() - startTime)
+						+ "";
+
+				results.add(suggestData);
+			} else if (path.equalsIgnoreCase("article")) {
+
+				startTime = System.currentTimeMillis();
+
+				SuggestData suggestData = new SuggestData();
+				suggestData.source = path;
+
+				try {
+					for (LookupResult result : ((AnalyzingSuggester) suggester)
+							.lookup(query, false, n)) {
+
+						Map<String, String> map = PrepareDictionary
+								.processJson(new String(result.payload.bytes));
+
+						Suggestions suggestions = suggestData.new Suggestions();
+						suggestions.keyword = map.remove(Entry.TERM);
+
+						Info info = suggestData.new Info();
+						info.key = Entry.TERM;
+						info.value = result.key.toString();
+						suggestions.info.add(info);
+
+						Set<String> keys = map.keySet();
+
+						for (String key : keys) {
+
+							Info info$ = suggestData.new Info();
+							info$.key = key;
+							info$.value = map.get(key);
+							suggestions.info.add(info$);
+						}
+
+						suggestData.suggestions.add(suggestions);
+
+					}
+				} catch (Exception e) {
+					log.info("cannot find the suggester ");
+				}
+
+				suggestData.took = (System.currentTimeMillis() - startTime)
+						+ "";
+
+				results.add(suggestData);
+
+			} else if (path.equalsIgnoreCase("categories")) {
+
+				startTime = System.currentTimeMillis();
+				SuggestData suggestData = new SuggestData();
+				suggestData.source = path;
+
+				try {
+					for (LookupResult result : ((AnalyzingSuggester) suggester)
+							.lookup(query, false, n)) {
+
+						/** output[] **/
+
+						Suggestions suggestions = suggestData.new Suggestions();
+						suggestions.keyword = result.key.toString();
+
+						Map<String, String> map = PrepareDictionary
+								.processJson(new String(result.payload.bytes));
+						Set<String> keys = map.keySet();
+
+						for (String key : keys) {
+
+							Info info$ = suggestData.new Info();
+							info$.key = key;
+							info$.value = map.get(key);
+							suggestions.info.add(info$);
+						}
+
+						suggestData.suggestions.add(suggestions);
+
+					}
+				} catch (Exception e) {
+					log.info("cannot find the suggester ");
+				}
+
+				suggestData.took = (System.currentTimeMillis() - startTime)
+						+ "";
+				results.add(suggestData);
+
 			}
-		} catch (Exception e) {
-			log.info("cannot find the suggester ");
+
+		} else if (suggester instanceof AnalyzingSuggesterExt) {
+
+			startTime = System.currentTimeMillis();
+
+			SuggestData suggestData = new SuggestData();
+			suggestData.source = path;
+
+			List<Map<String, String>> typeSuggestions = new ArrayList<Map<String, String>>();
+			try {
+				for (LookupResult result : ((AnalyzingSuggesterExt) suggester)
+						.lookup(query, false, n)) {
+
+					Map<String, String> map = PrepareDictionary
+							.processJson(new String(result.payload.bytes));
+
+					Suggestions suggestions = suggestData.new Suggestions();
+					suggestions.keyword = map.remove(Entry.TERM);
+					suggestData.suggestions.add(suggestions);
+
+					Set<String> keys = map.keySet();
+
+					for (String key : keys) {
+
+						Info info = suggestData.new Info();
+						info.key = key;
+						info.value = map.get(key);
+						suggestions.info.add(info);
+					}
+				}
+			} catch (Exception e) {
+				log.info("cannot find the suggester ");
+			}
+
+			suggestData.took = (System.currentTimeMillis() - startTime) + "";
+			results.add(suggestData);
+
 		}
 
 		return results;
 	}
-	
-	/**added**/
+
+	/** added **/
 	@Override
 	public List<SuggestData> lookup(String query, List<String> sources,
-			List<String> infos) {
-		 
+			List<String> infos, int size) {
+
 		List<SuggestData> allSuggestions = new ArrayList<SuggestData>();
 
-		if (query != null && query.trim().length() > 0) {
-
-			SuggestData suggestion = new SuggestData(query);
-			allSuggestions.add(suggestion);
-		}
-
-		if (sources != null && sources.size() > 0) {
-
-			for (String suggest : sources) {
-				SuggestData suggestion = new SuggestData(suggest);
-				allSuggestions.add(suggestion);
-
-			}
-
-		}
-
-		if (infos != null && infos.size() > 0) {
-
-			for (String suggest : infos) {
-				SuggestData suggestion = new SuggestData(suggest);
-				allSuggestions.add(suggestion);
-
-			}
-
+		for (String path : sources) {
+			allSuggestions.addAll(lookup(path, query, size));
 		}
 
 		return allSuggestions;
 	}
-
 
 }

@@ -8,6 +8,7 @@ import io.swagger.annotations.ApiResponses;
 import java.io.IOException;
 import java.util.List;
 
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -89,8 +90,8 @@ public class SuggestorResource {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response searchWithQueryParam(@QueryParam("query") String query,
-			@QueryParam("sources") List<String> sources,
-			@QueryParam("infos") List<String> infos) {
+			@QueryParam("source") List<String> source,
+			@QueryParam("info") List<String> info,@DefaultValue("10")@QueryParam("size") int size) {
 
 		/**
 		 * example of executing endpoints
@@ -105,7 +106,7 @@ public class SuggestorResource {
 			ObjectMapper mapper = new ObjectMapper();
 			return Response.ok(
 					mapper.writeValueAsString(suggesterHandler.lookup(query,
-							sources, infos))).build();
+							source, info,size))).build();
 		} catch (IOException e) {
 			logger.error("Error creating json response.", e);
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
