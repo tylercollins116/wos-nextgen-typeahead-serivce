@@ -31,6 +31,9 @@ public abstract class SuggesterHelper {
 			CharArraySet.EMPTY_SET, false);
 
 	private static final Map<String, String> dictionaryPaths = new HashMap<String, String>();
+	
+	private static final Logger log = LoggerFactory
+			.getLogger(SuggesterHelper.class);
 
 	static {
 		try {
@@ -124,11 +127,16 @@ public abstract class SuggesterHelper {
 			String dictionary) {
 
 		String dictionaryInfo = null;
+		
+		log.info("Cheking already loaded "+path+" "+dictionary);
 
 		if ((dictionaryInfo = dictionaryPaths.get(path.toLowerCase().trim())) != null
 				&& dictionaryInfo.trim().equalsIgnoreCase(dictionary.trim())) {
 			return true;
 		}
+		
+		
+		log.info("Cheking passed .. safe to load "+path+" "+dictionary);
 
 		return false;
 	}
