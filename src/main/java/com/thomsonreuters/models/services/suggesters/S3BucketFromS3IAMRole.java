@@ -175,7 +175,7 @@ public class S3BucketFromS3IAMRole extends SuggesterHelper implements
 					+ " BucketName : " + bucketName + "  ,Path : "
 					+ dictionaryPath + " again  .. reloading ignored ");
 					
-					continue;
+					return;
 		}
 
 		AmazonS3 s3Client = getAmazonS3();
