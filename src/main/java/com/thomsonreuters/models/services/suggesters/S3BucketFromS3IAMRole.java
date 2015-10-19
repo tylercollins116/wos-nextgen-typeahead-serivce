@@ -84,6 +84,15 @@ public class S3BucketFromS3IAMRole extends SuggesterHelper implements
 				String value = ConfigurationManager.getConfigInstance()
 						.getString(property.toString());
 
+				if (property.isDictionaryPathRelated()
+						&& isDictionaryAlreadyLoaded(
+								property.getDictionayName(), value)) {
+					log.info("Try to Load the  dictionary for "
+							+ dictionaryProperty + " BucketName : "
+							+ bucketName + "  ,Path : " + value
+							+ " again  .. reloading ignored ");
+				}
+
 				log.info(" Loading dictionary for " + dictionaryProperty
 						+ " BucketName : " + bucketName + "  ,Path : " + value);
 				try {
@@ -129,6 +138,8 @@ public class S3BucketFromS3IAMRole extends SuggesterHelper implements
 
 					/***************************** End **********************************/
 
+					storeLoadedDictoanryInfo(property.getDictionayName(), value);
+
 					log.info("Loading dictionary for " + dictionaryProperty
 							+ " completed successfully.");
 				} catch (Exception e) {
@@ -154,6 +165,14 @@ public class S3BucketFromS3IAMRole extends SuggesterHelper implements
 		Property property = PropertyValue.getProperty(propertyName);
 		String dictionaryPath = ConfigurationManager.getConfigInstance()
 				.getString(property.toString());
+
+		if (property.isDictionaryPathRelated()
+				&& isDictionaryAlreadyLoaded(property.getDictionayName(),
+						dictionaryPath)) {
+			log.info("Try to Load the  dictionary for " + propertyName
+					+ " BucketName : " + bucketName + "  ,Path : "
+					+ dictionaryPath + " again  .. reloading ignored ");
+		}
 
 		AmazonS3 s3Client = getAmazonS3();
 
@@ -185,6 +204,8 @@ public class S3BucketFromS3IAMRole extends SuggesterHelper implements
 		}
 
 		/***************************** End **********************************/
+
+		storeLoadedDictoanryInfo(property.getDictionayName(), dictionaryPath);
 
 		log.info("reloading dictionary of " + propertyName + " completed");
 	}
