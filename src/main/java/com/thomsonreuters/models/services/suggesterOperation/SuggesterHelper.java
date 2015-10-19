@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -33,7 +34,7 @@ public abstract class SuggesterHelper {
 			CharArraySet.EMPTY_SET, false);
 
 	private static final Map<String, String> dictionaryPaths = new HashMap<String, String>();
-	
+
 	private static final Logger log = LoggerFactory
 			.getLogger(SuggesterHelper.class);
 
@@ -125,12 +126,14 @@ public abstract class SuggesterHelper {
 		return suggester;
 	}
 
-	public final boolean isDictionaryAlreadyLoaded(String path,
+	public synchronized final boolean isDictionaryAlreadyLoaded(String path,
 			String dictionary) {
 
 		String dictionaryInfo = null;
 		
 		log.info("Cheking already loaded "+path+" "+dictionary);
+
+		log.info("Checking wheather already loaded " + path + " " + dictionary);
 
 		if ((dictionaryInfo = dictionaryPaths.get(path.toLowerCase().trim())) != null
 				&& dictionaryInfo.trim().equalsIgnoreCase(dictionary.trim())) {
@@ -140,14 +143,32 @@ public abstract class SuggesterHelper {
 		
 		log.info("Cheking passed .. safe to load "+path+" "+dictionary);
 
+		log.info("Checking passed .. safe to load " + path + " " + dictionary);
+
 		return false;
 	}
 
-	public final boolean storeLoadedDictoanryInfo(String path, String dictionary) {
+	public synchronized final boolean storeLoadedDictoanryInfo(String path,
+			String dictionary) {
 
 		dictionaryPaths.put(path.toLowerCase().trim(), dictionary.toLowerCase()
 				.trim());
+		log.info("Stored " + path.toLowerCase().trim() + "\t\t"
+				+ dictionary.toLowerCase().trim());
 		return true;
 	}
 
+	public synchronized final void getStoredPathInfo() {
+
+		log.info("***************************************************************************");
+		Set<String> keys = dictionaryPaths.keySet();
+
+		for (String key : keys) {
+			log.info("Founds following dictionary already loaded \"" + key
+					+ "\" from path " + dictionaryPaths.get(key));
+		}
+
+		log.info("***************************************************************************");
+
+	}
 }

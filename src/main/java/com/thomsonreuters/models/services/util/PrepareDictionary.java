@@ -30,8 +30,9 @@ public class PrepareDictionary {
 
 	public static List<com.thomsonreuters.models.services.suggesterOperation.models.Entry> initDictonary(
 			InputStream is, Class entryClass) throws IOException {
-
+		log.info("**************************************************************");
 		log.info("Pre-initilalizing Started");
+		log.info("**************************************************************");
 		List<com.thomsonreuters.models.services.suggesterOperation.models.Entry> EntryList = new ArrayList<com.thomsonreuters.models.services.suggesterOperation.models.Entry>();
 
 		BufferedReader br = new BufferedReader(new InputStreamReader(is));
@@ -70,8 +71,9 @@ public class PrepareDictionary {
 			}
 
 		}
-
+		log.info("**************************************************************");
 		log.info("Pre-initilalizing Completed Successfully");
+		log.info("**************************************************************");
 
 		return EntryList;
 	}
