@@ -39,12 +39,7 @@ public class PrepareDictionary {
 		String jsonAsLine = null;
 
 		while ((jsonAsLine = br.readLine()) != null) {
-			Map<String, String> jsonToMap = processJson(jsonAsLine);
-			
-				if(EntryList.size()>50000){
-			 
-				break;
-			}
+			Map<String, String> jsonToMap = processJson(jsonAsLine); 
 
 			try {
 				if (entryClass == OrganizationEntry.class) {
