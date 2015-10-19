@@ -17,6 +17,8 @@ import org.apache.lucene.search.suggest.FileDictionary;
 import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
 import org.apache.lucene.search.suggest.analyzing.FuzzySuggester;
 import org.apache.lucene.util.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.thomsonreuters.models.services.suggesterOperation.ext.AnalyzingSuggesterExt;
 import com.thomsonreuters.models.services.suggesterOperation.ext.FuzzySuggesterExt;
