@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -15,8 +17,6 @@ import org.apache.lucene.search.suggest.FileDictionary;
 import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
 import org.apache.lucene.search.suggest.analyzing.FuzzySuggester;
 import org.apache.lucene.util.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.thomsonreuters.models.services.suggesterOperation.ext.AnalyzingSuggesterExt;
 import com.thomsonreuters.models.services.suggesterOperation.ext.FuzzySuggesterExt;
@@ -30,7 +30,8 @@ public abstract class SuggesterHelper {
 	public static final CharArraySet stopSet = new CharArraySet(
 			CharArraySet.EMPTY_SET, false);
 
- 
+	private final Map<String, String> dictionaryPaths = new HashMap<String, String>();
+
 	static {
 		try {
 			stopSet.addAll(WordlistLoader.getWordSet(IOUtils.getDecodingReader(
@@ -86,8 +87,6 @@ public abstract class SuggesterHelper {
 			System.gc();
 			System.gc();
 
-			 
-
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -114,12 +113,31 @@ public abstract class SuggesterHelper {
 			System.gc();
 			System.gc();
 
-		 
-
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
 		return suggester;
 	}
+
+	public final boolean isDictionaryAlreadyLoaded(String path,
+			String dictionary) {
+
+		String dictionaryInfo = null;
+
+		if ((dictionaryInfo = dictionaryPaths.get(path.toLowerCase().trim())) != null
+				&& dictionaryInfo.trim().equalsIgnoreCase(dictionary.trim())) {
+			return true;
+		}
+
+		return false;
+	}
+
+	public final boolean storeLoadedDictoanryInfo(String path, String dictionary) {
+
+		dictionaryPaths.put(path.toLowerCase().trim(), dictionary.toLowerCase()
+				.trim());
+		return true;
+	}
+
 }
