@@ -43,7 +43,7 @@ public class PrepareDictionary {
 			
 				if(EntryList.size()>50000){
 			 
-				continue;
+				break;
 			}
 
 			try {
