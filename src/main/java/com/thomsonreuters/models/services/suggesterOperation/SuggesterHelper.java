@@ -30,7 +30,7 @@ public abstract class SuggesterHelper {
 	public static final CharArraySet stopSet = new CharArraySet(
 			CharArraySet.EMPTY_SET, false);
 
-	private final Map<String, String> dictionaryPaths = new HashMap<String, String>();
+	private static final Map<String, String> dictionaryPaths = new HashMap<String, String>();
 
 	static {
 		try {
