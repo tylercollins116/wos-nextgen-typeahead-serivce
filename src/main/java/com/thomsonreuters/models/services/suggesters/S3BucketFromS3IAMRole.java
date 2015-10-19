@@ -92,6 +92,7 @@ public class S3BucketFromS3IAMRole extends SuggesterHelper implements
 				if (property.isDictionaryPathRelated()
 						&& isDictionaryAlreadyLoaded(
 								property.getDictionayName(), value)) {
+ 
 					log.info("**************************************************************");
 					log.info("Trying to Load the  dictionary for "
 							+ dictionaryProperty + " BucketName : "
@@ -100,6 +101,7 @@ public class S3BucketFromS3IAMRole extends SuggesterHelper implements
 					log.info("**************************************************************");
 
 					continue;
+ 
 				}
 
 				log.info("**************************************************************");
@@ -188,9 +190,11 @@ public class S3BucketFromS3IAMRole extends SuggesterHelper implements
 			log.info("Try to reLoad the  dictionary for " + propertyName
 					+ " BucketName : " + bucketName + "  ,Path : "
 					+ dictionaryPath + " again  .. reloading ignored ");
+ 
 			log.info("**************************************************************");
 
 			return;
+ 
 		}
 
 		AmazonS3 s3Client = getAmazonS3();
