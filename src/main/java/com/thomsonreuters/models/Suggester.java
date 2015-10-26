@@ -1,6 +1,7 @@
 package com.thomsonreuters.models;
 
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,6 +63,8 @@ public class Suggester implements SuggesterHandler {
 
 						Suggestions suggestions = suggestData.new Suggestions();
 						suggestions.keyword = result.key.toString();
+						
+						System.out.println(result.key.toString()+"\t\t"+result.value);
 
 						suggestData.suggestions.add(suggestions);
 
@@ -90,12 +93,9 @@ public class Suggester implements SuggesterHandler {
 								.processJson(new String(result.payload.bytes));
 
 						Suggestions suggestions = suggestData.new Suggestions();
-						suggestions.keyword = map.remove(Entry.TERM);
-
-						Info info = suggestData.new Info();
-						info.key = Entry.TERM;
-						info.value = result.key.toString();
-						suggestions.info.add(info);
+						suggestions.keyword = result.key.toString();
+								
+						 
 
 						Set<String> keys = map.keySet();
 
@@ -206,6 +206,15 @@ public class Suggester implements SuggesterHandler {
 			List<String> infos, int size) {
 
 		List<SuggestData> allSuggestions = new ArrayList<SuggestData>();
+
+		if (sources != null && sources.size() <= 0) {
+			Enumeration<String> keys = suggesterConfigurationHandler
+					.getDictionaryAnalyzer().getSuggesterList().getKeys();
+
+			while (keys.hasMoreElements()) {
+				sources.add((String) keys.nextElement());
+			}
+		}
 
 		for (String path : sources) {
 			allSuggestions.addAll(lookup(path, query, size));

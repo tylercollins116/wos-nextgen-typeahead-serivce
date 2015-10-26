@@ -29,32 +29,12 @@ public class ArticleEntry extends Entry {
 			Set<String> keys = JsonToMap.keySet();
 			for (String key : keys) {
 				
-
-				if (!(key.toLowerCase().equals(ID) || key.toLowerCase().equals(
-						TITLE))) {
-					
-					if (sb.length() > 1) {
-						sb.append(",");
-					}
-
-					sb.append("\"" + key + "\":");
-					sb.append("\"" + JsonToMap.get(key) + "\"");
-				} else if (key.toLowerCase().equals(ID)
-						|| key.toLowerCase().equals(TITLE)) {
-					if (keyWordExist) {
-						continue;
-					} else {
-						keyWordExist = true;
-					}
-					
-					if (sb.length() > 1) {
-						sb.append(",");
-					}
-
-					sb.append("\"" + TERM + "\":");
-					sb.append("\"" + JsonToMap.get(ID) + ":"
-							+ JsonToMap.get(TITLE) + "\"");
+				if (sb.length() > 1) {
+					sb.append(",");
 				}
+
+				sb.append("\"" + key + "\":");
+				sb.append("\"" + JsonToMap.get(key) + "\"");
 			}
 
 		}
