@@ -1,6 +1,8 @@
 package com.thomsonreuters.models.services.util;
 
+import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Set;
 
 public class BlockingHashTable<String, K> extends Hashtable<String, K>
 		implements Blockable<String, K> {
@@ -32,6 +34,12 @@ public class BlockingHashTable<String, K> extends Hashtable<String, K>
 			}
 
 		}
+	}
+
+	@Override
+	public Enumeration<String> getKeys() {
+
+		return this.keys();
 	}
 
 }

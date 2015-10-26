@@ -108,7 +108,12 @@ public abstract class SuggesterHelper {
 			List<Entry> articleList = PrepareDictionary.initDictonary(is,
 					enteryClass);
 
-			suggester = new FuzzySuggester(indexAnalyzer, queryAnalyzer);
+			suggester = new FuzzySuggester(indexAnalyzer, queryAnalyzer,FuzzySuggester.EXACT_FIRST | FuzzySuggester.PRESERVE_SEP, 256, -1, true, FuzzySuggester.DEFAULT_MAX_EDITS, FuzzySuggester.DEFAULT_TRANSPOSITIONS,
+					3, 3, FuzzySuggester.DEFAULT_UNICODE_AWARE);
+			
+			
+			
+			 
 
 			suggester.build(new EntryIterator(articleList.iterator()));
 
