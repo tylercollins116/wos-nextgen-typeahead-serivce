@@ -8,7 +8,6 @@ import java.util.Set;
 
 import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.search.suggest.Lookup.LookupResult;
-import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +15,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.thomsonreuters.models.SuggestData.Info;
 import com.thomsonreuters.models.SuggestData.Suggestions;
+import com.thomsonreuters.models.services.suggesterOperation.ext.AnalyzingSuggester;
 import com.thomsonreuters.models.services.suggesterOperation.ext.AnalyzingSuggesterExt;
 import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
@@ -49,36 +49,18 @@ public class Suggester implements SuggesterHandler {
 				.getDictionaryAnalyzer().getSuggesterList().get(path);
 
 		if (suggester instanceof AnalyzingSuggester) {
+			
+			if (query.trim().length() < 4) {
 
-			if (path.equalsIgnoreCase("wos")) {
+				suggester = ((com.thomsonreuters.models.services.suggesterOperation.ext.FuzzySuggester) suggester)
+						.setMaxEdits(0);
+			} else {
+				suggester = ((com.thomsonreuters.models.services.suggesterOperation.ext.FuzzySuggester) suggester)
+						.setMaxEdits(1);
+			}
 
-				startTime = System.currentTimeMillis();
 
-				SuggestData suggestData = new SuggestData();
-				suggestData.source = path;
-
-				try {
-					for (LookupResult result : ((AnalyzingSuggester) suggester)
-							.lookup(query, false, n)) {
-
-						Suggestions suggestions = suggestData.new Suggestions();
-						suggestions.keyword = result.key.toString();
-						
-						System.out.println(result.key.toString()+"\t\t"+result.value);
-
-						suggestData.suggestions.add(suggestions);
-
-					}
-
-				} catch (Exception e) {
-					log.info("cannot find the suggester ");
-				}
-
-				suggestData.took = (System.currentTimeMillis() - startTime)
-						+ "";
-
-				results.add(suggestData);
-			} else if (path.equalsIgnoreCase("article")) {
+			if (path.equalsIgnoreCase("article")) {
 
 				startTime = System.currentTimeMillis();
 
@@ -94,8 +76,6 @@ public class Suggester implements SuggesterHandler {
 
 						Suggestions suggestions = suggestData.new Suggestions();
 						suggestions.keyword = result.key.toString();
-								
-						 
 
 						Set<String> keys = map.keySet();
 
@@ -157,6 +137,36 @@ public class Suggester implements SuggesterHandler {
 						+ "";
 				results.add(suggestData);
 
+			}else if (path.equalsIgnoreCase("wos")) {
+
+				startTime = System.currentTimeMillis();
+
+				SuggestData suggestData = new SuggestData();
+				suggestData.source = path;
+
+				try { 
+
+					for (LookupResult result : ((com.thomsonreuters.models.services.suggesterOperation.ext.FuzzySuggester) suggester)
+							.lookup(query, false, n)) {
+
+						Suggestions suggestions = suggestData.new Suggestions();
+						suggestions.keyword = result.key.toString();
+
+						System.out.println(result.key.toString() + "\t\t"
+								+ result.value);
+
+						suggestData.suggestions.add(suggestions);
+
+					}
+
+				} catch (Exception e) {
+					log.info("cannot find the suggester ");
+				}
+
+				suggestData.took = (System.currentTimeMillis() - startTime)
+						+ "";
+
+				results.add(suggestData);
 			}
 
 		} else if (suggester instanceof AnalyzingSuggesterExt) {
@@ -195,6 +205,40 @@ public class Suggester implements SuggesterHandler {
 			suggestData.took = (System.currentTimeMillis() - startTime) + "";
 			results.add(suggestData);
 
+		} else if (suggester instanceof com.thomsonreuters.models.services.suggesterOperation.ext.AnalyzingSuggester && false) {
+
+			if (path.equalsIgnoreCase("wos")) {
+
+				startTime = System.currentTimeMillis();
+
+				SuggestData suggestData = new SuggestData();
+				suggestData.source = path;
+
+				try {
+
+				
+					for (LookupResult result : ((com.thomsonreuters.models.services.suggesterOperation.ext.FuzzySuggester) suggester)
+							.lookup(query, false, n)) {
+
+						Suggestions suggestions = suggestData.new Suggestions();
+						suggestions.keyword = result.key.toString();
+
+						System.out.println(result.key.toString() + "\t\t"
+								+ result.value);
+
+						suggestData.suggestions.add(suggestions);
+
+					}
+
+				} catch (Exception e) {
+					log.info("cannot find the suggester ");
+				}
+
+				suggestData.took = (System.currentTimeMillis() - startTime)
+						+ "";
+
+				results.add(suggestData);
+			}
 		}
 
 		return results;

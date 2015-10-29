@@ -15,8 +15,7 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.util.CharArraySet;
 import org.apache.lucene.analysis.util.WordlistLoader;
 import org.apache.lucene.search.suggest.FileDictionary;
-import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
-import org.apache.lucene.search.suggest.analyzing.FuzzySuggester;
+
 import org.apache.lucene.util.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +26,10 @@ import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
 import com.thomsonreuters.models.services.suggesterOperation.models.EntryIterator;
 import com.thomsonreuters.models.services.suggesterOperation.models.OrganizationEntry;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
+
+
+import com.thomsonreuters.models.services.suggesterOperation.ext.AnalyzingSuggester;
+import com.thomsonreuters.models.services.suggesterOperation.ext.FuzzySuggester;
 
 public abstract class SuggesterHelper {
 
@@ -99,6 +102,33 @@ public abstract class SuggesterHelper {
 
 		return suggester;
 	}
+	
+	public com.thomsonreuters.models.services.suggesterOperation.ext.AnalyzingSuggester createAnalyzingSuggesterForWos(InputStream is,
+			Class enteryClass) {
+		com.thomsonreuters.models.services.suggesterOperation.ext.AnalyzingSuggester suggester = null;
+		try {
+
+			List<Entry> articleList = PrepareDictionary.initDictonary(is,
+					enteryClass);
+
+			suggester = new com.thomsonreuters.models.services.suggesterOperation.ext.FuzzySuggester(indexAnalyzer, queryAnalyzer); 
+
+			suggester.build(new EntryIterator(articleList.iterator()));
+
+			WeakReference<List<Entry>> weakreference = new WeakReference<List<Entry>>(
+					articleList);
+			articleList = weakreference.get();
+			articleList = null;
+			System.gc();
+			System.gc();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return suggester;
+	}
+
 
 	public AnalyzingSuggester createAnalyzingSuggesterForOthers(InputStream is,
 			Class enteryClass) {
@@ -108,12 +138,7 @@ public abstract class SuggesterHelper {
 			List<Entry> articleList = PrepareDictionary.initDictonary(is,
 					enteryClass);
 
-			suggester = new FuzzySuggester(indexAnalyzer, queryAnalyzer,FuzzySuggester.EXACT_FIRST | FuzzySuggester.PRESERVE_SEP, 256, -1, true, FuzzySuggester.DEFAULT_MAX_EDITS, FuzzySuggester.DEFAULT_TRANSPOSITIONS,
-					3, 3, FuzzySuggester.DEFAULT_UNICODE_AWARE);
-			
-			
-			
-			 
+			suggester = new FuzzySuggester(indexAnalyzer, queryAnalyzer); 
 
 			suggester.build(new EntryIterator(articleList.iterator()));
 

@@ -7,7 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.lucene.search.suggest.Lookup;
-import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
+ 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +25,9 @@ import com.thomsonreuters.models.services.util.Blockable;
 import com.thomsonreuters.models.services.util.BlockingHashTable;
 import com.thomsonreuters.models.services.util.Property;
 import com.thomsonreuters.models.services.util.PropertyValue;
+
+import com.thomsonreuters.models.services.suggesterOperation.ext.AnalyzingSuggester;
+import com.thomsonreuters.models.services.suggesterOperation.ext.FuzzySuggester;
 
 public class SuggesterFromS3Bucket extends SuggesterHelper implements
 		DictionaryLoader<Lookup> {
@@ -105,7 +108,7 @@ public class SuggesterFromS3Bucket extends SuggesterHelper implements
 					} else if (property.getDictionayName().equalsIgnoreCase(
 							"wos")) {
 
-						AnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
+						com.thomsonreuters.models.services.suggesterOperation.ext.AnalyzingSuggester suggester = createAnalyzingSuggesterForWos(
 								is, KeywordEntry.class);
 						suggesterList.put(property.getDictionayName(),
 								suggester);
@@ -165,33 +168,25 @@ public class SuggesterFromS3Bucket extends SuggesterHelper implements
 
 		/********** Important code to work on ************************/
 
-		if (property.getDictionayName().equalsIgnoreCase(
-				"organization")) {
+		if (property.getDictionayName().equalsIgnoreCase("organization")) {
 
 			AnalyzingSuggesterExt suggester = createAnalyzingSuggesterForOrganization(is);
-			suggesterList.put(property.getDictionayName(),
-					suggester);
+			suggesterList.put(property.getDictionayName(), suggester);
 
-		} else if (property.getDictionayName().equalsIgnoreCase(
-				"article")) {
+		} else if (property.getDictionayName().equalsIgnoreCase("article")) {
 
 			AnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
 					is, ArticleEntry.class);
-			suggesterList.put(property.getDictionayName(),
-					suggester);
-		} else if (property.getDictionayName().equalsIgnoreCase(
-				"wos")) {
+			suggesterList.put(property.getDictionayName(), suggester);
+		} else if (property.getDictionayName().equalsIgnoreCase("wos")) {
 
 			AnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
 					is, KeywordEntry.class);
-			suggesterList.put(property.getDictionayName(),
-					suggester);
-		} else if (property.getDictionayName().equalsIgnoreCase(
-				"categories")) {
+			suggesterList.put(property.getDictionayName(), suggester);
+		} else if (property.getDictionayName().equalsIgnoreCase("categories")) {
 			AnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
 					is, CategoryEntry.class);
-			suggesterList.put(property.getDictionayName(),
-					suggester);
+			suggesterList.put(property.getDictionayName(), suggester);
 
 		}
 
