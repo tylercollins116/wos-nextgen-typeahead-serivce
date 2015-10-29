@@ -7,7 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.lucene.search.suggest.Lookup;
-import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
+ 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +26,9 @@ import com.thomsonreuters.models.services.util.Blockable;
 import com.thomsonreuters.models.services.util.BlockingHashTable;
 import com.thomsonreuters.models.services.util.Property;
 import com.thomsonreuters.models.services.util.PropertyValue;
+
+import com.thomsonreuters.models.services.suggesterOperation.ext.AnalyzingSuggester;
+import com.thomsonreuters.models.services.suggesterOperation.ext.FuzzySuggester;
 
 public class S3BucketFromS3IAMRole extends SuggesterHelper implements
 		DictionaryLoader<Lookup> {
@@ -139,6 +142,9 @@ public class S3BucketFromS3IAMRole extends SuggesterHelper implements
 
 						AnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
 								is, KeywordEntry.class);
+						
+						
+						
 						suggesterList.put(property.getDictionayName(),
 								suggester);
 					} else if (property.getDictionayName().equalsIgnoreCase(
@@ -216,8 +222,7 @@ public class S3BucketFromS3IAMRole extends SuggesterHelper implements
 			suggesterList.put(property.getDictionayName(), suggester);
 		} else if (property.getDictionayName().equalsIgnoreCase("wos")) {
 
-			AnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
-					is, KeywordEntry.class);
+			com.thomsonreuters.models.services.suggesterOperation.ext.AnalyzingSuggester suggester = createAnalyzingSuggesterForWos(is, KeywordEntry.class);
 			suggesterList.put(property.getDictionayName(), suggester);
 		} else if (property.getDictionayName().equalsIgnoreCase("categories")) {
 			AnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
