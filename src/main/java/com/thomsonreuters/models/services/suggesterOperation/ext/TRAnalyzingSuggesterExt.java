@@ -1,6 +1,24 @@
 package com.thomsonreuters.models.services.suggesterOperation.ext;
 
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import static org.apache.lucene.util.automaton.Operations.DEFAULT_MAX_DETERMINIZED_STATES;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,11 +30,13 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.TokenStreamToAutomaton;
+import org.apache.lucene.search.spell.LuceneLevenshteinDistance;
 import org.apache.lucene.search.suggest.InputIterator;
 import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.search.suggest.analyzing.FSTUtil;
@@ -47,6 +67,9 @@ import org.apache.lucene.util.fst.PositiveIntOutputs;
 import org.apache.lucene.util.fst.Util;
 import org.apache.lucene.util.fst.Util.Result;
 import org.apache.lucene.util.fst.Util.TopResults;
+
+import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
+import com.thomsonreuters.models.services.util.PrepareDictionary;
 
 /**
  * Suggester that first analyzes the surface form, adds the analyzed form to a
@@ -91,14 +114,30 @@ import org.apache.lucene.util.fst.Util.TopResults;
  * 
  * @lucene.experimental
  */
-public class AnalyzingSuggester extends Lookup {
+public class TRAnalyzingSuggesterExt extends Lookup {
 
 	/**
 	 * FST&lt;Weight,Surface&gt;: input is the analyzed form, with a null byte
 	 * between terms weights are encoded as costs: (Integer.MAX_VALUE-weight)
 	 * surface is the original, unanalyzed form.
+	 * 
 	 */
+	
+	public static final String deliminator = "[:!@#$@!:]";
+	
 	private FST<Pair<Long, BytesRef>> fst = null;
+
+	protected float text_similarity_scale_factor = 3.0f;
+
+	protected boolean debug = false;
+
+	public void setDebug(boolean debug) {
+		this.debug = debug;
+	}
+
+	public void setTextSimilarityScaleFactor(float factor) {
+		this.text_similarity_scale_factor = factor;
+	}
 
 	/**
 	 * Analyzer that will be used for analyzing suggestions at index time.
@@ -179,7 +218,7 @@ public class AnalyzingSuggester extends Lookup {
 	 * AnalyzingSuggester(analyzer, analyzer, EXACT_FIRST | PRESERVE_SEP, 256,
 	 * -1, true)}
 	 */
-	public AnalyzingSuggester(Analyzer analyzer) {
+	public TRAnalyzingSuggesterExt(Analyzer analyzer) {
 		this(analyzer, analyzer, EXACT_FIRST | PRESERVE_SEP, 256, -1, true);
 	}
 
@@ -188,7 +227,7 @@ public class AnalyzingSuggester extends Lookup {
 	 * AnalyzingSuggester(indexAnalyzer, queryAnalyzer, EXACT_FIRST |
 	 * PRESERVE_SEP, 256, -1, true)}
 	 */
-	public AnalyzingSuggester(Analyzer indexAnalyzer, Analyzer queryAnalyzer) {
+	public TRAnalyzingSuggesterExt(Analyzer indexAnalyzer, Analyzer queryAnalyzer) {
 		this(indexAnalyzer, queryAnalyzer, EXACT_FIRST | PRESERVE_SEP, 256, -1,
 				true);
 	}
@@ -214,9 +253,10 @@ public class AnalyzingSuggester extends Lookup {
 	 * @param preservePositionIncrements
 	 *            Whether position holes should appear in the automata
 	 */
-	public AnalyzingSuggester(Analyzer indexAnalyzer, Analyzer queryAnalyzer,
-			int options, int maxSurfaceFormsPerAnalyzedForm,
-			int maxGraphExpansions, boolean preservePositionIncrements) {
+	public TRAnalyzingSuggesterExt(Analyzer indexAnalyzer,
+			Analyzer queryAnalyzer, int options,
+			int maxSurfaceFormsPerAnalyzedForm, int maxGraphExpansions,
+			boolean preservePositionIncrements) {
 		this.indexAnalyzer = indexAnalyzer;
 		this.queryAnalyzer = queryAnalyzer;
 		if ((options & ~(EXACT_FIRST | PRESERVE_SEP)) != 0) {
@@ -543,7 +583,21 @@ public class AnalyzingSuggester extends Lookup {
 			// still index the hightest-weight one). We clear
 			// this when we see a new analyzed form, so it cannot
 			// grow unbounded (at most 256 entries):
-			Set<BytesRef> seenSurfaceForms = new HashSet<>();
+
+			/**
+			 * commented by Manoj Manandhar In our case we need duplicate
+			 * because for the same string display string may be different
+			 * 
+			 * Pacific Northwest National Laboratory BATTELLE NW
+			 *
+			 * United States Department of Energy (DOE) BATTELLE NW
+			 * 
+			 * 
+			 * 
+			 * Set<BytesRef> seenSurfaceForms = new HashSet<>();
+			 */
+
+			List<BytesRef> seenSurfaceForms = new ArrayList<>();
 
 			int dedup = 0;
 			while (reader.read(scratch)) {
@@ -575,9 +629,15 @@ public class AnalyzingSuggester extends Lookup {
 						// dups: skip the rest:
 						continue;
 					}
-					if (seenSurfaceForms.contains(surface)) {
-						continue;
-					}
+
+					/**
+					 * commented by Manoj Manandhar
+					 * 
+					 * In our case we need duplicate because for the same string
+					 * display string may be different
+					 * 
+					 * if (seenSurfaceForms.contains(surface)) { continue; }
+					 */
 					seenSurfaceForms.add(BytesRef.deepCopyOf(surface));
 				} else {
 					dedup = 0;
@@ -659,6 +719,7 @@ public class AnalyzingSuggester extends Lookup {
 
 	private LookupResult getLookupResult(Long output1, BytesRef output2,
 			CharsRefBuilder spare) {
+
 		LookupResult result;
 		if (hasPayloads) {
 			int sepIndex = -1;
@@ -739,15 +800,6 @@ public class AnalyzingSuggester extends Lookup {
 
 			final CharsRefBuilder spare = new CharsRefBuilder();
 
-			// System.out.println("  now intersect exactFirst=" + exactFirst);
-
-			// Intersect automaton w/ suggest wFST and get all
-			// prefix starting nodes & their outputs:
-			// final PathIntersector intersector =
-			// getPathIntersector(lookupAutomaton, fst);
-
-			// System.out.println("  prefixPaths: " + prefixPaths.size());
-
 			BytesReader bytesReader = fst.getBytesReader();
 
 			FST.Arc<Pair<Long, BytesRef>> scratchArc = new FST.Arc<>();
@@ -758,35 +810,49 @@ public class AnalyzingSuggester extends Lookup {
 					.intersectPrefixPaths(convertAutomaton(lookupAutomaton),
 							fst);
 
+			/** to remove duplicate **/
+			final Set<BytesRef> globalSeen = new HashSet<>();
+
+			/** Exact match on the top **/
 			if (exactFirst) {
 
 				int count = 0;
 				for (FSTUtil.Path<Pair<Long, BytesRef>> path : prefixPaths) {
 					if (fst.findTargetArc(END_BYTE, path.fstNode, scratchArc,
 							bytesReader) != null) {
-						// This node has END_BYTE arc leaving, meaning it's an
-						// "exact" match:
+						/**
+						 * This node has END_BYTE arc leaving, meaning it's an
+						 * "exact" match:
+						 **/
 						count++;
 					}
 				}
 
-				// Searcher just to find the single exact only
-				// match, if present:
+				/**
+				 * Searcher just to find the single exact only match, if
+				 * present:
+				 * **/
+
 				Util.TopNSearcher<Pair<Long, BytesRef>> searcher;
 				searcher = new Util.TopNSearcher<>(fst, count
 						* maxSurfaceFormsPerAnalyzedForm, count
 						* maxSurfaceFormsPerAnalyzedForm, weightComparator);
 
-				// NOTE: we could almost get away with only using
-				// the first start node. The only catch is if
-				// maxSurfaceFormsPerAnalyzedForm had kicked in and
-				// pruned our exact match from one of these nodes
-				// ...:
+				/**
+				 * NOTE: we could almost get away with only using the first
+				 * start node. The only catch is if
+				 * maxSurfaceFormsPerAnalyzedForm had kicked in and pruned our
+				 * exact match from one of these nodes ...:
+				 * **/
+
 				for (FSTUtil.Path<Pair<Long, BytesRef>> path : prefixPaths) {
 					if (fst.findTargetArc(END_BYTE, path.fstNode, scratchArc,
 							bytesReader) != null) {
-						// This node has END_BYTE arc leaving, meaning it's an
-						// "exact" match:
+						/**
+						 * This node has END_BYTE arc leaving, meaning it's an
+						 * "exact" match:
+						 * 
+						 */
 						searcher.addStartPaths(
 								scratchArc,
 								fst.outputs.add(path.output, scratchArc.output),
@@ -798,36 +864,73 @@ public class AnalyzingSuggester extends Lookup {
 						.search();
 				assert completions.isComplete;
 
-				// NOTE: this is rather inefficient: we enumerate
-				// every matching "exactly the same analyzed form"
-				// path, and then do linear scan to see if one of
-				// these exactly matches the input. It should be
-				// possible (though hairy) to do something similar
-				// to getByOutput, since the surface form is encoded
-				// into the FST output, so we more efficiently hone
-				// in on the exact surface-form match. Still, I
-				// suspect very little time is spent in this linear
-				// seach: it's bounded by how many prefix start
-				// nodes we have and the
-				// maxSurfaceFormsPerAnalyzedForm:
+				/**
+				 * NOTE: this is rather inefficient: we enumerate every matching
+				 * "exactly the same analyzed form" path, and then do linear
+				 * scan to see if one of these exactly matches the input. It
+				 * should be possible (though hairy) to do something similar to
+				 * getByOutput, since the surface form is encoded into the FST
+				 * output, so we more efficiently hone in on the exact
+				 * surface-form match. Still, I suspect very little time is
+				 * spent in this linear seach: it's bounded by how many prefix
+				 * start nodes we have and the maxSurfaceFormsPerAnalyzedForm:
+				 * **/
+
 				for (Result<Pair<Long, BytesRef>> completion : completions) {
 					BytesRef output2 = completion.output.output2;
 					if (sameSurfaceForm(utf8Key, output2)) {
-						results.add(getLookupResult(completion.output.output1,
-								output2, spare));
-						break;
+
+						LookupResult result = getLookupResult(
+								completion.output.output1, output2, spare);
+
+						if (!globalSeen.contains(result.payload)) {
+							globalSeen.add(result.payload);
+							results.add(result);
+						}
+
+						/**
+						 * Manoj Manandhar
+						 * 
+						 * comment no 1000
+						 * 
+						 * break is removed and added following lines
+						 * 
+						 * 
+						 */
+						if (results.size() == num) {
+							break;
+						}
 					}
 				}
 
+				/**
+				 * Manoj Manandhar
+				 * 
+				 * comment no 1001
+				 * 
+				 * if all the ten suggester found in exact match then we dont
+				 * need to go further down to get more results
+				 * 
+				 */
+
 				if (results.size() == num) {
-					// That was quick:
-					return results;
+					/** That was quick: **/
+					if (this.text_similarity_scale_factor == 0) {
+						return results;
+					} else {
+						return alterSequenceAccordingCustomRule(results,
+								key.toString());
+					}
 				}
 			}
 
+			/** End of Exact match on the top **/
+
 			Util.TopNSearcher<Pair<Long, BytesRef>> searcher;
-			searcher = new Util.TopNSearcher<Pair<Long, BytesRef>>(fst, num
-					- results.size(), num * maxAnalyzedPathsForOneInput,
+
+			int count = num * 40 == 1000 ? num * 40 : 1000;
+			searcher = new Util.TopNSearcher<Pair<Long, BytesRef>>(fst, count
+					- results.size(), count * maxAnalyzedPathsForOneInput,
 					weightComparator) {
 				private final Set<BytesRef> seen = new HashSet<>();
 
@@ -837,10 +940,37 @@ public class AnalyzingSuggester extends Lookup {
 
 					// Dedup: when the input analyzes to a graph we
 					// can get duplicate surface forms:
-					if (seen.contains(output.output2)) {
+
+					/**
+					 * commented by Manoj Manandhar
+					 * 
+					 * Dosen't required lower if condifion because analyze
+					 * string may be duplicate
+					 * 
+					 * Pacific Northwest National Laboratory BATTELLE NW
+					 * 
+					 * United States Department of Energy (DOE) BATTELLE NW
+					 * 
+					 * both have the same analyze String "BATTELLE NW" but
+					 * display String is different.. for first one its
+					 * 
+					 * Pacific Northwest National Laboratory
+					 * 
+					 * for second one United States Department of Energy (DOE)
+					 * 
+					 * 
+					 * 
+					 * if (seen.contains(output.output2)) { return false; }
+					 **/
+
+					LookupResult result = getLookupResult(output.output1,
+							output.output2, spare);
+
+					if (seen.contains(result.payload)) {
 						return false;
 					}
-					seen.add(output.output2);
+
+					seen.add(result.payload);
 
 					if (!exactFirst) {
 						return true;
@@ -876,22 +1006,167 @@ public class AnalyzingSuggester extends Lookup {
 						completion.output.output1, completion.output.output2,
 						spare);
 
-				// TODO: for fuzzy case would be nice to return
-				// how many edits were required
-
-				// System.out.println("    result=" + result);
-				results.add(result);
+				if (!globalSeen.contains(result.payload)) {
+					globalSeen.add(result.payload);
+					results.add(result);
+				}
 
 				if (results.size() == num) {
-					// In the exactFirst=true case the search may
-					// produce one extra path
+
 					break;
 				}
 			}
 
-			return results;
+			if (this.text_similarity_scale_factor == 0) {
+				
+				for(LookupResult lcup:results){
+					System.out.println(new String(lcup.payload.bytes));
+				}
+				
+				return results;
+			} else {
+				return alterSequenceAccordingCustomRule(results, key.toString());
+			}
+
 		} catch (IOException bogus) {
 			throw new RuntimeException(bogus);
+		}
+	}
+
+	private List<LookupResult> alterSequenceAccordingCustomRule(
+			List<LookupResult> results, String inputText) {
+		final List<LookupResult> finalResults = new ArrayList<>();
+
+		LuceneLevenshteinDistance luceneLevenshteinDistance = new LuceneLevenshteinDistance();
+		double totalSumOfWeight = -1;
+
+		for (LookupResult lookupresult : results) {
+			totalSumOfWeight += lookupresult.value;
+		}
+
+		List<SortedLookupResult> sortedLookupResultSet = new ArrayList<TRAnalyzingSuggesterExt.SortedLookupResult>();
+
+		if (totalSumOfWeight > 0) {
+			for (LookupResult lookupresult : results) {
+				
+				 
+				long weight = lookupresult.value;
+				double normalizedWeight = (double) (weight / totalSumOfWeight);
+
+				double LevenshteinDistance = calculateLevenshteinDistance(
+						new String(lookupresult.payload.bytes), inputText,
+						luceneLevenshteinDistance);
+				double calculatedWeigth = normalizedWeight
+						+ (text_similarity_scale_factor * LevenshteinDistance);
+				
+				 
+
+				// sortedLookupResultSet.add(new
+				// SortedLookupResult(lookupresult,calculatedWeigth));
+
+				sortedLookupResultSet.add(new SortedLookupResult(
+						createLookupResult(lookupresult.key.toString(),
+								normalizedWeight, LevenshteinDistance,
+								calculatedWeigth, text_similarity_scale_factor,
+								lookupresult.value, lookupresult.payload),
+						calculatedWeigth));
+			}
+
+			Collections.sort(sortedLookupResultSet);
+			for (SortedLookupResult slr : sortedLookupResultSet) {
+				finalResults.add(slr.lookupresult);
+			}
+
+			return finalResults;
+
+		} else {
+			return results;
+
+		}
+	}
+
+	@Deprecated
+	public LookupResult createLookupResult(String key, double normalizedWeight,
+			double LevenshteinDistance, double calculatedWeigth,
+			float text_similarity_scale_factor, long weight, BytesRef payload) {
+
+		String key_ = new String(payload.bytes);
+
+		if (debug) {
+
+			key_ += " " + "[ " + weight + "," + normalizedWeight + ","
+					+ LevenshteinDistance + "," + text_similarity_scale_factor
+					+ "," + calculatedWeigth + "]";
+
+		}
+
+		LookupResult result = new LookupResult(key, weight, new BytesRef(
+				key_.getBytes()));
+
+		return result;
+	}
+
+	public float calculateLevenshteinDistance(String JsonListItem,
+			String inputText,
+			LuceneLevenshteinDistance luceneLevenshteinDistance) {
+		
+		 
+		
+		Map<String, String> jsonmaps=PrepareDictionary.processJson(JsonListItem);
+		
+		String listItem=jsonmaps.get(Entry.TERM);
+		if(listItem==null){
+			listItem="";
+		}
+
+		listItem = listItem.toLowerCase();
+		inputText = inputText.toLowerCase();
+
+		float score = 0.0f;
+
+		java.util.StringTokenizer tokenizer = new java.util.StringTokenizer(
+				listItem, " ");
+		while (tokenizer.hasMoreTokens()) {
+
+			float curScore = 0.0f;
+
+			String key = tokenizer.nextToken();
+
+			if ((inputText.length() + 1) >= key.length()) {
+
+				curScore = luceneLevenshteinDistance
+						.getDistance(inputText, key);
+			} else {
+
+				curScore = luceneLevenshteinDistance.getDistance(inputText,
+						key.substring(0, (inputText.length())));
+			}
+
+			if (curScore > score) {
+				score = curScore;
+			}
+
+		}
+
+		return score;
+
+	}
+
+	private class SortedLookupResult implements Comparable<SortedLookupResult> {
+
+		private double calculatedWeigth;
+		private LookupResult lookupresult;
+
+		public SortedLookupResult(LookupResult lookupresult,
+				double calculatedWeigth) {
+			this.calculatedWeigth = calculatedWeigth;
+			this.lookupresult = lookupresult;
+		}
+
+		@Override
+		public int compareTo(SortedLookupResult o) {
+			return (new Double(o.calculatedWeigth).compareTo(new Double(
+					this.calculatedWeigth)));
 		}
 	}
 

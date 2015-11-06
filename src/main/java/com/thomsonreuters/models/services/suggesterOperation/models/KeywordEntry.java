@@ -10,7 +10,7 @@ public class KeywordEntry extends Entry {
 
 	public KeywordEntry(Map<String, String> JsonToMap) {
 		setTerm(JsonToMap.get(Entry.TERM));
-		setWeight(Integer.parseInt((JsonToMap.remove(Entry.WEIGHT)).trim()));
+		setWeight(Integer.parseInt((JsonToMap.get(Entry.WEIGHT)).trim()));
 
 		this.JsonToMap = JsonToMap;
 

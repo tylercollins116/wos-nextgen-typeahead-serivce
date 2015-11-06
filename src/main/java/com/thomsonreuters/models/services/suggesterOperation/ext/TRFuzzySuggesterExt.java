@@ -73,7 +73,7 @@ import org.apache.lucene.util.fst.PairOutputs.Pair;
  *
  * @lucene.experimental
  */
-public final class FuzzySuggesterExt extends AnalyzingSuggesterExt {
+public final class TRFuzzySuggesterExt extends TRAnalyzingSuggesterExt {
 	private final int maxEdits;
 	private final boolean transpositions;
 	private final int nonFuzzyPrefix;
@@ -119,7 +119,7 @@ public final class FuzzySuggesterExt extends AnalyzingSuggesterExt {
 	 * @param analyzer
 	 *            the analyzer used for this suggester
 	 */
-	public FuzzySuggesterExt(Analyzer analyzer) {
+	public TRFuzzySuggesterExt(Analyzer analyzer) {
 		this(analyzer, analyzer);
 	}
 
@@ -134,7 +134,7 @@ public final class FuzzySuggesterExt extends AnalyzingSuggesterExt {
 	 *            Analyzer that will be used for analyzing query text during
 	 *            lookup
 	 */
-	public FuzzySuggesterExt(Analyzer indexAnalyzer, Analyzer queryAnalyzer) {
+	public TRFuzzySuggesterExt(Analyzer indexAnalyzer, Analyzer queryAnalyzer) {
 		this(indexAnalyzer, queryAnalyzer, EXACT_FIRST | PRESERVE_SEP, 256, -1,
 				true, DEFAULT_MAX_EDITS, DEFAULT_TRANSPOSITIONS,
 				DEFAULT_NON_FUZZY_PREFIX, DEFAULT_MIN_FUZZY_LENGTH,
@@ -177,7 +177,7 @@ public final class FuzzySuggesterExt extends AnalyzingSuggesterExt {
 	 * @param unicodeAware
 	 *            operate Unicode code points instead of bytes.
 	 */
-	public FuzzySuggesterExt(Analyzer indexAnalyzer, Analyzer queryAnalyzer,
+	public TRFuzzySuggesterExt(Analyzer indexAnalyzer, Analyzer queryAnalyzer,
 			int options, int maxSurfaceFormsPerAnalyzedForm,
 			int maxGraphExpansions, boolean preservePositionIncrements,
 			int maxEdits, boolean transpositions, int nonFuzzyPrefix,

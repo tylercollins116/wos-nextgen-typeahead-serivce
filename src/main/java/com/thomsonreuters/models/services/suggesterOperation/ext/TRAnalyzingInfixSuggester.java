@@ -115,7 +115,7 @@ import org.apache.lucene.util.Version;
  * @lucene.experimental
  */
 
-public class AnalyzingInfixSuggester extends Lookup implements Closeable {
+public class TRAnalyzingInfixSuggester extends Lookup implements Closeable {
 
 	/** Field name used for the indexed text. */
 	protected final static String TEXT_FIELD_NAME = "text";
@@ -182,7 +182,7 @@ public class AnalyzingInfixSuggester extends Lookup implements Closeable {
 	 * private to the infix suggester (i.e., not an external Lucene index). Note
 	 * that {@link #close} will also close the provided directory.
 	 */
-	public AnalyzingInfixSuggester(Directory dir, Analyzer analyzer)
+	public TRAnalyzingInfixSuggester(Directory dir, Analyzer analyzer)
 			throws IOException {
 		this(analyzer.getVersion(), dir, analyzer, analyzer,
 				DEFAULT_MIN_PREFIX_CHARS, false, DEFAULT_ALL_TERMS_REQUIRED,
@@ -193,7 +193,7 @@ public class AnalyzingInfixSuggester extends Lookup implements Closeable {
 	 * @deprecated Use {@link #AnalyzingInfixSuggester(Directory, Analyzer)}
 	 */
 	@Deprecated
-	public AnalyzingInfixSuggester(Version matchVersion, Directory dir,
+	public TRAnalyzingInfixSuggester(Version matchVersion, Directory dir,
 			Analyzer analyzer) throws IOException {
 		this(matchVersion, dir, analyzer, analyzer, DEFAULT_MIN_PREFIX_CHARS,
 				false);
@@ -216,7 +216,7 @@ public class AnalyzingInfixSuggester extends Lookup implements Closeable {
 	 *            persist the suggester index to disk and future instances of
 	 *            this suggester can use this pre-built dictionary.
 	 */
-	public AnalyzingInfixSuggester(Directory dir, Analyzer indexAnalyzer,
+	public TRAnalyzingInfixSuggester(Directory dir, Analyzer indexAnalyzer,
 			Analyzer queryAnalyzer, int minPrefixChars, boolean commitOnBuild)
 			throws IOException {
 		this(indexAnalyzer.getVersion(), dir, indexAnalyzer, queryAnalyzer,
@@ -247,7 +247,7 @@ public class AnalyzingInfixSuggester extends Lookup implements Closeable {
 	 *            Highlight suggest query in suggestions.
 	 *
 	 */
-	public AnalyzingInfixSuggester(Directory dir, Analyzer indexAnalyzer,
+	public TRAnalyzingInfixSuggester(Directory dir, Analyzer indexAnalyzer,
 			Analyzer queryAnalyzer, int minPrefixChars, boolean commitOnBuild,
 			boolean allTermsRequired, boolean highlight) throws IOException {
 		this(indexAnalyzer.getVersion(), dir, indexAnalyzer, queryAnalyzer,
@@ -259,7 +259,7 @@ public class AnalyzingInfixSuggester extends Lookup implements Closeable {
 	 *             {@link #AnalyzingInfixSuggester(Directory, Analyzer, Analyzer, int, boolean)}
 	 */
 	@Deprecated
-	public AnalyzingInfixSuggester(Version matchVersion, Directory dir,
+	public TRAnalyzingInfixSuggester(Version matchVersion, Directory dir,
 			Analyzer indexAnalyzer, Analyzer queryAnalyzer, int minPrefixChars,
 			boolean commitOnBuild) throws IOException {
 		this(matchVersion, dir, indexAnalyzer, queryAnalyzer, minPrefixChars,
@@ -271,7 +271,7 @@ public class AnalyzingInfixSuggester extends Lookup implements Closeable {
 	 *             {@link #AnalyzingInfixSuggester(Directory, Analyzer, Analyzer, int, boolean)}
 	 */
 	@Deprecated
-	public AnalyzingInfixSuggester(Version matchVersion, Directory dir,
+	public TRAnalyzingInfixSuggester(Version matchVersion, Directory dir,
 			Analyzer indexAnalyzer, Analyzer queryAnalyzer, int minPrefixChars,
 			boolean commitOnBuild, boolean allTermsRequired, boolean highlight)
 			throws IOException {

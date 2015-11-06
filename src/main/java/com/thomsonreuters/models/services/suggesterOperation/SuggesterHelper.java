@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -15,23 +17,41 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.util.CharArraySet;
 import org.apache.lucene.analysis.util.WordlistLoader;
 import org.apache.lucene.search.suggest.FileDictionary;
-
+import org.apache.lucene.search.suggest.Lookup;
+import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.thomsonreuters.models.services.suggesterOperation.ext.AnalyzingSuggesterExt;
-import com.thomsonreuters.models.services.suggesterOperation.ext.FuzzySuggesterExt;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.S3Object;
+import com.netflix.config.ConfigurationManager;
+import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingInfixSuggester;
+import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggester;
+import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt;
+import com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester;
+import com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggesterExt;
+import com.thomsonreuters.models.services.suggesterOperation.models.ArticleEntry;
+import com.thomsonreuters.models.services.suggesterOperation.models.CategoryEntry;
 import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
 import com.thomsonreuters.models.services.suggesterOperation.models.EntryIterator;
+import com.thomsonreuters.models.services.suggesterOperation.models.KeywordEntry;
 import com.thomsonreuters.models.services.suggesterOperation.models.OrganizationEntry;
+import com.thomsonreuters.models.services.util.Blockable;
+import com.thomsonreuters.models.services.util.BlockingHashTable;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
-
-
-import com.thomsonreuters.models.services.suggesterOperation.ext.AnalyzingSuggester;
-import com.thomsonreuters.models.services.suggesterOperation.ext.FuzzySuggester;
+import com.thomsonreuters.models.services.util.Property;
+import com.thomsonreuters.models.services.util.PropertyValue;
 
 public abstract class SuggesterHelper {
+
+	private AmazonS3 s3Client = null;
+
+	protected final Blockable<String, Lookup> suggesterList = new BlockingHashTable<String, Lookup>();
+
+	public void setS3Client(AmazonS3 s3Client) {
+		this.s3Client = s3Client;
+	}
 
 	public static final CharArraySet stopSet = new CharArraySet(
 			CharArraySet.EMPTY_SET, false);
@@ -58,120 +78,18 @@ public abstract class SuggesterHelper {
 	private Analyzer queryAnalyzer = new StandardAnalyzer(
 			CharArraySet.EMPTY_SET);
 
-	public AnalyzingSuggester createAnalyzingSuggester(InputStream is)
-			throws IOException {
-
-		FileDictionary dictionary = (new FileDictionary(
-				new BufferedInputStream(is)));
-
-		AnalyzingSuggester suggester = new FuzzySuggester(indexAnalyzer,
-				queryAnalyzer);
-
-		suggester.build(dictionary);
-
-		try {
-			is.close();
-		} catch (Exception e) {
-		}
-
-		return suggester;
-	}
-
-	public AnalyzingSuggesterExt createAnalyzingSuggesterForOrganization(
-			InputStream is) {
-		AnalyzingSuggesterExt suggester = null;
-		try {
-
-			List<Entry> organizationList = PrepareDictionary.initDictonary(is,
-					OrganizationEntry.class);
-
-			suggester = new FuzzySuggesterExt(indexAnalyzer, queryAnalyzer);
-
-			suggester.build(new EntryIterator(organizationList.iterator()));
-
-			WeakReference<List<Entry>> weakreference = new WeakReference<List<Entry>>(
-					organizationList);
-			organizationList = weakreference.get();
-			organizationList = null;
-			System.gc();
-			System.gc();
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return suggester;
-	}
-	
-	public com.thomsonreuters.models.services.suggesterOperation.ext.AnalyzingSuggester createAnalyzingSuggesterForWos(InputStream is,
-			Class enteryClass) {
-		com.thomsonreuters.models.services.suggesterOperation.ext.AnalyzingSuggester suggester = null;
-		try {
-
-			List<Entry> articleList = PrepareDictionary.initDictonary(is,
-					enteryClass);
-
-			suggester = new com.thomsonreuters.models.services.suggesterOperation.ext.FuzzySuggester(indexAnalyzer, queryAnalyzer); 
-
-			suggester.build(new EntryIterator(articleList.iterator()));
-
-			WeakReference<List<Entry>> weakreference = new WeakReference<List<Entry>>(
-					articleList);
-			articleList = weakreference.get();
-			articleList = null;
-			System.gc();
-			System.gc();
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return suggester;
-	}
-
-
-	public AnalyzingSuggester createAnalyzingSuggesterForOthers(InputStream is,
-			Class enteryClass) {
-		AnalyzingSuggester suggester = null;
-		try {
-
-			List<Entry> articleList = PrepareDictionary.initDictonary(is,
-					enteryClass);
-
-			suggester = new FuzzySuggester(indexAnalyzer, queryAnalyzer); 
-
-			suggester.build(new EntryIterator(articleList.iterator()));
-
-			WeakReference<List<Entry>> weakreference = new WeakReference<List<Entry>>(
-					articleList);
-			articleList = weakreference.get();
-			articleList = null;
-			System.gc();
-			System.gc();
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return suggester;
-	}
-
 	public synchronized final boolean isDictionaryAlreadyLoaded(String path,
 			String dictionary) {
 
 		String dictionaryInfo = null;
-		
-		log.info("Cheking already loaded "+path+" "+dictionary);
 
-		log.info("Checking wheather already loaded " + path + " " + dictionary);
+		log.info("Checking wheather dictionary with following path " + path
+				+ " " + dictionary + "  already loaded ");
 
 		if ((dictionaryInfo = dictionaryPaths.get(path.toLowerCase().trim())) != null
 				&& dictionaryInfo.trim().equalsIgnoreCase(dictionary.trim())) {
 			return true;
 		}
-		
-		
-		log.info("Cheking passed .. safe to load "+path+" "+dictionary);
 
 		log.info("Checking passed .. safe to load " + path + " " + dictionary);
 
@@ -201,4 +119,344 @@ public abstract class SuggesterHelper {
 		log.info("***************************************************************************");
 
 	}
+
+	public static void loadFuzzynessThreshold(String triggredProperty) {
+
+		String fuzzynessThreshold = null;
+		if (triggredProperty != null
+				&& (fuzzynessThreshold = triggredProperty.trim())
+						.equalsIgnoreCase(PropertyValue.FUZZYNESS_THRESHOLD_PATH)) {
+
+			fuzzynessThreshold = ConfigurationManager.getConfigInstance()
+					.getString(fuzzynessThreshold);
+
+			try {
+
+				PropertyValue.FUZZTNESS_THRESHOLD = Integer
+						.parseInt(fuzzynessThreshold);
+
+			} catch (NumberFormatException nfe) {
+			}
+		}
+	}
+
+	public void initializeSuggesterList() throws IOException {
+
+		if (s3Client == null) {
+			throw new IOException(
+					" S3Client found null pls initilize s3Client first");
+		}
+
+		Iterator<String> keys = ConfigurationManager.getConfigInstance()
+				.getKeys();
+
+		String bucketName = null;
+		List<String> dictionaryProperties = new ArrayList<String>();
+
+		while (keys.hasNext()) {
+			String key = keys.next();
+
+			Property property = PropertyValue.getProperty(key);
+
+			if (property.isBucketName()) {
+				bucketName = ConfigurationManager.getConfigInstance()
+						.getString(key);
+				log.info("path to bucket : " + bucketName);
+
+			} else if (property.isDictionaryPathRelated()) {
+				log.info("**************************************************************");
+				log.info("path to dictionary : " + property.toString());
+				log.info("**************************************************************");
+				dictionaryProperties.add(property.toString());
+			} else {
+
+				loadFuzzynessThreshold(key);
+			}
+		}
+
+		if (bucketName != null && bucketName.trim().length() > 0) {
+			for (String dictionaryProperty : dictionaryProperties) {
+				Property property = PropertyValue
+						.getProperty(dictionaryProperty);
+				String value = ConfigurationManager.getConfigInstance()
+						.getString(property.toString());
+
+				getStoredPathInfo();
+
+				if (property.isDictionaryPathRelated()
+						&& isDictionaryAlreadyLoaded(
+								property.getDictionayName(), value)) {
+
+					log.info("**************************************************************");
+					log.info("Trying to Load the  dictionary for "
+							+ dictionaryProperty + " BucketName : "
+							+ bucketName + "  ,Path : " + value
+							+ " again  .. reloading ignored ");
+					log.info("**************************************************************");
+
+					continue;
+
+				}
+
+				log.info("**************************************************************");
+				log.info(" Loading dictionary for " + dictionaryProperty
+						+ " BucketName : " + bucketName + "  ,Path : " + value);
+				log.info("**************************************************************");
+				try {
+
+					S3Object s3file = s3Client.getObject(bucketName, value);
+					log.info("**************************************************************");
+					log.info("Successfully got access to S3 bucket : "
+							+ bucketName);
+					log.info("**************************************************************");
+
+					InputStream is = s3file.getObjectContent();
+
+					/********** Important code to work on ************************/
+
+					if (property.getDictionayName().equalsIgnoreCase(
+							"organization")) {
+
+						TRAnalyzingSuggesterExt suggester = createAnalyzingSuggesterForOrganization(is);
+						suggesterList.put(property.getDictionayName(),
+								suggester);
+
+					} else if (property.getDictionayName().equalsIgnoreCase(
+							"article")) {
+
+						TRAnalyzingInfixSuggester suggester = createAnalyzingForArticle(is);
+						suggesterList.put(property.getDictionayName(),
+								suggester);
+					} else if (property.getDictionayName().equalsIgnoreCase(
+							"wos")) {
+
+						TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
+								is, KeywordEntry.class);
+
+						suggesterList.put(property.getDictionayName(),
+								suggester);
+					} else if (property.getDictionayName().equalsIgnoreCase(
+							"categories")) {
+						TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
+								is, CategoryEntry.class);
+						suggesterList.put(property.getDictionayName(),
+								suggester);
+
+					}
+
+					/***************************** End **********************************/
+
+					storeLoadedDictoanryInfo(property.getDictionayName(), value);
+
+					log.info("Loading dictionary for " + dictionaryProperty
+							+ " completed successfully.");
+				} catch (Exception e) {
+
+					log.info(" fail loading dictionary for "
+							+ dictionaryProperty);
+
+					e.printStackTrace();
+				}
+			}
+		}
+
+	}
+
+	public void reloadDictionary(String propertyName) throws IOException {
+
+		if (s3Client == null) {
+			throw new IOException(
+					" S3Client found null pls initilize s3Client first");
+		}
+
+		log.info("**************************************************************");
+		log.info("reloading dictionary of " + propertyName + " starting");
+		log.info("**************************************************************");
+		Property bucketProperty = PropertyValue.getProperty(Property.S3_BUCKET);
+		String bucketName = ConfigurationManager.getConfigInstance().getString(
+				bucketProperty.toString());
+
+		Property property = PropertyValue.getProperty(propertyName);
+		String dictionaryPath = ConfigurationManager.getConfigInstance()
+				.getString(property.toString());
+
+		getStoredPathInfo();
+
+		if (property.isDictionaryPathRelated()
+				&& isDictionaryAlreadyLoaded(property.getDictionayName(),
+						dictionaryPath)) {
+			log.info("**************************************************************");
+			log.info("Try to reLoad the  dictionary for " + propertyName
+					+ " BucketName : " + bucketName + "  ,Path : "
+					+ dictionaryPath + " again  .. reloading ignored ");
+
+			log.info("**************************************************************");
+
+			return;
+
+		}
+
+		S3Object s3file = s3Client.getObject(bucketName, dictionaryPath);
+		InputStream is = s3file.getObjectContent();
+
+		/********** Important code to work on ************************/
+
+		if (property.getDictionayName().equalsIgnoreCase("organization")) {
+
+			TRAnalyzingSuggesterExt suggester = createAnalyzingSuggesterForOrganization(is);
+			suggesterList.put(property.getDictionayName(), suggester);
+
+		} else if (property.getDictionayName().equalsIgnoreCase("article")) {
+
+			TRAnalyzingInfixSuggester suggester = createAnalyzingForArticle(is);
+			suggesterList.put(property.getDictionayName(), suggester);
+		} else if (property.getDictionayName().equalsIgnoreCase("wos")) {
+
+			com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggester suggester = createAnalyzingSuggesterForWos(
+					is, KeywordEntry.class);
+			suggesterList.put(property.getDictionayName(), suggester);
+		} else if (property.getDictionayName().equalsIgnoreCase("categories")) {
+			TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
+					is, CategoryEntry.class);
+			suggesterList.put(property.getDictionayName(), suggester);
+
+		}
+
+		/***************************** End **********************************/
+
+		storeLoadedDictoanryInfo(property.getDictionayName(), dictionaryPath);
+
+		log.info("**************************************************************");
+		log.info(" reloading dictionary of " + propertyName + " completed");
+		log.info("**************************************************************");
+	}
+
+	/****************************************************************************************/
+	/********************* Creating Analyzers starts Here ************************************/
+	/****************************************************************************************/
+
+	public TRAnalyzingSuggester createAnalyzingSuggester(InputStream is)
+			throws IOException {
+
+		FileDictionary dictionary = (new FileDictionary(
+				new BufferedInputStream(is)));
+
+		TRAnalyzingSuggester suggester = new TRFuzzySuggester(indexAnalyzer,
+				queryAnalyzer);
+
+		suggester.build(dictionary);
+
+		try {
+			is.close();
+		} catch (Exception e) {
+		}
+
+		return suggester;
+	}
+
+	public TRAnalyzingSuggesterExt createAnalyzingSuggesterForOrganization(
+			InputStream is) {
+		TRAnalyzingSuggesterExt suggester = null;
+		try {
+
+			List<Entry> organizationList = PrepareDictionary.initDictonary(is,
+					OrganizationEntry.class);
+
+			suggester = new TRFuzzySuggesterExt(indexAnalyzer, queryAnalyzer);
+
+			suggester.build(new EntryIterator(organizationList.iterator()));
+
+			WeakReference<List<Entry>> weakreference = new WeakReference<List<Entry>>(
+					organizationList);
+			organizationList = weakreference.get();
+			organizationList = null;
+			System.gc();
+			System.gc();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return suggester;
+	}
+
+	public TRAnalyzingSuggester createAnalyzingSuggesterForWos(InputStream is,
+			Class enteryClass) {
+		TRAnalyzingSuggester suggester = null;
+		try {
+
+			List<Entry> articleList = PrepareDictionary.initDictonary(is,
+					enteryClass);
+
+			suggester = new com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester(
+					indexAnalyzer, queryAnalyzer);
+
+			suggester.build(new EntryIterator(articleList.iterator()));
+
+			WeakReference<List<Entry>> weakreference = new WeakReference<List<Entry>>(
+					articleList);
+			articleList = weakreference.get();
+			articleList = null;
+			System.gc();
+			System.gc();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return suggester;
+	}
+
+	public TRAnalyzingSuggester createAnalyzingSuggesterForOthers(
+			InputStream is, Class enteryClass) {
+		TRAnalyzingSuggester suggester = null;
+		try {
+
+			List<Entry> articleList = PrepareDictionary.initDictonary(is,
+					enteryClass);
+
+			suggester = new TRFuzzySuggester(indexAnalyzer, queryAnalyzer);
+
+			suggester.build(new EntryIterator(articleList.iterator()));
+
+			WeakReference<List<Entry>> weakreference = new WeakReference<List<Entry>>(
+					articleList);
+			articleList = weakreference.get();
+			articleList = null;
+			System.gc();
+			System.gc();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return suggester;
+	}
+
+	public TRAnalyzingInfixSuggester createAnalyzingForArticle(InputStream is) {
+		TRAnalyzingInfixSuggester suggester = null;
+		try {
+
+			List<Entry> peopleList = PrepareDictionary.initDictonary(is,
+					ArticleEntry.class);
+
+			suggester = new TRAnalyzingInfixSuggester(new RAMDirectory(),
+					indexAnalyzer);
+
+			suggester.build(new EntryIterator(peopleList.iterator()));
+
+			WeakReference<List<Entry>> weakreference = new WeakReference<List<Entry>>(
+					peopleList);
+			peopleList = weakreference.get();
+			peopleList = null;
+			System.gc();
+			System.gc();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return suggester;
+	}
+
 }

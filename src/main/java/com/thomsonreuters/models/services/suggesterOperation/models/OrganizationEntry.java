@@ -1,20 +1,19 @@
 package com.thomsonreuters.models.services.suggesterOperation.models;
 
-import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 
-public class OrganizationEntry extends Entry{
+public class OrganizationEntry extends Entry {
 
 	private final String ALIAS = "alias";
-	 
+
 	private Map<String, String> JsonToMap = null;
 
 	public OrganizationEntry(Map<String, String> JsonToMap) {
 
 		setTerm(JsonToMap.remove(Entry.TERM));
-		setWeight(Integer.parseInt((JsonToMap.remove(Entry.WEIGHT)).trim()));
-		 
+		setWeight(Integer.parseInt((JsonToMap.get(Entry.WEIGHT)).trim()));
+
 		this.JsonToMap = JsonToMap;
 
 	}
@@ -31,7 +30,7 @@ public class OrganizationEntry extends Entry{
 					sb.append(",");
 				}
 				if (key.toLowerCase().equals(ALIAS)) {
-					sb.append("\""+TERM+"\":");
+					sb.append("\"" + TERM + "\":");
 					sb.append("\"" + JsonToMap.get(key) + "\"");
 				} else {
 

@@ -15,10 +15,13 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.thomsonreuters.models.SuggestData.Info;
 import com.thomsonreuters.models.SuggestData.Suggestions;
-import com.thomsonreuters.models.services.suggesterOperation.ext.AnalyzingSuggester;
-import com.thomsonreuters.models.services.suggesterOperation.ext.AnalyzingSuggesterExt;
+import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingInfixSuggester;
+import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggester;
+import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt;
+import com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester;
 import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
+import com.thomsonreuters.models.services.util.PropertyValue;
 
 @Singleton
 public class Suggester implements SuggesterHandler {
@@ -48,65 +51,23 @@ public class Suggester implements SuggesterHandler {
 		Lookup suggester = suggesterConfigurationHandler
 				.getDictionaryAnalyzer().getSuggesterList().get(path);
 
-		if (suggester instanceof AnalyzingSuggester) {
-			
-			if (query.trim().length() < 4) {
+		if (suggester instanceof TRAnalyzingSuggester) {
 
-				suggester = ((com.thomsonreuters.models.services.suggesterOperation.ext.FuzzySuggester) suggester)
-						.setMaxEdits(0);
+			if (query.trim().length() < PropertyValue.FUZZTNESS_THRESHOLD) {
+
+				suggester = ((TRFuzzySuggester) suggester).setMaxEdits(0);
 			} else {
-				suggester = ((com.thomsonreuters.models.services.suggesterOperation.ext.FuzzySuggester) suggester)
-						.setMaxEdits(1);
+				suggester = ((TRFuzzySuggester) suggester).setMaxEdits(1);
 			}
 
-
-			if (path.equalsIgnoreCase("article")) {
-
-				startTime = System.currentTimeMillis();
-
-				SuggestData suggestData = new SuggestData();
-				suggestData.source = path;
-
-				try {
-					for (LookupResult result : ((AnalyzingSuggester) suggester)
-							.lookup(query, false, n)) {
-
-						Map<String, String> map = PrepareDictionary
-								.processJson(new String(result.payload.bytes));
-
-						Suggestions suggestions = suggestData.new Suggestions();
-						suggestions.keyword = result.key.toString();
-
-						Set<String> keys = map.keySet();
-
-						for (String key : keys) {
-
-							Info info$ = suggestData.new Info();
-							info$.key = key;
-							info$.value = map.get(key);
-							suggestions.info.add(info$);
-						}
-
-						suggestData.suggestions.add(suggestions);
-
-					}
-				} catch (Exception e) {
-					log.info("cannot find the suggester ");
-				}
-
-				suggestData.took = (System.currentTimeMillis() - startTime)
-						+ "";
-
-				results.add(suggestData);
-
-			} else if (path.equalsIgnoreCase("categories")) {
+			if (path.equalsIgnoreCase("categories")) {
 
 				startTime = System.currentTimeMillis();
 				SuggestData suggestData = new SuggestData();
 				suggestData.source = path;
 
 				try {
-					for (LookupResult result : ((AnalyzingSuggester) suggester)
+					for (LookupResult result : ((TRAnalyzingSuggester) suggester)
 							.lookup(query, false, n)) {
 
 						/** output[] **/
@@ -137,16 +98,16 @@ public class Suggester implements SuggesterHandler {
 						+ "";
 				results.add(suggestData);
 
-			}else if (path.equalsIgnoreCase("wos")) {
+			} else if (path.equalsIgnoreCase("wos")) {
 
 				startTime = System.currentTimeMillis();
 
 				SuggestData suggestData = new SuggestData();
 				suggestData.source = path;
 
-				try { 
+				try {
 
-					for (LookupResult result : ((com.thomsonreuters.models.services.suggesterOperation.ext.FuzzySuggester) suggester)
+					for (LookupResult result : ((com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester) suggester)
 							.lookup(query, false, n)) {
 
 						Suggestions suggestions = suggestData.new Suggestions();
@@ -169,7 +130,7 @@ public class Suggester implements SuggesterHandler {
 				results.add(suggestData);
 			}
 
-		} else if (suggester instanceof AnalyzingSuggesterExt) {
+		} else if (suggester instanceof TRAnalyzingSuggesterExt) {
 
 			startTime = System.currentTimeMillis();
 
@@ -178,7 +139,7 @@ public class Suggester implements SuggesterHandler {
 
 			List<Map<String, String>> typeSuggestions = new ArrayList<Map<String, String>>();
 			try {
-				for (LookupResult result : ((AnalyzingSuggesterExt) suggester)
+				for (LookupResult result : ((TRAnalyzingSuggesterExt) suggester)
 						.lookup(query, false, n)) {
 
 					Map<String, String> map = PrepareDictionary
@@ -205,9 +166,9 @@ public class Suggester implements SuggesterHandler {
 			suggestData.took = (System.currentTimeMillis() - startTime) + "";
 			results.add(suggestData);
 
-		} else if (suggester instanceof com.thomsonreuters.models.services.suggesterOperation.ext.AnalyzingSuggester && false) {
+		} else if (suggester instanceof TRAnalyzingInfixSuggester) {
 
-			if (path.equalsIgnoreCase("wos")) {
+			if (path.equalsIgnoreCase("article")) {
 
 				startTime = System.currentTimeMillis();
 
@@ -215,21 +176,28 @@ public class Suggester implements SuggesterHandler {
 				suggestData.source = path;
 
 				try {
-
-				
-					for (LookupResult result : ((com.thomsonreuters.models.services.suggesterOperation.ext.FuzzySuggester) suggester)
+					for (LookupResult result : ((TRAnalyzingInfixSuggester) suggester)
 							.lookup(query, false, n)) {
+
+						Map<String, String> map = PrepareDictionary
+								.processJson(new String(result.payload.bytes));
 
 						Suggestions suggestions = suggestData.new Suggestions();
 						suggestions.keyword = result.key.toString();
 
-						System.out.println(result.key.toString() + "\t\t"
-								+ result.value);
+						Set<String> keys = map.keySet();
+
+						for (String key : keys) {
+
+							Info info$ = suggestData.new Info();
+							info$.key = key;
+							info$.value = map.get(key);
+							suggestions.info.add(info$);
+						}
 
 						suggestData.suggestions.add(suggestions);
 
 					}
-
 				} catch (Exception e) {
 					log.info("cannot find the suggester ");
 				}
@@ -238,6 +206,7 @@ public class Suggester implements SuggesterHandler {
 						+ "";
 
 				results.add(suggestData);
+
 			}
 		}
 
