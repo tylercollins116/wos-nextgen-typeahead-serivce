@@ -4,12 +4,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import com.thomsonreuters.models.services.util.PrepareDictionary;
+
 public class KeywordEntry extends Entry {
 
 	private Map<String, String> JsonToMap = null;
 
 	public KeywordEntry(Map<String, String> JsonToMap) {
-		setTerm(JsonToMap.get(Entry.TERM));
+		setTerm(JsonToMap.remove(Entry.TERM));
 		setWeight(Integer.parseInt((JsonToMap.get(Entry.WEIGHT)).trim()));
 
 		this.JsonToMap = JsonToMap;
@@ -17,11 +19,7 @@ public class KeywordEntry extends Entry {
 	}
 
 	@Override
-	public String getJson() {
-
-		if (true) {
-			return "";
-		}
+	public String getJson() { 
 
 		StringBuilder sb = new StringBuilder("{");		 
 
@@ -31,8 +29,10 @@ public class KeywordEntry extends Entry {
 				if (sb.length() > 1) {
 					sb.append(",");
 				}
-				sb.append("\"" + TERM + "\":");
-				sb.append("\"" + JsonToMap.get(TERM) + "\"");
+				 
+						sb.append("\"" + key + "\":");
+						sb.append("\"" + JsonToMap.get(key) + "\"");
+					 
 
 			}
 
@@ -44,13 +44,16 @@ public class KeywordEntry extends Entry {
 	}
 
 	public static void main(String[] args) {
+		
+		
 
-		Map<String, String> datas = new HashMap<String, String>();
-		datas.put("keyword", "management");
-		datas.put("count", "63");
+		Map<String, String> JsonToMap = PrepareDictionary
+				.processJson("{\"keyword\":\"undulation and bio composite\",\"count\":5}");
 
-		Entry article = new KeywordEntry(datas);
-		System.out.println(article.getJson());
+		 KeywordEntry entry=new KeywordEntry(JsonToMap);
+
+		 
+		System.out.println(entry.getJson());
 
 	}
 
