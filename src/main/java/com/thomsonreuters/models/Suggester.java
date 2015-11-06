@@ -112,9 +112,19 @@ public class Suggester implements SuggesterHandler {
 
 						Suggestions suggestions = suggestData.new Suggestions();
 						suggestions.keyword = result.key.toString();
+						
+						Map<String, String> map = PrepareDictionary
+								.processJson(new String(result.payload.bytes));
 
-						System.out.println(result.key.toString() + "\t\t"
-								+ result.value);
+						Set<String> keys = map.keySet();
+
+						for (String key : keys) {
+
+							Info info = suggestData.new Info();
+							info.key = key;
+							info.value = map.get(key);
+							suggestions.info.add(info);
+						}
 
 						suggestData.suggestions.add(suggestions);
 
