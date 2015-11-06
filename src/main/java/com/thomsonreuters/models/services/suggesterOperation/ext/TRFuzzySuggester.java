@@ -24,7 +24,7 @@ import org.apache.lucene.util.fst.FST;
 import org.apache.lucene.util.fst.PairOutputs.Pair;
 
 /**
- * Implements a fuzzy {@link AnalyzingSuggester}. The similarity measurement is
+ * Implements a fuzzy {@link TRAnalyzingSuggester}. The similarity measurement is
  * based on the Damerau-Levenshtein (optimal string alignment) algorithm, though
  * you can explicitly choose classic Levenshtein by passing <code>false</code>
  * for the <code>transpositions</code> parameter.
@@ -54,7 +54,7 @@ import org.apache.lucene.util.fst.PairOutputs.Pair;
  *
  * @lucene.experimental
  */
-public final class FuzzySuggester extends AnalyzingSuggester {
+public final class TRFuzzySuggester extends TRAnalyzingSuggester {
 	private int maxEdits = 1;
 	private final boolean transpositions;
 	private final int nonFuzzyPrefix;
@@ -88,18 +88,18 @@ public final class FuzzySuggester extends AnalyzingSuggester {
 	public static final boolean DEFAULT_TRANSPOSITIONS = true;
 
 	/**
-	 * Creates a {@link FuzzySuggester} instance initialized with default
+	 * Creates a {@link TRFuzzySuggester} instance initialized with default
 	 * values.
 	 * 
 	 * @param analyzer
 	 *            the analyzer used for this suggester
 	 */
-	public FuzzySuggester(Analyzer analyzer) {
+	public TRFuzzySuggester(Analyzer analyzer) {
 		this(analyzer, analyzer);
 	}
 
 	/**
-	 * Creates a {@link FuzzySuggester} instance with an index and query
+	 * Creates a {@link TRFuzzySuggester} instance with an index and query
 	 * analyzer initialized with default values.
 	 * 
 	 * @param indexAnalyzer
@@ -109,14 +109,14 @@ public final class FuzzySuggester extends AnalyzingSuggester {
 	 *            Analyzer that will be used for analyzing query text during
 	 *            lookup
 	 */
-	public FuzzySuggester(Analyzer indexAnalyzer, Analyzer queryAnalyzer) {
+	public TRFuzzySuggester(Analyzer indexAnalyzer, Analyzer queryAnalyzer) {
 		this(indexAnalyzer, queryAnalyzer, EXACT_FIRST | PRESERVE_SEP, 256, -1,
 				true, DEFAULT_TRANSPOSITIONS, DEFAULT_NON_FUZZY_PREFIX,
 				DEFAULT_MIN_FUZZY_LENGTH, DEFAULT_UNICODE_AWARE);
 	}
 
 	/**
-	 * Creates a {@link FuzzySuggester} instance.
+	 * Creates a {@link TRFuzzySuggester} instance.
 	 * 
 	 * @param indexAnalyzer
 	 *            Analyzer that will be used for analyzing suggestions while
@@ -151,7 +151,7 @@ public final class FuzzySuggester extends AnalyzingSuggester {
 	 * @param unicodeAware
 	 *            operate Unicode code points instead of bytes.
 	 */
-	public FuzzySuggester(Analyzer indexAnalyzer, Analyzer queryAnalyzer,
+	public TRFuzzySuggester(Analyzer indexAnalyzer, Analyzer queryAnalyzer,
 			int options, int maxSurfaceFormsPerAnalyzedForm,
 			int maxGraphExpansions, boolean preservePositionIncrements,
 			boolean transpositions, int nonFuzzyPrefix, int minFuzzyLength,
@@ -202,8 +202,10 @@ public final class FuzzySuggester extends AnalyzingSuggester {
 		 */
 		return FSTUtil.intersectPrefixPaths(levA, fst);
 	}
+	
+	/**Added by Manoj Manandhar **/
 
-	public FuzzySuggester setMaxEdits(int maxEdits) {
+	public TRFuzzySuggester setMaxEdits(int maxEdits) {
 		if (maxEdits < 0
 				|| maxEdits > LevenshteinAutomata.MAXIMUM_SUPPORTED_DISTANCE) {
 			throw new IllegalArgumentException(

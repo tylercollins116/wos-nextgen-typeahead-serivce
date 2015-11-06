@@ -17,6 +17,7 @@ import com.thomsonreuters.models.services.async.NamedThreadFactory;
 import com.thomsonreuters.models.services.async.WaitingBlockingQueue;
 import com.thomsonreuters.models.services.suggesterOperation.DictionaryLoader;
 import com.thomsonreuters.models.services.suggesterOperation.SuggesterFactory;
+import com.thomsonreuters.models.services.suggesterOperation.SuggesterHelper;
 import com.thomsonreuters.models.services.suggesters.BlankSuggester;
 import com.thomsonreuters.models.services.util.PropertyValue;
 
@@ -52,12 +53,13 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 
 					@Override
 					public void configurationChanged(ConfigurationEvent event) {
-						
-						String triggredProperty=event.getPropertyName();
+
+						String triggredProperty = event.getPropertyName();
 
 						if (PropertyValue.getProperty(triggredProperty)
-								.isDictionaryPathRelated()||PropertyValue.getProperty(triggredProperty)
-								.isBucketName()) {
+								.isDictionaryPathRelated()
+								|| PropertyValue.getProperty(triggredProperty)
+										.isBucketName()) {
 
 							log.info("reloding  dictionary "
 									+ event.getPropertyName());
@@ -65,7 +67,9 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 							Job<Lookup> job = new Job<Lookup>(dictionaryReader,
 									event.getPropertyName());
 							reloadExecutor.execute(job.inputTask);
-							;
+						} else {
+							
+							SuggesterHelper.loadFuzzynessThreshold(triggredProperty);
 						}
 
 					}

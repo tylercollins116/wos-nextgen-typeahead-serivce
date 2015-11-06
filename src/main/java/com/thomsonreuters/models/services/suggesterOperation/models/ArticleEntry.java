@@ -1,19 +1,19 @@
 package com.thomsonreuters.models.services.suggesterOperation.models;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import com.thomsonreuters.models.services.util.PrepareDictionary;
+
 public class ArticleEntry extends Entry {
 
-	private static final String ID = "id";
-	private static final String TITLE = "title";
+	public static final String TERM = "title";
 
 	private Map<String, String> JsonToMap = null;
 
 	public ArticleEntry(Map<String, String> JsonToMap) {
-		setTerm(JsonToMap.remove(Entry.TERM));
-		setWeight(Integer.parseInt((JsonToMap.remove(Entry.WEIGHT)).trim()));
+		setTerm(JsonToMap.remove(TERM));
+		setWeight(Integer.parseInt((JsonToMap.get(Entry.WEIGHT)).trim()));
 
 		this.JsonToMap = JsonToMap;
 
@@ -28,7 +28,7 @@ public class ArticleEntry extends Entry {
 		if (JsonToMap != null && JsonToMap.size() > 0) {
 			Set<String> keys = JsonToMap.keySet();
 			for (String key : keys) {
-				
+
 				if (sb.length() > 1) {
 					sb.append(",");
 				}
@@ -43,19 +43,15 @@ public class ArticleEntry extends Entry {
 
 		return sb.toString();
 	}
-	
-	public static void main(String[] args) {
-		
-		Map<String, String> datas=new HashMap<String, String>();
-		datas.put("keyword","management");
-		datas.put("count","63");
-		datas.put("id","WOS:000184971100016");
-		datas.put("title","Adaptive management of large rivers with special reference to the Missouri River");
-		
-		ArticleEntry article=new ArticleEntry(datas);
-		System.out.println(article.getJson());
 
-		
+	public static void main(String[] args) {
+
+		Map<String, String> JsonToMap = PrepareDictionary
+				.processJson("{\"keyword\":\"adsorption\",\"count\":11,\"UT\":\"WOS:000337985600052\",\"title\":\"Adsorption behavior and mechanism of perfluorinated compounds on various adsorbents-A review\",\"fuid\":\"472494968WOS1\"}");
+
+		ArticleEntry entry = new ArticleEntry(JsonToMap);
+		System.out.println(entry.getJson());
+
 	}
 
 }

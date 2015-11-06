@@ -7,6 +7,8 @@ public interface Property {
 	public String AWS_KEY_ID = "aws.key.id";
 	public String AWS_KEY = "aws.key";
 
+	public static final String FUZZYNESS_THRESHOLD_PATH = "fuzziness.threshold";
+
 	public enum TYPE {
 		DICTIONARY_PATH, S3_BUCKET, NONE;
 	}
