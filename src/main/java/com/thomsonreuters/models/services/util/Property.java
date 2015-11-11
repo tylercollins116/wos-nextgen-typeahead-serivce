@@ -6,6 +6,10 @@ public interface Property {
 	public String S3_BUCKET = "s3.bucket";
 	public String AWS_KEY_ID = "aws.key.id";
 	public String AWS_KEY = "aws.key";
+	
+	public String SEARCH_HOST="";
+	public String SEARCH_PORT="";
+	public String SEARCH_PATH_WOS="";
 
 	public static final String FUZZYNESS_THRESHOLD_PATH = "fuzziness.threshold";
 

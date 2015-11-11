@@ -18,6 +18,7 @@ import org.apache.lucene.analysis.util.CharArraySet;
 import org.apache.lucene.analysis.util.WordlistLoader;
 import org.apache.lucene.search.suggest.FileDictionary;
 import org.apache.lucene.search.suggest.Lookup;
+import org.apache.lucene.search.suggest.analyzing.AnalyzingInfixSuggester;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.IOUtils;
 import org.slf4j.Logger;
@@ -37,6 +38,8 @@ import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
 import com.thomsonreuters.models.services.suggesterOperation.models.EntryIterator;
 import com.thomsonreuters.models.services.suggesterOperation.models.KeywordEntry;
 import com.thomsonreuters.models.services.suggesterOperation.models.OrganizationEntry;
+import com.thomsonreuters.models.services.suggesterOperation.models.PatentEntry;
+import com.thomsonreuters.models.services.suggesterOperation.models.PeopleEntry;
 import com.thomsonreuters.models.services.util.Blockable;
 import com.thomsonreuters.models.services.util.BlockingHashTable;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
@@ -242,6 +245,18 @@ public abstract class SuggesterHelper {
 						suggesterList.put(property.getDictionayName(),
 								suggester);
 
+					} else if (property.getDictionayName().equalsIgnoreCase(
+							"people")) {
+						AnalyzingInfixSuggester suggester = createAnalyzingForPeopleAndPatent(is,PeopleEntry.class);
+						suggesterList.put(property.getDictionayName(),
+								suggester);
+
+					}else if (property.getDictionayName().equalsIgnoreCase(
+							"patent")) {
+						AnalyzingInfixSuggester suggester = createAnalyzingForPeopleAndPatent(is,PatentEntry.class);
+						suggesterList.put(property.getDictionayName(),
+								suggester);
+
 					}
 
 					/***************************** End **********************************/
@@ -441,6 +456,32 @@ public abstract class SuggesterHelper {
 					ArticleEntry.class);
 
 			suggester = new TRAnalyzingInfixSuggester(new RAMDirectory(),
+					indexAnalyzer);
+
+			suggester.build(new EntryIterator(peopleList.iterator()));
+
+			WeakReference<List<Entry>> weakreference = new WeakReference<List<Entry>>(
+					peopleList);
+			peopleList = weakreference.get();
+			peopleList = null;
+			System.gc();
+			System.gc();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return suggester;
+	}
+
+	public AnalyzingInfixSuggester createAnalyzingForPeopleAndPatent(InputStream is,Class c) {
+		AnalyzingInfixSuggester suggester = null;
+		try {
+
+			List<Entry> peopleList = PrepareDictionary.initDictonary(is,
+					c);
+
+			suggester = new AnalyzingInfixSuggester(new RAMDirectory(),
 					indexAnalyzer);
 
 			suggester.build(new EntryIterator(peopleList.iterator()));
