@@ -1,10 +1,9 @@
-package com.thomsonreuters.models;
+package com.thomsonreuters.models.extact;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.search.suggest.Lookup.LookupResult;
@@ -14,40 +13,39 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.thomsonreuters.models.SuggestData.Info;
-import com.thomsonreuters.models.SuggestData.Suggestions;
+import com.thomsonreuters.models.SuggestData;
+import com.thomsonreuters.models.SuggesterConfigurationHandler;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingInfixSuggester;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggester;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester;
-import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
 import com.thomsonreuters.models.services.util.PropertyValue;
 
 @Singleton
-public class Suggester implements SuggesterHandler {
+public class SuggesterExt implements SuggesterHandlerExt {
 
-	private static final Logger log = LoggerFactory.getLogger(Suggester.class);
+	private static final Logger log = LoggerFactory
+			.getLogger(SuggesterExt.class);
 
 	private final SuggesterConfigurationHandler suggesterConfigurationHandler;
 
 	@Inject
-	public Suggester(SuggesterConfigurationHandler suggesterConfigurationHandler) {
+	public SuggesterExt(
+			SuggesterConfigurationHandler suggesterConfigurationHandler) {
 		this.suggesterConfigurationHandler = suggesterConfigurationHandler;
 	}
 
-	@Override
-	public List<SuggestData> lookup(String query, int n) {
+	public List<SuggestDataExt> lookup(String query, int n) {
 
 		return lookup("wos", query, n);
 	}
 
-	@Override
-	public List<SuggestData> lookup(String path, String query, int n) {
+	public List<SuggestDataExt> lookup(String path, String query, int n) {
 
 		long startTime = -1L;
 
-		List<SuggestData> results = new ArrayList<SuggestData>();
+		List<SuggestDataExt> jsonarray = new ArrayList<SuggestDataExt>();
 
 		Lookup suggester = suggesterConfigurationHandler
 				.getDictionaryAnalyzer().getSuggesterList().get(path);
@@ -64,8 +62,8 @@ public class Suggester implements SuggesterHandler {
 			if (path.equalsIgnoreCase("categories")) {
 
 				startTime = System.currentTimeMillis();
-				SuggestData suggestData = new SuggestData();
-				suggestData.source = path;
+
+				List<Map<String, String>> allSuggestions = new ArrayList<Map<String, String>>();
 
 				try {
 					for (LookupResult result : ((TRAnalyzingSuggester) suggester)
@@ -73,33 +71,28 @@ public class Suggester implements SuggesterHandler {
 
 						/** output[] **/
 
-						Suggestions suggestions = suggestData.new Suggestions();
-						suggestions.keyword = result.key.toString();
-
-						Map<String, String> map = PrepareDictionary
+						Map<String, String> suggestions = PrepareDictionary
 								.processJson(new String(result.payload.bytes));
-						Set<String> keys = map.keySet();
 
-						for (String key : keys) {
+						suggestions.put("keyword", result.key.toString());
 
-							Info info$ = suggestData.new Info();
-							info$.key = key;
-							info$.value = map.get(key);
-							suggestions.info.add(info$);
-						}
-
-						suggestData.suggestions.add(suggestions);
+						allSuggestions.add(suggestions);
 
 					}
 				} catch (Exception e) {
 					log.info("cannot find the suggester ");
 				}
 
-				suggestData.took = (System.currentTimeMillis() - startTime)
-						+ "";
-				results.add(suggestData);
+				String took = (System.currentTimeMillis() - startTime) + "";
+
+				SuggestDataExt actualSuggestions = new SuggestDataExt(path,
+						took, allSuggestions);
+
+				jsonarray.add(actualSuggestions);
 
 			} else if (path.equalsIgnoreCase("wos")) {
+
+				List<Map<String, String>> allSuggestions = new ArrayList<Map<String, String>>();
 
 				startTime = System.currentTimeMillis();
 
@@ -111,23 +104,14 @@ public class Suggester implements SuggesterHandler {
 					for (LookupResult result : ((com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester) suggester)
 							.lookup(query, false, n)) {
 
-						Suggestions suggestions = suggestData.new Suggestions();
-						suggestions.keyword = result.key.toString();
+						/** output[] **/
 
-						Map<String, String> map = PrepareDictionary
+						Map<String, String> suggestions = PrepareDictionary
 								.processJson(new String(result.payload.bytes));
 
-						Set<String> keys = map.keySet();
+						suggestions.put("keyword", result.key.toString());
 
-						for (String key : keys) {
-
-							Info info = suggestData.new Info();
-							info.key = key;
-							info.value = map.get(key);
-							suggestions.info.add(info);
-						}
-
-						suggestData.suggestions.add(suggestions);
+						allSuggestions.add(suggestions);
 
 					}
 
@@ -135,13 +119,17 @@ public class Suggester implements SuggesterHandler {
 					log.info("cannot find the suggester ");
 				}
 
-				suggestData.took = (System.currentTimeMillis() - startTime)
-						+ "";
+				String took = (System.currentTimeMillis() - startTime) + "";
 
-				results.add(suggestData);
+				SuggestDataExt actualSuggestions = new SuggestDataExt(path,
+						took, allSuggestions);
+
+				jsonarray.add(actualSuggestions);
 			}
 
 		} else if (suggester instanceof TRAnalyzingSuggesterExt) {
+
+			List<Map<String, String>> allSuggestions = new ArrayList<Map<String, String>>();
 
 			startTime = System.currentTimeMillis();
 
@@ -153,34 +141,27 @@ public class Suggester implements SuggesterHandler {
 				for (LookupResult result : ((TRAnalyzingSuggesterExt) suggester)
 						.lookup(query, false, n)) {
 
-					Map<String, String> map = PrepareDictionary
+					Map<String, String> suggestions = PrepareDictionary
 							.processJson(new String(result.payload.bytes));
 
-					Suggestions suggestions = suggestData.new Suggestions();
-					suggestions.keyword = map.remove(Entry.TERM);
-					suggestData.suggestions.add(suggestions);
-
-					Set<String> keys = map.keySet();
-
-					for (String key : keys) {
-
-						Info info = suggestData.new Info();
-						info.key = key;
-						info.value = map.get(key);
-						suggestions.info.add(info);
-					}
+					allSuggestions.add(suggestions);
 				}
 			} catch (Exception e) {
 				log.info("cannot find the suggester ");
 			}
 
-			suggestData.took = (System.currentTimeMillis() - startTime) + "";
-			results.add(suggestData);
+			String took = (System.currentTimeMillis() - startTime) + "";
 
+			SuggestDataExt actualSuggestions = new SuggestDataExt(path, took,
+					allSuggestions);
+
+			jsonarray.add(actualSuggestions);
 		} else if (suggester instanceof AnalyzingInfixSuggester) {
 
 			if (path.equalsIgnoreCase("people")) {
 
+				List<Map<String, String>> allSuggestions = new ArrayList<Map<String, String>>();
+
 				startTime = System.currentTimeMillis();
 
 				SuggestData suggestData = new SuggestData();
@@ -191,27 +172,12 @@ public class Suggester implements SuggesterHandler {
 					for (LookupResult result : ((AnalyzingInfixSuggester) suggester)
 							.lookup(query, false, n)) {
 
-						Map<String, String> map = PrepareDictionary
+						Map<String, String> suggestions = PrepareDictionary
 								.processJson(new String(result.payload.bytes));
 
-						Suggestions suggestions = suggestData.new Suggestions();
-						suggestions.keyword = "";
-						suggestData.suggestions.add(suggestions);
+						suggestions.put("name", result.key.toString());
 
-						Info info1 = suggestData.new Info();
-						info1.key = "name";
-						info1.value = result.key.toString();
-						suggestions.info.add(info1);
-
-						Set<String> keys = map.keySet();
-
-						for (String key : keys) {
-
-							Info info = suggestData.new Info();
-							info.key = key;
-							info.value = map.get(key);
-							suggestions.info.add(info);
-						}
+						allSuggestions.add(suggestions);
 
 					}
 
@@ -219,12 +185,16 @@ public class Suggester implements SuggesterHandler {
 					log.info("cannot find the suggester ");
 				}
 
-				suggestData.took = (System.currentTimeMillis() - startTime)
-						+ "";
+				String took = (System.currentTimeMillis() - startTime) + "";
 
-				results.add(suggestData);
+				SuggestDataExt actualSuggestions = new SuggestDataExt(path,
+						took, allSuggestions);
+
+				jsonarray.add(actualSuggestions);
 			} else if (path.equalsIgnoreCase("patent")) {
 
+				List<Map<String, String>> allSuggestions = new ArrayList<Map<String, String>>();
+
 				startTime = System.currentTimeMillis();
 
 				SuggestData suggestData = new SuggestData();
@@ -235,27 +205,12 @@ public class Suggester implements SuggesterHandler {
 					for (LookupResult result : ((AnalyzingInfixSuggester) suggester)
 							.lookup(query, false, n)) {
 
-						Map<String, String> map = PrepareDictionary
+						Map<String, String> suggestions = PrepareDictionary
 								.processJson(new String(result.payload.bytes));
 
-						Suggestions suggestions = suggestData.new Suggestions();
-						suggestions.keyword = "";
-						suggestData.suggestions.add(suggestions);
+						suggestions.put("title", result.key.toString());
 
-						Info info1 = suggestData.new Info();
-						info1.key = "title";
-						info1.value = result.key.toString();
-						suggestions.info.add(info1);
-
-						Set<String> keys = map.keySet();
-
-						for (String key : keys) {
-
-							Info info = suggestData.new Info();
-							info.key = key;
-							info.value = map.get(key);
-							suggestions.info.add(info);
-						}
+						allSuggestions.add(suggestions);
 
 					}
 
@@ -263,14 +218,18 @@ public class Suggester implements SuggesterHandler {
 					log.info("cannot find the suggester ");
 				}
 
-				suggestData.took = (System.currentTimeMillis() - startTime)
-						+ "";
+				String took = (System.currentTimeMillis() - startTime) + "";
 
-				results.add(suggestData);
+				SuggestDataExt actualSuggestions = new SuggestDataExt(path,
+						took, allSuggestions);
+
+				jsonarray.add(actualSuggestions);
 			}
 		} else if (suggester instanceof TRAnalyzingInfixSuggester) {
 
 			if (path.equalsIgnoreCase("article")) {
+
+				List<Map<String, String>> allSuggestions = new ArrayList<Map<String, String>>();
 
 				startTime = System.currentTimeMillis();
 
@@ -280,52 +239,36 @@ public class Suggester implements SuggesterHandler {
 				try {
 					for (LookupResult result : ((TRAnalyzingInfixSuggester) suggester)
 							.lookup(query, false, n)) {
-
-						Map<String, String> map = PrepareDictionary
+						Map<String, String> suggestions = PrepareDictionary
 								.processJson(new String(result.payload.bytes));
 
-						Suggestions suggestions = suggestData.new Suggestions();
-						suggestions.keyword = map.remove(Entry.TERM);
+						suggestions.put("title", result.key.toString());
 
-						Set<String> keys = map.keySet();
-
-						for (String key : keys) {
-
-							Info info$ = suggestData.new Info();
-							info$.key = key;
-							info$.value = map.get(key);
-							suggestions.info.add(info$);
-						}
-
-						Info info$ = suggestData.new Info();
-						info$.key = "title";
-						info$.value = result.key.toString();
-						suggestions.info.add(info$);
-
-						suggestData.suggestions.add(suggestions);
+						allSuggestions.add(suggestions);
 
 					}
 				} catch (Exception e) {
 					log.info("cannot find the suggester ");
 				}
 
-				suggestData.took = (System.currentTimeMillis() - startTime)
-						+ "";
+				String took = (System.currentTimeMillis() - startTime) + "";
 
-				results.add(suggestData);
+				SuggestDataExt actualSuggestions = new SuggestDataExt(path,
+						took, allSuggestions);
 
+				jsonarray.add(actualSuggestions);
 			}
 		}
 
-		return results;
+		return jsonarray;
 	}
 
 	/** added **/
 	@Override
-	public List<SuggestData> lookup(String query, List<String> sources,
+	public List<SuggestDataExt> lookup(String query, List<String> sources,
 			List<String> infos, int size) {
 
-		List<SuggestData> allSuggestions = new ArrayList<SuggestData>();
+		List<SuggestDataExt> allSuggestions = new ArrayList<SuggestDataExt>();
 
 		if (sources != null && sources.size() <= 0) {
 			Enumeration<String> keys = suggesterConfigurationHandler
