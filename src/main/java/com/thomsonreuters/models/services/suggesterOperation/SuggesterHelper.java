@@ -247,13 +247,15 @@ public abstract class SuggesterHelper {
 
 					} else if (property.getDictionayName().equalsIgnoreCase(
 							"people")) {
-						AnalyzingInfixSuggester suggester = createAnalyzingForPeopleAndPatent(is,PeopleEntry.class);
+						AnalyzingInfixSuggester suggester = createAnalyzingForPeopleAndPatent(
+								is, PeopleEntry.class);
 						suggesterList.put(property.getDictionayName(),
 								suggester);
 
-					}else if (property.getDictionayName().equalsIgnoreCase(
+					} else if (property.getDictionayName().equalsIgnoreCase(
 							"patent")) {
-						AnalyzingInfixSuggester suggester = createAnalyzingForPeopleAndPatent(is,PatentEntry.class);
+						AnalyzingInfixSuggester suggester = createAnalyzingForPeopleAndPatent(
+								is, PatentEntry.class);
 						suggesterList.put(property.getDictionayName(),
 								suggester);
 
@@ -333,6 +335,16 @@ public abstract class SuggesterHelper {
 		} else if (property.getDictionayName().equalsIgnoreCase("categories")) {
 			TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
 					is, CategoryEntry.class);
+			suggesterList.put(property.getDictionayName(), suggester);
+
+		} else if (property.getDictionayName().equalsIgnoreCase("people")) {
+			AnalyzingInfixSuggester suggester = createAnalyzingForPeopleAndPatent(
+					is, PeopleEntry.class);
+			suggesterList.put(property.getDictionayName(), suggester);
+
+		} else if (property.getDictionayName().equalsIgnoreCase("patent")) {
+			AnalyzingInfixSuggester suggester = createAnalyzingForPeopleAndPatent(
+					is, PatentEntry.class);
 			suggesterList.put(property.getDictionayName(), suggester);
 
 		}
@@ -474,12 +486,12 @@ public abstract class SuggesterHelper {
 		return suggester;
 	}
 
-	public AnalyzingInfixSuggester createAnalyzingForPeopleAndPatent(InputStream is,Class c) {
+	public AnalyzingInfixSuggester createAnalyzingForPeopleAndPatent(
+			InputStream is, Class c) {
 		AnalyzingInfixSuggester suggester = null;
 		try {
 
-			List<Entry> peopleList = PrepareDictionary.initDictonary(is,
-					c);
+			List<Entry> peopleList = PrepareDictionary.initDictonary(is, c);
 
 			suggester = new AnalyzingInfixSuggester(new RAMDirectory(),
 					indexAnalyzer);
