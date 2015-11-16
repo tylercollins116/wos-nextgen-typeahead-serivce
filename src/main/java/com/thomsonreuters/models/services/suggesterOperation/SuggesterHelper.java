@@ -171,6 +171,16 @@ public abstract class SuggesterHelper {
 				log.info("path to dictionary : " + property.toString());
 				log.info("**************************************************************");
 				dictionaryProperties.add(property.toString());
+			} else if (key.trim().equalsIgnoreCase(
+					Property.DEFAULT_TYPEAHEAD_TYPES)) {
+
+				String[] typeaheadvalues = ConfigurationManager
+						.getConfigInstance().getStringArray(key);
+
+				if (typeaheadvalues != null && typeaheadvalues.length > 0) {
+					PropertyValue.SELECTED_DEFAULT_TYPEAHEADS = typeaheadvalues;
+				}
+
 			} else {
 
 				loadFuzzynessThreshold(key);

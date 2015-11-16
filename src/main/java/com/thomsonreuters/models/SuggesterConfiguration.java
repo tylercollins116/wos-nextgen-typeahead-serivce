@@ -19,6 +19,7 @@ import com.thomsonreuters.models.services.suggesterOperation.DictionaryLoader;
 import com.thomsonreuters.models.services.suggesterOperation.SuggesterFactory;
 import com.thomsonreuters.models.services.suggesterOperation.SuggesterHelper;
 import com.thomsonreuters.models.services.suggesters.BlankSuggester;
+import com.thomsonreuters.models.services.util.Property;
 import com.thomsonreuters.models.services.util.PropertyValue;
 
 @Singleton
@@ -67,9 +68,21 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 							Job<Lookup> job = new Job<Lookup>(dictionaryReader,
 									event.getPropertyName());
 							reloadExecutor.execute(job.inputTask);
+						} else if (triggredProperty.trim().equalsIgnoreCase(
+								Property.DEFAULT_TYPEAHEAD_TYPES)) {
+
+							String[] typeaheadvalues = ConfigurationManager
+									.getConfigInstance().getStringArray(
+											triggredProperty);
+
+							if (typeaheadvalues != null
+									&& typeaheadvalues.length > 0) {
+								PropertyValue.SELECTED_DEFAULT_TYPEAHEADS = typeaheadvalues;
+							}
+
 						} else {
-							
-							SuggesterHelper.loadFuzzynessThreshold(triggredProperty);
+							SuggesterHelper
+									.loadFuzzynessThreshold(triggredProperty);
 						}
 
 					}

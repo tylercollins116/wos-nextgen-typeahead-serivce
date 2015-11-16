@@ -2,6 +2,7 @@ package com.thomsonreuters.models;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -331,8 +332,23 @@ public class Suggester implements SuggesterHandler {
 			Enumeration<String> keys = suggesterConfigurationHandler
 					.getDictionaryAnalyzer().getSuggesterList().getKeys();
 
+			Set<String> includeType = new HashSet<String>();
+			for (String type : PropertyValue.SELECTED_DEFAULT_TYPEAHEADS) {
+				includeType.add(type.toLowerCase().trim());
+			}
+
 			while (keys.hasMoreElements()) {
-				sources.add((String) keys.nextElement());
+
+				String value = (String) keys.nextElement();
+
+				if (includeType != null && includeType.size() > 0) {
+					if (includeType.contains(value.toLowerCase().trim())) {
+						sources.add(value);
+					}
+
+				} else {
+					sources.add(value);
+				}
 			}
 		}
 
