@@ -333,8 +333,12 @@ public class Suggester implements SuggesterHandler {
 					.getDictionaryAnalyzer().getSuggesterList().getKeys();
 
 			Set<String> includeType = new HashSet<String>();
-			for (String type : PropertyValue.SELECTED_DEFAULT_TYPEAHEADS) {
-				includeType.add(type.toLowerCase().trim());
+
+			if (PropertyValue.SELECTED_DEFAULT_TYPEAHEADS != null
+					&& PropertyValue.SELECTED_DEFAULT_TYPEAHEADS.length > 0) {
+				for (String type : PropertyValue.SELECTED_DEFAULT_TYPEAHEADS) {
+					includeType.add(type.toLowerCase().trim());
+				}
 			}
 
 			while (keys.hasMoreElements()) {
