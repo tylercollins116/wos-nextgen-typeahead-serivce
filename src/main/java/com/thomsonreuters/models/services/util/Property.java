@@ -10,6 +10,7 @@ public interface Property {
 	public String SEARCH_HOST="";
 	public String SEARCH_PORT="";
 	public String SEARCH_PATH_WOS="";
+	public String DEFAULT_TYPEAHEAD_TYPES="typeahead.default.types";
 
 	public static final String FUZZYNESS_THRESHOLD_PATH = "fuzziness.threshold";
 
