@@ -2,6 +2,7 @@ package com.thomsonreuters.models.services.suggesterOperation;
 
 import java.io.IOException;
 
+import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
 
 import com.thomsonreuters.models.services.suggesters.S3BucketFromS3IAMRole;
@@ -28,7 +29,7 @@ import com.thomsonreuters.models.services.suggesters.SuggesterFromS3Bucket;
  */
 public class SuggesterFactory {
 
-	public static final DictionaryLoader<AnalyzingSuggester> createSuggesters(
+	public static final DictionaryLoader<Lookup> createSuggesters(
 			String type) throws IOException {
 
 		if (type.equals("S3")) {

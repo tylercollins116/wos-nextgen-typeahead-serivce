@@ -1,16 +1,29 @@
 package com.thomsonreuters.models;
 
 import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.search.suggest.Lookup.LookupResult;
-import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
+import org.apache.lucene.search.suggest.analyzing.AnalyzingInfixSuggester;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
+import com.thomsonreuters.models.SuggestData.Info;
+import com.thomsonreuters.models.SuggestData.Suggestions;
+import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingInfixSuggester;
+import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggester;
+import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt;
+import com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester;
+import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
+import com.thomsonreuters.models.services.util.PrepareDictionary;
+import com.thomsonreuters.models.services.util.PropertyValue;
 
 @Singleton
 public class Suggester implements SuggesterHandler {
@@ -33,57 +46,321 @@ public class Suggester implements SuggesterHandler {
 	@Override
 	public List<SuggestData> lookup(String path, String query, int n) {
 
+		long startTime = -1L;
+
 		List<SuggestData> results = new ArrayList<SuggestData>();
 
-		AnalyzingSuggester suggester = suggesterConfigurationHandler.getDictionaryAnalyzer()
-				.getSuggesterList().get(path);
+		Lookup suggester = suggesterConfigurationHandler
+				.getDictionaryAnalyzer().getSuggesterList().get(path);
 
-		try {
-			for (LookupResult result : suggester.lookup(query, false, n)) {
-				results.add(new SuggestData(result.key.toString()));
+		if (suggester instanceof TRAnalyzingSuggester) {
+
+			if (query.trim().length() < PropertyValue.FUZZTNESS_THRESHOLD) {
+
+				suggester = ((TRFuzzySuggester) suggester).setMaxEdits(0);
+			} else {
+				suggester = ((TRFuzzySuggester) suggester).setMaxEdits(1);
 			}
-		} catch (Exception e) {
-			log.info("cannot find the suggester ");
+
+			if (path.equalsIgnoreCase("categories")) {
+
+				startTime = System.currentTimeMillis();
+				SuggestData suggestData = new SuggestData();
+				suggestData.source = path;
+
+				try {
+					for (LookupResult result : ((TRAnalyzingSuggester) suggester)
+							.lookup(query, false, n)) {
+
+						/** output[] **/
+
+						Suggestions suggestions = suggestData.new Suggestions();
+						suggestions.keyword = result.key.toString();
+
+						Map<String, String> map = PrepareDictionary
+								.processJson(new String(result.payload.bytes));
+						Set<String> keys = map.keySet();
+
+						for (String key : keys) {
+
+							Info info$ = suggestData.new Info();
+							info$.key = key;
+							info$.value = map.get(key);
+							suggestions.info.add(info$);
+						}
+
+						suggestData.suggestions.add(suggestions);
+
+					}
+				} catch (Exception e) {
+					log.info("cannot find the suggester ");
+				}
+
+				suggestData.took = (System.currentTimeMillis() - startTime)
+						+ "";
+				results.add(suggestData);
+
+			} else if (path.equalsIgnoreCase("wos")) {
+
+				startTime = System.currentTimeMillis();
+
+				SuggestData suggestData = new SuggestData();
+				suggestData.source = path;
+
+				try {
+
+					for (LookupResult result : ((com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester) suggester)
+							.lookup(query, false, n)) {
+
+						Suggestions suggestions = suggestData.new Suggestions();
+						suggestions.keyword = result.key.toString();
+
+						Map<String, String> map = PrepareDictionary
+								.processJson(new String(result.payload.bytes));
+
+						Set<String> keys = map.keySet();
+
+						for (String key : keys) {
+
+							Info info = suggestData.new Info();
+							info.key = key;
+							info.value = map.get(key);
+							suggestions.info.add(info);
+						}
+
+						suggestData.suggestions.add(suggestions);
+
+					}
+
+				} catch (Exception e) {
+					log.info("cannot find the suggester ");
+				}
+
+				suggestData.took = (System.currentTimeMillis() - startTime)
+						+ "";
+
+				results.add(suggestData);
+			}
+
+		} else if (suggester instanceof TRAnalyzingSuggesterExt) {
+
+			startTime = System.currentTimeMillis();
+
+			SuggestData suggestData = new SuggestData();
+			suggestData.source = path;
+
+			List<Map<String, String>> typeSuggestions = new ArrayList<Map<String, String>>();
+			try {
+				for (LookupResult result : ((TRAnalyzingSuggesterExt) suggester)
+						.lookup(query, false, n)) {
+
+					Map<String, String> map = PrepareDictionary
+							.processJson(new String(result.payload.bytes));
+
+					Suggestions suggestions = suggestData.new Suggestions();
+					suggestions.keyword = map.remove(Entry.TERM);
+					suggestData.suggestions.add(suggestions);
+
+					Set<String> keys = map.keySet();
+
+					for (String key : keys) {
+
+						Info info = suggestData.new Info();
+						info.key = key;
+						info.value = map.get(key);
+						suggestions.info.add(info);
+					}
+				}
+			} catch (Exception e) {
+				log.info("cannot find the suggester ");
+			}
+
+			suggestData.took = (System.currentTimeMillis() - startTime) + "";
+			results.add(suggestData);
+
+		} else if (suggester instanceof AnalyzingInfixSuggester) {
+
+			if (path.equalsIgnoreCase("people")) {
+
+				startTime = System.currentTimeMillis();
+
+				SuggestData suggestData = new SuggestData();
+				suggestData.source = path;
+
+				try {
+
+					for (LookupResult result : ((AnalyzingInfixSuggester) suggester)
+							.lookup(query, false, n)) {
+
+						Map<String, String> map = PrepareDictionary
+								.processJson(new String(result.payload.bytes));
+
+						Suggestions suggestions = suggestData.new Suggestions();
+						suggestions.keyword = "";
+						suggestData.suggestions.add(suggestions);
+
+						Info info1 = suggestData.new Info();
+						info1.key = "name";
+						info1.value = result.key.toString();
+						suggestions.info.add(info1);
+
+						Set<String> keys = map.keySet();
+
+						for (String key : keys) {
+
+							Info info = suggestData.new Info();
+							info.key = key;
+							info.value = map.get(key);
+							suggestions.info.add(info);
+						}
+
+					}
+
+				} catch (Exception e) {
+					log.info("cannot find the suggester ");
+				}
+
+				suggestData.took = (System.currentTimeMillis() - startTime)
+						+ "";
+
+				results.add(suggestData);
+			} else if (path.equalsIgnoreCase("patent")) {
+
+				startTime = System.currentTimeMillis();
+
+				SuggestData suggestData = new SuggestData();
+				suggestData.source = path;
+
+				try {
+
+					for (LookupResult result : ((AnalyzingInfixSuggester) suggester)
+							.lookup(query, false, n)) {
+
+						Map<String, String> map = PrepareDictionary
+								.processJson(new String(result.payload.bytes));
+
+						Suggestions suggestions = suggestData.new Suggestions();
+						suggestions.keyword = "";
+						suggestData.suggestions.add(suggestions);
+
+						Info info1 = suggestData.new Info();
+						info1.key = "title";
+						info1.value = result.key.toString();
+						suggestions.info.add(info1);
+
+						Set<String> keys = map.keySet();
+
+						for (String key : keys) {
+
+							Info info = suggestData.new Info();
+							info.key = key;
+							info.value = map.get(key);
+							suggestions.info.add(info);
+						}
+
+					}
+
+				} catch (Exception e) {
+					log.info("cannot find the suggester ");
+				}
+
+				suggestData.took = (System.currentTimeMillis() - startTime)
+						+ "";
+
+				results.add(suggestData);
+			}
+		} else if (suggester instanceof TRAnalyzingInfixSuggester) {
+
+			if (path.equalsIgnoreCase("article")) {
+
+				startTime = System.currentTimeMillis();
+
+				SuggestData suggestData = new SuggestData();
+				suggestData.source = path;
+
+				try {
+					for (LookupResult result : ((TRAnalyzingInfixSuggester) suggester)
+							.lookup(query, false, n)) {
+
+						Map<String, String> map = PrepareDictionary
+								.processJson(new String(result.payload.bytes));
+
+						Suggestions suggestions = suggestData.new Suggestions();
+						suggestions.keyword = map.remove(Entry.TERM);
+
+						Set<String> keys = map.keySet();
+
+						for (String key : keys) {
+
+							Info info$ = suggestData.new Info();
+							info$.key = key;
+							info$.value = map.get(key);
+							suggestions.info.add(info$);
+						}
+
+						Info info$ = suggestData.new Info();
+						info$.key = "title";
+						info$.value = result.key.toString();
+						suggestions.info.add(info$);
+
+						suggestData.suggestions.add(suggestions);
+
+					}
+				} catch (Exception e) {
+					log.info("cannot find the suggester ");
+				}
+
+				suggestData.took = (System.currentTimeMillis() - startTime)
+						+ "";
+
+				results.add(suggestData);
+
+			}
 		}
 
 		return results;
 	}
-	
-	/**added**/
+
+	/** added **/
 	@Override
 	public List<SuggestData> lookup(String query, List<String> sources,
-			List<String> infos) {
-		 
+			List<String> infos, int size) {
+
 		List<SuggestData> allSuggestions = new ArrayList<SuggestData>();
 
-		if (query != null && query.trim().length() > 0) {
+		if (sources != null && sources.size() <= 0) {
+			Enumeration<String> keys = suggesterConfigurationHandler
+					.getDictionaryAnalyzer().getSuggesterList().getKeys();
 
-			SuggestData suggestion = new SuggestData(query);
-			allSuggestions.add(suggestion);
-		}
+			Set<String> includeType = new HashSet<String>();
 
-		if (sources != null && sources.size() > 0) {
-
-			for (String suggest : sources) {
-				SuggestData suggestion = new SuggestData(suggest);
-				allSuggestions.add(suggestion);
-
+			if (PropertyValue.SELECTED_DEFAULT_TYPEAHEADS != null
+					&& PropertyValue.SELECTED_DEFAULT_TYPEAHEADS.length > 0) {
+				for (String type : PropertyValue.SELECTED_DEFAULT_TYPEAHEADS) {
+					includeType.add(type.toLowerCase().trim());
+				}
 			}
 
+			while (keys.hasMoreElements()) {
+
+				String value = (String) keys.nextElement();
+
+				if (includeType != null && includeType.size() > 0) {
+					if (includeType.contains(value.toLowerCase().trim())) {
+						sources.add(value);
+					}
+
+				} else {
+					sources.add(value);
+				}
+			}
 		}
 
-		if (infos != null && infos.size() > 0) {
-
-			for (String suggest : infos) {
-				SuggestData suggestion = new SuggestData(suggest);
-				allSuggestions.add(suggestion);
-
-			}
-
+		for (String path : sources) {
+			allSuggestions.addAll(lookup(path, query, size));
 		}
 
 		return allSuggestions;
 	}
-
 
 }

@@ -2,6 +2,9 @@ package com.thomsonreuters.models.services.util;
 
 public class PropertyValue implements Property {
 
+	public static int FUZZTNESS_THRESHOLD = 10; 
+	public static String[] SELECTED_DEFAULT_TYPEAHEADS = null;
+
 	private String value;
 	private TYPE type = TYPE.NONE;
 

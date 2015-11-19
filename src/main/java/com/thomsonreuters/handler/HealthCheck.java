@@ -10,7 +10,7 @@ import javax.annotation.PostConstruct;
 
 import netflix.karyon.health.HealthCheckHandler;
 
-import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
+import org.apache.lucene.search.suggest.Lookup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +19,6 @@ import com.google.inject.Singleton;
 import com.netflix.config.ConfigurationManager;
 import com.thomsonreuters.eiddo.client.EiddoClient;
 import com.thomsonreuters.eiddo.client.EiddoListener;
-import com.thomsonreuters.models.Suggester;
 import com.thomsonreuters.models.SuggesterConfigurationHandler;
 import com.thomsonreuters.models.services.util.BlockingHashTable;
 import com.thomsonreuters.models.services.util.Property;
@@ -38,11 +37,10 @@ public class HealthCheck implements HealthCheckHandler {
 	@Inject
 	public HealthCheck(EiddoClient eiddo,
 			SuggesterConfigurationHandler suggesterConfigurationHandler) {
-		
-		
+
 		this.eiddo = eiddo;
-		this.suggesterConfigurationHandler=suggesterConfigurationHandler;
-		
+		this.suggesterConfigurationHandler = suggesterConfigurationHandler;
+
 		eiddo.addListener(new EiddoListener() {
 
 			@Override
@@ -107,13 +105,18 @@ public class HealthCheck implements HealthCheckHandler {
 			return 500;
 		}
 
-		BlockingHashTable<String, AnalyzingSuggester> suggesters = (BlockingHashTable<String, AnalyzingSuggester>) suggesterConfigurationHandler.getDictionaryAnalyzer().getSuggesterList();
+		BlockingHashTable<String, Lookup> suggesters = (BlockingHashTable<String, Lookup>) suggesterConfigurationHandler
+				.getDictionaryAnalyzer().getSuggesterList();
 
 		Set<String> dictionaryNames = suggesters.keySet();
+		
+		 
 
 		boolean allSet = true;
 
 		for (String dictionaryName : dictionaryProperties) {
+			
+			log.error("Dictionary Names : "+dictionaryName);
 
 			if ((!dictionaryNames.contains(dictionaryName))
 					|| (suggesters.get(dictionaryName) == null)) {
@@ -124,6 +127,19 @@ public class HealthCheck implements HealthCheckHandler {
 		}
 
 		if (!allSet) {
+			
+			log.error("========= Available dictionary in eiddo===========");
+			for (String name : dictionaryProperties){
+				log.error("\t\t"+name+"\t\t");				
+			}	
+			
+			log.error("========= Available dictionary in applications===========");
+			Iterator<String> enums=dictionaryNames.iterator();
+			while(enums.hasNext()){
+				log.error("\t\t"+enums.next()+"\t\t");
+			}
+			log.error("===========================================================");
+
 
 			log.error("Total number of Dictionary Names mismatch with Eiddo Dictionary Name , returning error code :500");
 
