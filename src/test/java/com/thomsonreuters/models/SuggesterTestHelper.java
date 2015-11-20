@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -235,6 +236,8 @@ public class SuggesterTestHelper {
 			// TODO Auto-generated method stub
 			return null;
 		}
+
+	 
 
 	}
 

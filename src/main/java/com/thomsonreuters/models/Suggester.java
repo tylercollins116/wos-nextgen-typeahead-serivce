@@ -2,6 +2,7 @@ package com.thomsonreuters.models;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -17,12 +18,18 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.thomsonreuters.models.SuggestData.Info;
 import com.thomsonreuters.models.SuggestData.Suggestions;
+import com.thomsonreuters.models.services.ESoperation.ArticleESEntry;
+import com.thomsonreuters.models.services.ESoperation.IESQueryExecutor;
+import com.thomsonreuters.models.services.ESoperation.IQueryGenerator;
+import com.thomsonreuters.models.services.ESoperation.PatentESEntry;
+import com.thomsonreuters.models.services.ESoperation.PeopleESEntry;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingInfixSuggester;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggester;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester;
 import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
+import com.thomsonreuters.models.services.util.Property;
 import com.thomsonreuters.models.services.util.PropertyValue;
 
 @Singleton
@@ -32,9 +39,14 @@ public class Suggester implements SuggesterHandler {
 
 	private final SuggesterConfigurationHandler suggesterConfigurationHandler;
 
+	private final IESQueryExecutor ESQueryExecutor;
+
 	@Inject
-	public Suggester(SuggesterConfigurationHandler suggesterConfigurationHandler) {
+	public Suggester(
+			SuggesterConfigurationHandler suggesterConfigurationHandler,
+			IESQueryExecutor queryExecutor) {
 		this.suggesterConfigurationHandler = suggesterConfigurationHandler;
+		this.ESQueryExecutor = queryExecutor;
 	}
 
 	@Override
@@ -50,236 +62,254 @@ public class Suggester implements SuggesterHandler {
 
 		List<SuggestData> results = new ArrayList<SuggestData>();
 
-		Lookup suggester = suggesterConfigurationHandler
-				.getDictionaryAnalyzer().getSuggesterList().get(path);
+		/** These code are execute against ElasticSearch **/
 
-		if (suggester instanceof TRAnalyzingSuggester) {
+		if (path.equals("article") || path.equals("people")
+				|| path.equals("patent")) {
 
-			if (query.trim().length() < PropertyValue.FUZZTNESS_THRESHOLD) {
-
-				suggester = ((TRFuzzySuggester) suggester).setMaxEdits(0);
-			} else {
-				suggester = ((TRFuzzySuggester) suggester).setMaxEdits(1);
-			}
-
-			if (path.equalsIgnoreCase("categories")) {
-
-				startTime = System.currentTimeMillis();
-				SuggestData suggestData = new SuggestData();
-				suggestData.source = path;
+			if (path.equals("article")) {
 
 				try {
-					for (LookupResult result : ((TRAnalyzingSuggester) suggester)
-							.lookup(query, false, n)) {
 
-						/** output[] **/
+					if (Property.ES_SEARCH_PATH.containsKey("wos")) {
 
-						Suggestions suggestions = suggestData.new Suggestions();
-						suggestions.keyword = result.key.toString();
+						long start = System.currentTimeMillis();
 
-						Map<String, String> map = PrepareDictionary
-								.processJson(new String(result.payload.bytes));
-						Set<String> keys = map.keySet();
+						String returnVaule[] = new String[] { "title", "cuid",
+								"fuid" };
+						IQueryGenerator entry = new ArticleESEntry(returnVaule,
+								query, 0, n, "wos");
+						SuggestData data = this.ESQueryExecutor
+								.formatResult(entry);
 
-						for (String key : keys) {
+						data.took = (System.currentTimeMillis() - start) + "";
 
-							Info info$ = suggestData.new Info();
-							info$.key = key;
-							info$.value = map.get(key);
-							suggestions.info.add(info$);
-						}
-
-						suggestData.suggestions.add(suggestions);
-
+						results.add(data);
+					} else {
+						// no path found
 					}
 				} catch (Exception e) {
-					log.info("cannot find the suggester ");
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 
-				suggestData.took = (System.currentTimeMillis() - startTime)
-						+ "";
-				results.add(suggestData);
-
-			} else if (path.equalsIgnoreCase("wos")) {
-
-				startTime = System.currentTimeMillis();
-
-				SuggestData suggestData = new SuggestData();
-				suggestData.source = path;
+			} else if (path.equals("people")) {
 
 				try {
+					if (Property.ES_SEARCH_PATH.containsKey("people")) {
 
-					for (LookupResult result : ((com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester) suggester)
-							.lookup(query, false, n)) {
+						long start = System.currentTimeMillis();
 
-						Suggestions suggestions = suggestData.new Suggestions();
-						suggestions.keyword = result.key.toString();
+						String returnVaule[] = new String[] { "country",
+								"institution", "role", "authors",
+								"fullrecord.summary.uid" };
 
-						Map<String, String> map = PrepareDictionary
-								.processJson(new String(result.payload.bytes));
+						HashMap<String, String> aliasField = new HashMap<String, String>(
+								2);
+						aliasField.put("authors", "name");
+						aliasField.put("fullrecord.summary.uid", "id");
 
-						Set<String> keys = map.keySet();
-
-						for (String key : keys) {
-
-							Info info = suggestData.new Info();
-							info.key = key;
-							info.value = map.get(key);
-							suggestions.info.add(info);
+						IQueryGenerator entry = new PeopleESEntry(returnVaule,
+								query, 0, n, "people", aliasField);
+						SuggestData data = null;
+						try {
+							data = this.ESQueryExecutor.formatResult(entry);
+						} catch (Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
 						}
 
-						suggestData.suggestions.add(suggestions);
+						data.took = (System.currentTimeMillis() - start) + "";
 
+						results.add(data);
 					}
-
 				} catch (Exception e) {
-					log.info("cannot find the suggester ");
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 
-				suggestData.took = (System.currentTimeMillis() - startTime)
-						+ "";
-
-				results.add(suggestData);
-			}
-
-		} else if (suggester instanceof TRAnalyzingSuggesterExt) {
-
-			startTime = System.currentTimeMillis();
-
-			SuggestData suggestData = new SuggestData();
-			suggestData.source = path;
-
-			List<Map<String, String>> typeSuggestions = new ArrayList<Map<String, String>>();
-			try {
-				for (LookupResult result : ((TRAnalyzingSuggesterExt) suggester)
-						.lookup(query, false, n)) {
-
-					Map<String, String> map = PrepareDictionary
-							.processJson(new String(result.payload.bytes));
-
-					Suggestions suggestions = suggestData.new Suggestions();
-					suggestions.keyword = map.remove(Entry.TERM);
-					suggestData.suggestions.add(suggestions);
-
-					Set<String> keys = map.keySet();
-
-					for (String key : keys) {
-
-						Info info = suggestData.new Info();
-						info.key = key;
-						info.value = map.get(key);
-						suggestions.info.add(info);
-					}
-				}
-			} catch (Exception e) {
-				log.info("cannot find the suggester ");
-			}
-
-			suggestData.took = (System.currentTimeMillis() - startTime) + "";
-			results.add(suggestData);
-
-		} else if (suggester instanceof AnalyzingInfixSuggester) {
-
-			if (path.equalsIgnoreCase("people")) {
-
-				startTime = System.currentTimeMillis();
-
-				SuggestData suggestData = new SuggestData();
-				suggestData.source = path;
+			} else if (path.equals("patent")) {
 
 				try {
+					if (Property.ES_SEARCH_PATH.containsKey("patent")) {
 
-					for (LookupResult result : ((AnalyzingInfixSuggester) suggester)
-							.lookup(query, false, n)) {
+						long start = System.currentTimeMillis();
 
-						Map<String, String> map = PrepareDictionary
-								.processJson(new String(result.payload.bytes));
-
-						Suggestions suggestions = suggestData.new Suggestions();
-						suggestions.keyword = "";
-						suggestData.suggestions.add(suggestions);
-
-						Info info1 = suggestData.new Info();
-						info1.key = "name";
-						info1.value = result.key.toString();
-						suggestions.info.add(info1);
-
-						Set<String> keys = map.keySet();
-
-						for (String key : keys) {
-
-							Info info = suggestData.new Info();
-							info.key = key;
-							info.value = map.get(key);
-							suggestions.info.add(info);
+						String returnVaule[] = new String[] { "patentno",
+								"title" };
+						IQueryGenerator entry = new PatentESEntry(returnVaule,
+								query, 0, n, "patent", null);
+						SuggestData data = null;
+						try {
+							data = this.ESQueryExecutor.formatResult(entry);
+						} catch (Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
 						}
 
-					}
+						data.took = (System.currentTimeMillis() - start) + "";
 
+						results.add(data);
+					}
 				} catch (Exception e) {
-					log.info("cannot find the suggester ");
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 
-				suggestData.took = (System.currentTimeMillis() - startTime)
-						+ "";
+			}
 
-				results.add(suggestData);
-			} else if (path.equalsIgnoreCase("patent")) {
+		}
 
-				startTime = System.currentTimeMillis();
+		/** End of codes that execute against ElasticSearch **/
 
-				SuggestData suggestData = new SuggestData();
-				suggestData.source = path;
+		/** The below codes are execute against Dictionary in S3 bucket **/
+		else {
 
-				try {
+			Lookup suggester = suggesterConfigurationHandler
+					.getDictionaryAnalyzer().getSuggesterList().get(path);
 
-					for (LookupResult result : ((AnalyzingInfixSuggester) suggester)
-							.lookup(query, false, n)) {
+			if (suggester instanceof TRAnalyzingSuggester) {
 
-						Map<String, String> map = PrepareDictionary
-								.processJson(new String(result.payload.bytes));
+				if (query.trim().length() < PropertyValue.FUZZTNESS_THRESHOLD) {
 
-						Suggestions suggestions = suggestData.new Suggestions();
-						suggestions.keyword = "";
-						suggestData.suggestions.add(suggestions);
+					suggester = ((TRFuzzySuggester) suggester).setMaxEdits(0);
+				} else {
+					suggester = ((TRFuzzySuggester) suggester).setMaxEdits(1);
+				}
 
-						Info info1 = suggestData.new Info();
-						info1.key = "title";
-						info1.value = result.key.toString();
-						suggestions.info.add(info1);
+				if (path.equalsIgnoreCase("categories")) {
 
-						Set<String> keys = map.keySet();
+					startTime = System.currentTimeMillis();
+					SuggestData suggestData = new SuggestData();
+					suggestData.source = path;
 
-						for (String key : keys) {
+					try {
+						for (LookupResult result : ((TRAnalyzingSuggester) suggester)
+								.lookup(query, false, n)) {
 
-							Info info = suggestData.new Info();
-							info.key = key;
-							info.value = map.get(key);
-							suggestions.info.add(info);
+							/** output[] **/
+
+							Suggestions suggestions = suggestData.new Suggestions();
+							suggestions.keyword = result.key.toString();
+
+							Map<String, String> map = PrepareDictionary
+									.processJson(new String(
+											result.payload.bytes));
+							Set<String> keys = map.keySet();
+
+							for (String key : keys) {
+
+								Info info$ = suggestData.new Info();
+								info$.key = key;
+								info$.value = map.get(key);
+								suggestions.info.add(info$);
+							}
+
+							suggestData.suggestions.add(suggestions);
+
+						}
+					} catch (Exception e) {
+						log.info("cannot find the suggester ");
+					}
+
+					suggestData.took = (System.currentTimeMillis() - startTime)
+							+ "";
+					results.add(suggestData);
+
+				} else if (path.equalsIgnoreCase("wos")) {
+
+					startTime = System.currentTimeMillis();
+
+					SuggestData suggestData = new SuggestData();
+					suggestData.source = path;
+
+					try {
+
+						for (LookupResult result : ((com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester) suggester)
+								.lookup(query, false, n)) {
+
+							Suggestions suggestions = suggestData.new Suggestions();
+							suggestions.keyword = result.key.toString();
+
+							Map<String, String> map = PrepareDictionary
+									.processJson(new String(
+											result.payload.bytes));
+
+							Set<String> keys = map.keySet();
+
+							for (String key : keys) {
+
+								Info info = suggestData.new Info();
+								info.key = key;
+								info.value = map.get(key);
+								suggestions.info.add(info);
+							}
+
+							suggestData.suggestions.add(suggestions);
+
 						}
 
+					} catch (Exception e) {
+						log.info("cannot find the suggester ");
 					}
 
-				} catch (Exception e) {
-					log.info("cannot find the suggester ");
+					suggestData.took = (System.currentTimeMillis() - startTime)
+							+ "";
+
+					results.add(suggestData);
+				} else if (path.equalsIgnoreCase("topic")) {
+
+					startTime = System.currentTimeMillis();
+
+					SuggestData suggestData = new SuggestData();
+					suggestData.source = path;
+
+					try {
+
+						for (LookupResult result : ((com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester) suggester)
+								.lookup(query, false, n)) {
+
+							Suggestions suggestions = suggestData.new Suggestions();
+							suggestions.keyword = result.key.toString();
+
+							Map<String, String> map = PrepareDictionary
+									.processJson(new String(
+											result.payload.bytes));
+
+							Set<String> keys = map.keySet();
+
+							for (String key : keys) {
+
+								Info info = suggestData.new Info();
+								info.key = key;
+								info.value = map.get(key);
+								suggestions.info.add(info);
+							}
+
+							suggestData.suggestions.add(suggestions);
+
+						}
+
+					} catch (Exception e) {
+						log.info("cannot find the suggester ");
+					}
+
+					suggestData.took = (System.currentTimeMillis() - startTime)
+							+ "";
+
+					results.add(suggestData);
 				}
 
-				suggestData.took = (System.currentTimeMillis() - startTime)
-						+ "";
-
-				results.add(suggestData);
-			}
-		} else if (suggester instanceof TRAnalyzingInfixSuggester) {
-
-			if (path.equalsIgnoreCase("article")) {
+			} else if (suggester instanceof TRAnalyzingSuggesterExt) {
 
 				startTime = System.currentTimeMillis();
 
 				SuggestData suggestData = new SuggestData();
 				suggestData.source = path;
 
+				List<Map<String, String>> typeSuggestions = new ArrayList<Map<String, String>>();
 				try {
-					for (LookupResult result : ((TRAnalyzingInfixSuggester) suggester)
+					for (LookupResult result : ((TRAnalyzingSuggesterExt) suggester)
 							.lookup(query, false, n)) {
 
 						Map<String, String> map = PrepareDictionary
@@ -287,24 +317,17 @@ public class Suggester implements SuggesterHandler {
 
 						Suggestions suggestions = suggestData.new Suggestions();
 						suggestions.keyword = map.remove(Entry.TERM);
+						suggestData.suggestions.add(suggestions);
 
 						Set<String> keys = map.keySet();
 
 						for (String key : keys) {
 
-							Info info$ = suggestData.new Info();
-							info$.key = key;
-							info$.value = map.get(key);
-							suggestions.info.add(info$);
+							Info info = suggestData.new Info();
+							info.key = key;
+							info.value = map.get(key);
+							suggestions.info.add(info);
 						}
-
-						Info info$ = suggestData.new Info();
-						info$.key = "title";
-						info$.value = result.key.toString();
-						suggestions.info.add(info$);
-
-						suggestData.suggestions.add(suggestions);
-
 					}
 				} catch (Exception e) {
 					log.info("cannot find the suggester ");
@@ -312,12 +335,152 @@ public class Suggester implements SuggesterHandler {
 
 				suggestData.took = (System.currentTimeMillis() - startTime)
 						+ "";
-
 				results.add(suggestData);
 
+			} else if (suggester instanceof AnalyzingInfixSuggester) {
+
+				if (path.equalsIgnoreCase("people")) {
+
+					startTime = System.currentTimeMillis();
+
+					SuggestData suggestData = new SuggestData();
+					suggestData.source = path;
+
+					try {
+
+						for (LookupResult result : ((AnalyzingInfixSuggester) suggester)
+								.lookup(query, false, n)) {
+
+							Map<String, String> map = PrepareDictionary
+									.processJson(new String(
+											result.payload.bytes));
+
+							Suggestions suggestions = suggestData.new Suggestions();
+							suggestions.keyword = "";
+							suggestData.suggestions.add(suggestions);
+
+							Info info1 = suggestData.new Info();
+							info1.key = "name";
+							info1.value = result.key.toString();
+							suggestions.info.add(info1);
+
+							Set<String> keys = map.keySet();
+
+							for (String key : keys) {
+
+								Info info = suggestData.new Info();
+								info.key = key;
+								info.value = map.get(key);
+								suggestions.info.add(info);
+							}
+
+						}
+
+					} catch (Exception e) {
+						log.info("cannot find the suggester ");
+					}
+
+					suggestData.took = (System.currentTimeMillis() - startTime)
+							+ "";
+
+					results.add(suggestData);
+				} else if (path.equalsIgnoreCase("patent")) {
+
+					startTime = System.currentTimeMillis();
+
+					SuggestData suggestData = new SuggestData();
+					suggestData.source = path;
+
+					try {
+
+						for (LookupResult result : ((AnalyzingInfixSuggester) suggester)
+								.lookup(query, false, n)) {
+
+							Map<String, String> map = PrepareDictionary
+									.processJson(new String(
+											result.payload.bytes));
+
+							Suggestions suggestions = suggestData.new Suggestions();
+							suggestions.keyword = "";
+							suggestData.suggestions.add(suggestions);
+
+							Info info1 = suggestData.new Info();
+							info1.key = "title";
+							info1.value = result.key.toString();
+							suggestions.info.add(info1);
+
+							Set<String> keys = map.keySet();
+
+							for (String key : keys) {
+
+								Info info = suggestData.new Info();
+								info.key = key;
+								info.value = map.get(key);
+								suggestions.info.add(info);
+							}
+
+						}
+
+					} catch (Exception e) {
+						log.info("cannot find the suggester ");
+					}
+
+					suggestData.took = (System.currentTimeMillis() - startTime)
+							+ "";
+
+					results.add(suggestData);
+				}
+			} else if (suggester instanceof TRAnalyzingInfixSuggester) {
+
+				if (path.equalsIgnoreCase("article")) {
+
+					startTime = System.currentTimeMillis();
+
+					SuggestData suggestData = new SuggestData();
+					suggestData.source = path;
+
+					try {
+						for (LookupResult result : ((TRAnalyzingInfixSuggester) suggester)
+								.lookup(query, false, n)) {
+
+							Map<String, String> map = PrepareDictionary
+									.processJson(new String(
+											result.payload.bytes));
+
+							Suggestions suggestions = suggestData.new Suggestions();
+							suggestions.keyword = map.remove(Entry.TERM);
+
+							Set<String> keys = map.keySet();
+
+							for (String key : keys) {
+
+								Info info$ = suggestData.new Info();
+								info$.key = key;
+								info$.value = map.get(key);
+								suggestions.info.add(info$);
+							}
+
+							Info info$ = suggestData.new Info();
+							info$.key = "title";
+							info$.value = result.key.toString();
+							suggestions.info.add(info$);
+
+							suggestData.suggestions.add(suggestions);
+
+						}
+					} catch (Exception e) {
+						log.info("cannot find the suggester ");
+					}
+
+					suggestData.took = (System.currentTimeMillis() - startTime)
+							+ "";
+
+					results.add(suggestData);
+
+				}
 			}
 		}
-
+		/** End of codes that execute against dictionary in S3 Buckets **/
 		return results;
 	}
 
@@ -329,8 +492,24 @@ public class Suggester implements SuggesterHandler {
 		List<SuggestData> allSuggestions = new ArrayList<SuggestData>();
 
 		if (sources != null && sources.size() <= 0) {
-			Enumeration<String> keys = suggesterConfigurationHandler
+
+			/**
+			 * This is for ES query property in eiddo starts with "search.path."
+			 **/
+
+			Set<String> keysForES = PropertyValue.ES_SEARCH_PATH.keySet();
+
+			/**
+			 * -----------------------------------------------------------------
+			 **/
+
+			/** This is for dictionary in eiddo starts with "dictionary.path." **/
+			Enumeration<String> keysForDictionary = suggesterConfigurationHandler
 					.getDictionaryAnalyzer().getSuggesterList().getKeys();
+
+			/**
+			 * -----------------------------------------------------------------
+			 **/
 
 			Set<String> includeType = new HashSet<String>();
 
@@ -341,11 +520,15 @@ public class Suggester implements SuggesterHandler {
 				}
 			}
 
-			while (keys.hasMoreElements()) {
+			boolean defaulTypeExists = (includeType != null && includeType
+					.size() > 0);
 
-				String value = (String) keys.nextElement();
+			// For dictionary
 
-				if (includeType != null && includeType.size() > 0) {
+			while (keysForDictionary.hasMoreElements()) {
+				String value = (String) keysForDictionary.nextElement();
+
+				if (defaulTypeExists) {
 					if (includeType.contains(value.toLowerCase().trim())) {
 						sources.add(value);
 					}
@@ -354,6 +537,21 @@ public class Suggester implements SuggesterHandler {
 					sources.add(value);
 				}
 			}
+
+			// for elasticsearch
+
+			for (String value : keysForES) {
+
+				if (defaulTypeExists) {
+					if (includeType.contains(value.toLowerCase().trim())) {
+						sources.add(value);
+					}
+
+				} else {
+					sources.add(value);
+				}
+			}
+
 		}
 
 		for (String path : sources) {

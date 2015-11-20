@@ -1,5 +1,6 @@
 package com.thomsonreuters.models;
 
+import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -49,6 +50,9 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 			dictionaryReader = new BlankSuggester();
 		}
 
+		// build ES URL
+		prepareESURL();
+
 		ConfigurationManager.getConfigInstance().addConfigurationListener(
 				new ConfigurationListener() {
 
@@ -80,6 +84,15 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 								PropertyValue.SELECTED_DEFAULT_TYPEAHEADS = typeaheadvalues;
 							}
 
+						} else if (triggredProperty.trim().equalsIgnoreCase(
+								Property.SEARCH_HOST)
+								|| triggredProperty.trim().equalsIgnoreCase(
+										Property.SEARCH_PORT)
+								|| triggredProperty.trim().startsWith(
+										Property.SEARCH_PATH_PREFIX)) {
+
+							prepareESURL();
+
 						} else {
 							SuggesterHelper
 									.loadFuzzynessThreshold(triggredProperty);
@@ -92,6 +105,34 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 	@Override
 	public DictionaryLoader<Lookup> getDictionaryAnalyzer() {
 		return this.dictionaryReader;
+	}
+
+	private void prepareESURL() {
+
+		PropertyValue.ELASTIC_SEARCH_URL = ConfigurationManager
+				.getConfigInstance().getString(Property.SEARCH_HOST)
+				+ ":"
+				+ ConfigurationManager.getConfigInstance().getString(
+						Property.SEARCH_PORT);
+
+		Iterator<String> keys = ConfigurationManager.getConfigInstance()
+				.getKeys();
+
+		while (keys.hasNext()) {
+			String key = keys.next();
+
+			if (key.startsWith(Property.SEARCH_PATH_PREFIX)) {
+
+				String path = ConfigurationManager.getConfigInstance()
+						.getString(key);
+				key = key.toLowerCase().replace(
+						Property.SEARCH_PATH_PREFIX + ".", "");
+				Property.ES_SEARCH_PATH.put(key, path);
+
+			}
+
+		}
+
 	}
 
 }

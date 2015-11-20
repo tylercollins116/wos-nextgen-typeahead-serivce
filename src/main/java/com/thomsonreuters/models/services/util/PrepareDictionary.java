@@ -24,6 +24,7 @@ import com.thomsonreuters.models.services.suggesterOperation.models.KeywordEntry
 import com.thomsonreuters.models.services.suggesterOperation.models.OrganizationEntry;
 import com.thomsonreuters.models.services.suggesterOperation.models.PatentEntry;
 import com.thomsonreuters.models.services.suggesterOperation.models.PeopleEntry;
+import com.thomsonreuters.models.services.suggesterOperation.models.TopicEntry;
 
 public class PrepareDictionary {
 
@@ -40,13 +41,22 @@ public class PrepareDictionary {
 		BufferedReader br = new BufferedReader(new InputStreamReader(is));
 		String jsonAsLine = null;
 
+		List<String> list = new ArrayList<String>();
+
 		while ((jsonAsLine = br.readLine()) != null) {
+
 			Map<String, String> jsonToMap = processJson(jsonAsLine);
 
 			try {
 				if (entryClass == OrganizationEntry.class) {
 
 					com.thomsonreuters.models.services.suggesterOperation.models.Entry entry = new OrganizationEntry(
+							jsonToMap);
+					EntryList.add(entry);
+
+				} else if (entryClass == TopicEntry.class) {
+
+					com.thomsonreuters.models.services.suggesterOperation.models.Entry entry = new TopicEntry(
 							jsonToMap);
 					EntryList.add(entry);
 
@@ -70,7 +80,7 @@ public class PrepareDictionary {
 
 					PeopleEntry entry = new PeopleEntry(jsonToMap);
 					EntryList.add(entry);
-				}else if (entryClass == PatentEntry.class) {
+				} else if (entryClass == PatentEntry.class) {
 
 					PatentEntry entry = new PatentEntry(jsonToMap);
 					EntryList.add(entry);

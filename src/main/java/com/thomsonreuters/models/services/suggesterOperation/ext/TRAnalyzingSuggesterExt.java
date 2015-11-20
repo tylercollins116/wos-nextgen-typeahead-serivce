@@ -1019,9 +1019,9 @@ public class TRAnalyzingSuggesterExt extends Lookup {
 
 			if (this.text_similarity_scale_factor == 0) {
 				
-				for(LookupResult lcup:results){
-					System.out.println(new String(lcup.payload.bytes));
-				}
+//				for(LookupResult lcup:results){
+//					System.out.println(new String(lcup.payload.bytes));
+//				}
 				
 				return results;
 			} else {

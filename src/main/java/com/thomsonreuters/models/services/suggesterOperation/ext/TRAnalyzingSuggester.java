@@ -1,6 +1,7 @@
 package com.thomsonreuters.models.services.suggesterOperation.ext;
 
 import static org.apache.lucene.util.automaton.Operations.DEFAULT_MAX_DETERMINIZED_STATES;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
