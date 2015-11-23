@@ -49,7 +49,7 @@ public class ESQueryExecutor implements IESQueryExecutor {
 
 	private void execute(IQueryGenerator queryGenerator) {
 
-		String result = "";
+		String result = "{}";
 
 		try {
 
@@ -57,7 +57,8 @@ public class ESQueryExecutor implements IESQueryExecutor {
 			result = executeESQueryViaAppache(queryGenerator);
 
 		} catch (Exception e) {
-			result = "";
+			e.printStackTrace();
+			result = "{}";
 		}
 
 		queryGenerator.setResponse(result);
@@ -117,6 +118,8 @@ public class ESQueryExecutor implements IESQueryExecutor {
 		HttpPost gbPost = new HttpPost(PropertyValue.ELASTIC_SEARCH_URL
 				+ Property.ES_SEARCH_PATH.get(queryGenerator.getSource())
 				+ "/_search");
+		
+		logger.info(jsonBuffer.toString());
 
 		HttpContext gbPostContext = new BasicHttpContext();
 
@@ -144,6 +147,8 @@ public class ESQueryExecutor implements IESQueryExecutor {
 			jsonBuffer.append(line);
 		}
 		htmlReader.close();
+		
+		logger.info(jsonBuffer.toString());
 
 		return jsonBuffer.toString();
 	}
