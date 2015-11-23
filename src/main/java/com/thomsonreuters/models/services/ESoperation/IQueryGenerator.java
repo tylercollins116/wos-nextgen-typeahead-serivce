@@ -5,6 +5,8 @@ import java.util.HashMap;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.thomsonreuters.models.SuggestData;
 import com.thomsonreuters.models.SuggestData.Info;
@@ -17,6 +19,9 @@ public abstract class IQueryGenerator {
 	protected String analyzer = null;
 	private String query = "";
 	protected HashMap<String, String> aliasFields = null;
+
+	private static final Logger logger = LoggerFactory
+			.getLogger(IQueryGenerator.class);
 
 	public IQueryGenerator(String type, String[] returnFields) {
 		this.type = type;
@@ -65,6 +70,8 @@ public abstract class IQueryGenerator {
 		}
 		esQuery += "\"slop\":1}}}}},\"fields\":[" + sb.toString() + "]}";
 
+		
+		logger.info(esQuery);
 		return esQuery;
 
 	}
