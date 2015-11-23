@@ -120,7 +120,7 @@ public class TRAnalyzingInfixSuggester extends Lookup implements Closeable {
 	/** Field name used for the indexed text. */
 	protected final static String TEXT_FIELD_NAME = "text";
 
-	/**slop of two words **/
+	/** slop of two words **/
 	private int slop = 0;
 
 	public void setSlop(int slop) {

@@ -40,6 +40,7 @@ import com.thomsonreuters.models.services.suggesterOperation.models.KeywordEntry
 import com.thomsonreuters.models.services.suggesterOperation.models.OrganizationEntry;
 import com.thomsonreuters.models.services.suggesterOperation.models.PatentEntry;
 import com.thomsonreuters.models.services.suggesterOperation.models.PeopleEntry;
+import com.thomsonreuters.models.services.suggesterOperation.models.TopicEntry;
 import com.thomsonreuters.models.services.util.Blockable;
 import com.thomsonreuters.models.services.util.BlockingHashTable;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
@@ -171,16 +172,6 @@ public abstract class SuggesterHelper {
 				log.info("path to dictionary : " + property.toString());
 				log.info("**************************************************************");
 				dictionaryProperties.add(property.toString());
-			} else if (key.trim().equalsIgnoreCase(
-					Property.DEFAULT_TYPEAHEAD_TYPES)) {
-
-				String[] typeaheadvalues = ConfigurationManager
-						.getConfigInstance().getStringArray(key);
-
-				if (typeaheadvalues != null && typeaheadvalues.length > 0) {
-					PropertyValue.SELECTED_DEFAULT_TYPEAHEADS = typeaheadvalues;
-				}
-
 			} else {
 
 				loadFuzzynessThreshold(key);
@@ -235,16 +226,18 @@ public abstract class SuggesterHelper {
 								suggester);
 
 					} else if (property.getDictionayName().equalsIgnoreCase(
-							"article")) {
-
-						TRAnalyzingInfixSuggester suggester = createAnalyzingForArticle(is);
-						suggesterList.put(property.getDictionayName(),
-								suggester);
-					} else if (property.getDictionayName().equalsIgnoreCase(
 							"wos")) {
 
 						TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
 								is, KeywordEntry.class);
+
+						suggesterList.put(property.getDictionayName(),
+								suggester);
+					} else if (property.getDictionayName().equalsIgnoreCase(
+							"topic")) {
+
+						TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
+								is, TopicEntry.class);
 
 						suggesterList.put(property.getDictionayName(),
 								suggester);
@@ -256,27 +249,36 @@ public abstract class SuggesterHelper {
 								suggester);
 
 					} else if (property.getDictionayName().equalsIgnoreCase(
-							"people")) {
+							"people") && false) {
 						AnalyzingInfixSuggester suggester = createAnalyzingForPeopleAndPatent(
 								is, PeopleEntry.class);
 						suggesterList.put(property.getDictionayName(),
 								suggester);
 
 					} else if (property.getDictionayName().equalsIgnoreCase(
-							"patent")) {
+							"patent") && false) {
 						AnalyzingInfixSuggester suggester = createAnalyzingForPeopleAndPatent(
 								is, PatentEntry.class);
 						suggesterList.put(property.getDictionayName(),
 								suggester);
 
+					} else if (property.getDictionayName().equalsIgnoreCase(
+							"article") && false) {
+
+						TRAnalyzingInfixSuggester suggester = createAnalyzingForArticle(is);
+						suggesterList.put(property.getDictionayName(),
+								suggester);
 					}
 
 					/***************************** End **********************************/
 
 					storeLoadedDictoanryInfo(property.getDictionayName(), value);
+					log.info("**************************************************************");
 
-					log.info("Loading dictionary for " + dictionaryProperty
+					log.info("  Loading dictionary for " + dictionaryProperty
 							+ " completed successfully.");
+					log.info("**************************************************************");
+
 				} catch (Exception e) {
 
 					log.info(" fail loading dictionary for "
@@ -521,5 +523,4 @@ public abstract class SuggesterHelper {
 
 		return suggester;
 	}
-
 }

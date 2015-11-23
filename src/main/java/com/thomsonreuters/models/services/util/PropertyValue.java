@@ -1,9 +1,15 @@
 package com.thomsonreuters.models.services.util;
 
+import java.util.HashMap;
+
 public class PropertyValue implements Property {
 
-	public static int FUZZTNESS_THRESHOLD = 10; 
+	public static int FUZZTNESS_THRESHOLD = 10;
 	public static String[] SELECTED_DEFAULT_TYPEAHEADS = null;
+
+	public static String ELASTIC_SEARCH_URL = "";
+
+	
 
 	private String value;
 	private TYPE type = TYPE.NONE;
