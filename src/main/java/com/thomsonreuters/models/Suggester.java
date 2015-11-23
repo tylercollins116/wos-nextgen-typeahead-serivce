@@ -77,7 +77,7 @@ public class Suggester implements SuggesterHandler {
 						String returnVaule[] = new String[] { "title", "cuid",
 								"fuid" };
 						IQueryGenerator entry = new ArticleESEntry(returnVaule,
-								query, 0, n, "wos");
+								query, 0, n, "article");
 						SuggestData data = this.ESQueryExecutor
 								.formatResult(entry);
 
