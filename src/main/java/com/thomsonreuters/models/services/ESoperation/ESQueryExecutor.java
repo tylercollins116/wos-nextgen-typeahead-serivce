@@ -119,7 +119,12 @@ public class ESQueryExecutor implements IESQueryExecutor {
 				+ Property.ES_SEARCH_PATH.get(queryGenerator.getSource())
 				+ "/_search");
 		
-		logger.info(jsonBuffer.toString());
+		
+		System.out.println("==============================================");
+		logger.info(PropertyValue.ELASTIC_SEARCH_URL
+				+ Property.ES_SEARCH_PATH.get(queryGenerator.getSource())
+				+ "/_search");
+		System.out.println("==============================================");
 
 		HttpContext gbPostContext = new BasicHttpContext();
 
@@ -148,7 +153,9 @@ public class ESQueryExecutor implements IESQueryExecutor {
 		}
 		htmlReader.close();
 		
+		System.out.println("==============================================");
 		logger.info(jsonBuffer.toString());
+		System.out.println("==============================================");
 
 		return jsonBuffer.toString();
 	}
