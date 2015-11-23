@@ -70,8 +70,7 @@ public class Suggester implements SuggesterHandler {
 			if (path.equals("article")) {
 
 				try {
-
-					if (Property.ES_SEARCH_PATH.containsKey("wos")) {
+ 
 
 						long start = System.currentTimeMillis();
 
@@ -85,9 +84,7 @@ public class Suggester implements SuggesterHandler {
 						data.took = (System.currentTimeMillis() - start) + "";
 
 						results.add(data);
-					} else {
-						// no path found
-					}
+				 
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
