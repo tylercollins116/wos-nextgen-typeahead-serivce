@@ -5,10 +5,6 @@ import java.util.HashMap;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import org.elasticsearch.index.query.ConstantScoreQueryBuilder;
-import org.elasticsearch.index.query.MatchQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import com.thomsonreuters.models.SuggestData;
 import com.thomsonreuters.models.SuggestData.Info;
@@ -128,32 +124,25 @@ public abstract class IQueryGenerator {
 
 		return suggestData;
 	}
-	
+
 	/**
-	 
-
-	public String generateQuery(String query, int from, int size) {
-
-		MatchQueryBuilder matchQueryBuilder = QueryBuilders
-				.matchPhrasePrefixQuery("title", query);
-		matchQueryBuilder.slop(1);
-
-		if (analyzer != null && analyzer.trim().length() > 0) {
-			matchQueryBuilder.analyzer(analyzer);
-		}
-
-		ConstantScoreQueryBuilder csb = QueryBuilders
-				.constantScoreQuery(matchQueryBuilder);
-
-		SearchSourceBuilder queryBuilder = new SearchSourceBuilder();
-		queryBuilder.version(true);
-
-		queryBuilder.query(csb);
-		queryBuilder.size(size).from(from).fields(returnFields);
-
-		return queryBuilder.toString();
-	}
-	
-	
-	**/
+	 * public String generateQuery(String query, int from, int size) {
+	 * 
+	 * MatchQueryBuilder matchQueryBuilder = QueryBuilders
+	 * .matchPhrasePrefixQuery("title", query); matchQueryBuilder.slop(1);
+	 * 
+	 * if (analyzer != null && analyzer.trim().length() > 0) {
+	 * matchQueryBuilder.analyzer(analyzer); }
+	 * 
+	 * ConstantScoreQueryBuilder csb = QueryBuilders
+	 * .constantScoreQuery(matchQueryBuilder);
+	 * 
+	 * SearchSourceBuilder queryBuilder = new SearchSourceBuilder();
+	 * queryBuilder.version(true);
+	 * 
+	 * queryBuilder.query(csb);
+	 * queryBuilder.size(size).from(from).fields(returnFields);
+	 * 
+	 * return queryBuilder.toString(); }
+	 **/
 }
