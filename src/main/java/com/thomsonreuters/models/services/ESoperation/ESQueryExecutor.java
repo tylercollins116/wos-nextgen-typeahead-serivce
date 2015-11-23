@@ -72,6 +72,8 @@ public class ESQueryExecutor implements IESQueryExecutor {
 		URL url = new URL(PropertyValue.ELASTIC_SEARCH_URL
 				+ PropertyValue.getProperty(queryGenerator.getSource())
 				+ "/_search");
+		
+		logger.info(url.toString());
 
 		HttpURLConnection con = (HttpURLConnection) url.openConnection();
 
@@ -101,6 +103,8 @@ public class ESQueryExecutor implements IESQueryExecutor {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		
+		logger.info(jsonBuffer.toString());
 
 		return jsonBuffer.toString();
 	}
