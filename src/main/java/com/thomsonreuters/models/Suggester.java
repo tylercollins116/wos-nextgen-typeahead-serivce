@@ -70,21 +70,26 @@ public class Suggester implements SuggesterHandler {
 			if (path.equals("article")) {
 
 				try {
- 
 
-						long start = System.currentTimeMillis();
+					long start = System.currentTimeMillis();
 
-						String returnVaule[] = new String[] { "title", "cuid",
-								"fuid" };
-						IQueryGenerator entry = new ArticleESEntry(returnVaule,
-								query, 0, n, "article");
-						SuggestData data = this.ESQueryExecutor
-								.formatResult(entry);
+					String returnVaule[] = new String[] {
+							"fullrecord.summary.title", "cuid", "fuid" };
+					// didn't find cuid in patent fullrecord.summary. and fuid I
+					// find it fullrecord.summary.uid but ignored
 
-						data.took = (System.currentTimeMillis() - start) + "";
+					HashMap<String, String> aliasField = new HashMap<String, String>(
+							1);
+					aliasField.put("fullrecord.summary.title", "title");
 
-						results.add(data);
-				 
+					IQueryGenerator entry = new ArticleESEntry(returnVaule,
+							query, 0, n, "article", aliasField);
+					SuggestData data = this.ESQueryExecutor.formatResult(entry);
+
+					data.took = (System.currentTimeMillis() - start) + "";
+
+					results.add(data);
+
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -97,13 +102,15 @@ public class Suggester implements SuggesterHandler {
 
 						long start = System.currentTimeMillis();
 
-						String returnVaule[] = new String[] { "country",
-								"institution", "role", "authors",
+						String returnVaule[] = new String[] {
+								"fullrecord.summary.country", "institution",
+								"role", "fullrecord.summary.authors",
 								"fullrecord.summary.uid" };
 
 						HashMap<String, String> aliasField = new HashMap<String, String>(
 								2);
-						aliasField.put("authors", "name");
+						aliasField.put("fullrecord.summary.country", "country");
+						aliasField.put("fullrecord.summary.authors", "name");
 						aliasField.put("fullrecord.summary.uid", "id");
 
 						IQueryGenerator entry = new PeopleESEntry(returnVaule,
@@ -132,10 +139,18 @@ public class Suggester implements SuggesterHandler {
 
 						long start = System.currentTimeMillis();
 
-						String returnVaule[] = new String[] { "patentno",
-								"title" };
+						String returnVaule[] = new String[] {
+								"fullrecord.summary.patentno",
+								"fullrecord.summary.title" };
+
+						HashMap<String, String> aliasField = new HashMap<String, String>(
+								2);
+						aliasField.put("fullrecord.summary.title", "title");
+						aliasField.put("fullrecord.summary.patentno",
+								"patentno");
+
 						IQueryGenerator entry = new PatentESEntry(returnVaule,
-								query, 0, n, "patent", null);
+								query, 0, n, "patent", aliasField);
 						SuggestData data = null;
 						try {
 							data = this.ESQueryExecutor.formatResult(entry);
