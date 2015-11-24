@@ -68,7 +68,7 @@ public abstract class IQueryGenerator {
 					+ org.codehaus.jettison.json.JSONObject.quote(analyzer)
 					+ ",";
 		}
-		esQuery += "\"slop\":1}}}}},\"fields\":[" + sb.toString() + "]}";
+		esQuery += "\"slop\":1,\"max_expansions\":50}}}}},\"fields\":[" + sb.toString() + "]}";
 
 		
 		logger.info(esQuery);
