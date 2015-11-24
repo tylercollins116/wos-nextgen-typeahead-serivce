@@ -1,5 +1,7 @@
 package com.thomsonreuters.models.services.ESoperation;
 
+import java.util.HashMap;
+
 public class ArticleESEntry extends IQueryGenerator {
 
 	private final String returnFields[];
@@ -12,7 +14,7 @@ public class ArticleESEntry extends IQueryGenerator {
 									// it must be different then type
 
 	public ArticleESEntry(String[] returnFields, String userQuery, int from,
-			int size, String source) {
+			int size, String source, HashMap<String, String> aliasFields) {
 		super(type, returnFields);
 		this.returnFields = returnFields;
 		this.query = userQuery;
@@ -20,6 +22,7 @@ public class ArticleESEntry extends IQueryGenerator {
 		this.size = size;
 		this.source = source;
 		super.analyzer="en_std_syn";
+		this.aliasFields=aliasFields;
 	}
 
 	public void setFrom(int from) {

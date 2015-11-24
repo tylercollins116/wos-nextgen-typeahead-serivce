@@ -12,6 +12,8 @@ public class PatentESEntry extends IQueryGenerator {
 	private static final String type = "patent";
 	private final String source; // for type article the content type is wos so
 									// it must be different then type
+	
+	
 
 	public PatentESEntry(String[] returnFields, String userQuery, int from,
 			int size, String source, HashMap<String, String> aliasFields) {
@@ -21,6 +23,7 @@ public class PatentESEntry extends IQueryGenerator {
 		this.from = from;
 		this.size = size;
 		this.source = source;
+		super.analyzer="en_std_syn";
 		super.aliasFields = aliasFields;
 
 	}
