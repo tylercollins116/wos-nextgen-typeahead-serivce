@@ -6,6 +6,7 @@ apply plugin: 'java-library-distribution'
 apply plugin: 'os-package'
 apply plugin: 'sonar-runner'
 apply plugin: 'net.researchgate.release'
+apply plugin: 'cobertura'
 
 sourceCompatibility = 1.8
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
@@ -28,6 +29,7 @@ buildscript {
     }
 
     dependencies {
+        classpath group: 'net.saliman',         name: 'gradle-cobertura-plugin', version: '2.2.8'
         classpath 'com.netflix.nebula:gradle-ospackage-plugin:2.2.0'
         classpath 'net.researchgate:gradle-release:2.1.1'
     }
@@ -154,4 +156,8 @@ sonarRunner {
     property "sonar.jdbc.username", "$System.env.sonarUsername"
     property "sonar.jdbc.password", "$System.env.sonarPassword"
   }
+}
+
+cobertura {
+  coverageFormats = ['html', 'xml']  
 }
