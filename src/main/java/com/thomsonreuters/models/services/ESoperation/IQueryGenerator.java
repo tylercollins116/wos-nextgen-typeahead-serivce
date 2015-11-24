@@ -58,19 +58,44 @@ public abstract class IQueryGenerator {
 			sb.append(org.codehaus.jettison.json.JSONObject.quote(field));
 		}
 
-		String esQuery = "{\"from\":" + from + ",\"size\":" + size
-				+ ",\"query\":{\"constant_score\":{\"query\":{\"match\":{"
+		/**
+		 * -----------not working--------------
+		 * {"from":0,"size":10,"query":{"constant_score"
+		 * :{"query":{"match":{"title"
+		 * :{"query":"exact linear det","type":"phrase_prefix"
+		 * ,"analyzer":"en_std_syn","slop":1,"max_expansions":50}}}}},"fields":[
+		 * "fullrecord.summary.title","cuid","fuid"]}
+		 * 
+		 * 
+		 * 
+		 * ----------working----------------------------
+		 * {"from":0,"size":10,"query"
+		 * :{"constant_score":{"query":{"match_phrase_prefix"
+		 * :{"title":{"query":"exact linear det"
+		 * ,"slop":3,"analyzer":"en_std_syn"
+		 * ,"max_expansions":50}}}}},"fields":["title"
+		 * ,"fullrecord.summary.title","cuid","fuid"]}
+		 * ---------------------------------------------
+		 */
+
+		String esQuery = "{\"from\":"
+				+ from
+				+ ",\"size\":"
+				+ size
+				+ ",\"query\":{\"constant_score\":{\"query\":{\"match_phrase_prefix\":{"
 				+ org.codehaus.jettison.json.JSONObject.quote(searchField)
-				+ ":{\"query\":" + coatedQuery + ",\"type\":\"phrase_prefix\",";
+				+ ":{\"query\":" + coatedQuery + ",";
 
 		if (this.analyzer != null && this.analyzer.trim().length() > 0) {
 			esQuery += "\"analyzer\":"
 					+ org.codehaus.jettison.json.JSONObject.quote(analyzer)
 					+ ",";
 		}
-		esQuery += "\"slop\":1,\"max_expansions\":50}}}}},\"fields\":[" + sb.toString() + "]}";
+		esQuery += "\"slop\":3,\"max_expansions\":50}}}}},\"fields\":["
+				+ sb.toString() + "]}";
 
-		
+		System.out.println(esQuery);
+
 		logger.info(esQuery);
 		return esQuery;
 
