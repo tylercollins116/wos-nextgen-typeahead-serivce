@@ -115,12 +115,14 @@ public class ESQueryExecutor implements IESQueryExecutor {
 			throws Exception {
 
 		StringBuilder jsonBuffer = new StringBuilder();
-		HttpPost gbPost = new HttpPost(PropertyValue.ELASTIC_SEARCH_URL
+		
+		System.out.println("==============================================");
+		HttpPost gbPost = new HttpPost("http://"+PropertyValue.ELASTIC_SEARCH_URL
 				+ Property.ES_SEARCH_PATH.get(queryGenerator.getSource())
 				+ "/_search");
 		
 		
-		System.out.println("==============================================");
+		
 		logger.info("http://"+PropertyValue.ELASTIC_SEARCH_URL
 				+ Property.ES_SEARCH_PATH.get(queryGenerator.getSource())
 				+ "/_search");
