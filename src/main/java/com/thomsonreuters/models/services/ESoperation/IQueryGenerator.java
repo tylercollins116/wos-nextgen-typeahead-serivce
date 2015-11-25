@@ -20,6 +20,8 @@ public abstract class IQueryGenerator {
 	private String query = "";
 	protected HashMap<String, String> aliasFields = null;
 
+	private int max_expansion = 50;
+
 	private static final Logger logger = LoggerFactory
 			.getLogger(IQueryGenerator.class);
 
@@ -36,6 +38,13 @@ public abstract class IQueryGenerator {
 
 	public void setResponse(String response) {
 		this.response = response;
+	}
+
+	public void setMax_expansion(int max_expansion) {
+		if (max_expansion <= 0) {
+			max_expansion = 50;
+		}
+		this.max_expansion = max_expansion;
 	}
 
 	public abstract String createQuery();
@@ -91,12 +100,11 @@ public abstract class IQueryGenerator {
 					+ org.codehaus.jettison.json.JSONObject.quote(analyzer)
 					+ ",";
 		}
-		esQuery += "\"slop\":3,\"max_expansions\":50}}}}},\"fields\":["
-				+ sb.toString() + "]}";
+		esQuery += "\"slop\":3,\"max_expansions\":" + max_expansion
+				+ "}}}}},\"fields\":[" + sb.toString() + "]}";
 
-		System.out.println(esQuery);
-
-		logger.info(esQuery);
+		 
+ 
 		return esQuery;
 
 	}

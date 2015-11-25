@@ -84,7 +84,28 @@ public class Suggester implements SuggesterHandler {
 
 					IQueryGenerator entry = new ArticleESEntry(returnVaule,
 							query, 0, n, "article", aliasField);
-					SuggestData data = this.ESQueryExecutor.formatResult(entry);
+
+					SuggestData data = new SuggestData();
+					for (int count = 0; count <= 3; count++) {
+
+						if (data.suggestions.size() <= 0) {
+							if (count == 1) {
+								entry.setMax_expansion(50);
+							} else if (count == 1) {
+								entry.setMax_expansion(500);
+							} else if (count == 2) {
+								entry.setMax_expansion(1000);
+							} else if (count == 3) {
+								entry.setMax_expansion(1500);
+							}
+
+							data = this.ESQueryExecutor.formatResult(entry);
+
+						} else {
+							break;
+						}
+
+					}
 
 					data.took = (System.currentTimeMillis() - start) + "";
 

@@ -74,7 +74,7 @@ public class ESQueryExecutor implements IESQueryExecutor {
 				+ PropertyValue.getProperty(queryGenerator.getSource())
 				+ "/_search");
 		
-		logger.info(url.toString());
+		 
 
 		HttpURLConnection con = (HttpURLConnection) url.openConnection();
 
@@ -105,7 +105,7 @@ public class ESQueryExecutor implements IESQueryExecutor {
 			e.printStackTrace();
 		}
 		
-		logger.info(jsonBuffer.toString());
+		 
 
 		return jsonBuffer.toString();
 	}
@@ -116,17 +116,13 @@ public class ESQueryExecutor implements IESQueryExecutor {
 
 		StringBuilder jsonBuffer = new StringBuilder();
 		
-		System.out.println("==============================================");
+		 
 		HttpPost gbPost = new HttpPost("http://"+PropertyValue.ELASTIC_SEARCH_URL
 				+ Property.ES_SEARCH_PATH.get(queryGenerator.getSource())
 				+ "/_search");
 		
 		
-		
-		logger.info("http://"+PropertyValue.ELASTIC_SEARCH_URL
-				+ Property.ES_SEARCH_PATH.get(queryGenerator.getSource())
-				+ "/_search");
-		System.out.println("==============================================");
+	 
 
 		HttpContext gbPostContext = new BasicHttpContext();
 
@@ -153,11 +149,7 @@ public class ESQueryExecutor implements IESQueryExecutor {
 			logger.debug(line);
 			jsonBuffer.append(line);
 		}
-		htmlReader.close();
-		
-		System.out.println("==============================================");
-		logger.info(jsonBuffer.toString());
-		System.out.println("==============================================");
+		htmlReader.close(); 
 
 		return jsonBuffer.toString();
 	}
