@@ -94,9 +94,9 @@ public class Suggester implements SuggesterHandler {
 							} else if (count == 1) {
 								entry.setMax_expansion(500);
 							} else if (count == 2) {
-								entry.setMax_expansion(1000);
-							} else if (count == 3) {
 								entry.setMax_expansion(1500);
+							} else if (count == 3) {
+								entry.setMax_expansion(4000);
 							}
 
 							data = this.ESQueryExecutor.formatResult(entry);
