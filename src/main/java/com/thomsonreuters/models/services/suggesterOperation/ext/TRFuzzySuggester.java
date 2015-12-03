@@ -97,6 +97,14 @@ public final class TRFuzzySuggester extends TRAnalyzingSuggester {
 	public TRFuzzySuggester(Analyzer analyzer) {
 		this(analyzer, analyzer);
 	}
+	
+	
+	public TRFuzzySuggester(Analyzer indexAnalyzer, Analyzer queryAnalyzer,int EXACT_FIRST_) {
+		this(indexAnalyzer, queryAnalyzer, EXACT_FIRST_ | PRESERVE_SEP, 256, -1,
+				true, DEFAULT_TRANSPOSITIONS, DEFAULT_NON_FUZZY_PREFIX,
+				DEFAULT_MIN_FUZZY_LENGTH, DEFAULT_UNICODE_AWARE);
+	}
+
 
 	/**
 	 * Creates a {@link TRFuzzySuggester} instance with an index and query

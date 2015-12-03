@@ -449,7 +449,13 @@ public abstract class SuggesterHelper {
 
 			PrepareDictionary dictionary = new PrepareDictionary(is,
 					enteryClass);
-			suggester = new TRFuzzySuggester(indexAnalyzer, queryAnalyzer);
+
+			if (enteryClass == KeywordEntry.class) {
+				suggester = new TRFuzzySuggester(indexAnalyzer, queryAnalyzer,
+						0);
+			} else {
+				suggester = new TRFuzzySuggester(indexAnalyzer, queryAnalyzer);
+			}
 
 			suggester.build(new EntryIterator(dictionary));
 
