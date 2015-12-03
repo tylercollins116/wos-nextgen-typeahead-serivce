@@ -1,6 +1,8 @@
 package com.thomsonreuters.models.services.ESoperation;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
@@ -19,6 +21,7 @@ public abstract class IQueryGenerator {
 	protected String analyzer = null;
 	private String query = "";
 	protected HashMap<String, String> aliasFields = null;
+	protected List<sort> sorts = new ArrayList<IQueryGenerator.sort>();
 
 	private int max_expansion = 50;
 
@@ -87,11 +90,16 @@ public abstract class IQueryGenerator {
 		 * ---------------------------------------------
 		 */
 
-		String esQuery = "{\"from\":"
-				+ from
-				+ ",\"size\":"
-				+ size
-				+ ",\"query\":{\"constant_score\":{\"query\":{\"match_phrase_prefix\":{"
+		/**
+		 * "sort": [ { "citingsrcscount": { "order": "desc" } } ],
+		 * 
+		 */
+
+		String esQuery = "{\"from\":" + from + ",\"size\":" + size + ",";
+
+		esQuery += getSortingField();
+
+		esQuery += "\"query\":{\"constant_score\":{\"query\":{\"match_phrase_prefix\":{"
 				+ org.codehaus.jettison.json.JSONObject.quote(searchField)
 				+ ":{\"query\":" + coatedQuery + ",";
 
@@ -100,12 +108,33 @@ public abstract class IQueryGenerator {
 					+ org.codehaus.jettison.json.JSONObject.quote(analyzer)
 					+ ",";
 		}
+
 		esQuery += "\"slop\":3,\"max_expansions\":" + max_expansion
 				+ "}}}}},\"fields\":[" + sb.toString() + "]}";
 
-		 
- 
 		return esQuery;
+
+	}
+
+	public String getSortingField() {
+
+		StringBuilder sb = new StringBuilder();
+		if (sorts.size() > 0) {
+			for (sort sort : sorts) {
+
+				if (sb.length() > 2) {
+					sb.append(",");
+				}
+
+				sb.append(sort.toString());
+			}
+
+			if (sb.toString().trim().length() > 0) {
+				return "\"sort\": [" + sb.toString() + "],";
+			}
+
+		}
+		return "";
 
 	}
 
@@ -185,4 +214,33 @@ public abstract class IQueryGenerator {
 	 * 
 	 * return queryBuilder.toString(); }
 	 **/
+
+	public enum orderAs {
+		asc, desc;
+	}
+
+	public class sort {
+
+		private String sortFieldName;
+
+		private orderAs orderas = orderAs.desc;
+
+		public sort(String sortFieldName_, orderAs orderas_) {
+			this.sortFieldName = sortFieldName_;
+			this.orderas = orderas_;
+		}
+
+		@Override
+		public String toString() {
+			if (sortFieldName == null || sortFieldName.trim().length() <= 0) {
+				return "";
+			}
+			StringBuilder sb = new StringBuilder();
+			sb.append("{\"" + sortFieldName + "\": { \"order\": \"" + orderas
+					+ "\" } }");
+			return sb.toString();
+		}
+
+	}
+
 }

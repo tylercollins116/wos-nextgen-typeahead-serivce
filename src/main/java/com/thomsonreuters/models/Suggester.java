@@ -10,10 +10,10 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.search.suggest.Lookup.LookupResult;
@@ -30,8 +30,6 @@ import com.thomsonreuters.models.services.ESoperation.IESQueryExecutor;
 import com.thomsonreuters.models.services.ESoperation.IQueryGenerator;
 import com.thomsonreuters.models.services.ESoperation.PatentESEntry;
 import com.thomsonreuters.models.services.ESoperation.PeopleESEntry;
-import com.thomsonreuters.models.services.async.NamedThreadFactory;
-import com.thomsonreuters.models.services.async.WaitingBlockingQueue;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingInfixSuggester;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggester;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt;
@@ -47,6 +45,9 @@ public class Suggester implements SuggesterHandler {
 	private static final Logger log = LoggerFactory.getLogger(Suggester.class);
 
 	private final SuggesterConfigurationHandler suggesterConfigurationHandler;
+
+	private final ExecutorService reloadExecutor = Executors
+			.newFixedThreadPool(50);
 
 	private final IESQueryExecutor ESQueryExecutor;
 
@@ -598,224 +599,42 @@ public class Suggester implements SuggesterHandler {
 
 		}
 
-		boolean which = true;
-		
-		long startTime=System.currentTimeMillis();
+		/**
+		 * for (String path : sources) {
+		 * 
+		 * allSuggestions.addAll(lookup(path, query, size));
+		 * 
+		 * }
+		 **/
 
-		/**********************************************************/
-		if (which) {
-			for (String path : sources) {
-				 allSuggestions.addAll(lookup(path, query, size));
-			}
+		List<Future<List<SuggestData>>> furtureList = new ArrayList<Future<List<SuggestData>>>();
+
+		for (String path : sources) {
+
+			Future<List<SuggestData>> future = reloadExecutor
+					.submit(new Callable<List<SuggestData>>() {
+
+						@Override
+						public List<SuggestData> call() throws Exception {
+							return lookup(path, query, size);
+						}
+					});
+
+			furtureList.add(future);
+
 		}
 
-		/**********************************************************/
-		System.out.println("The time taken in First is  : :  "+(System.currentTimeMillis()-startTime));
-		startTime=System.currentTimeMillis();
-		which=false;
-		if (!which) {
-
-			final LinkedBlockingQueue<Job> jobs = new LinkedBlockingQueue<Job>(
-					64);
-			final Job LAST_JOB = new Job(null);
-			final Object lock = new Object();
-
-			Thread receivingThread = new Thread(new Runnable() {
-
-				@Override
-				public void run() {
-					try {
-						for (;;) {
-
-							Job job = jobs.take();
-
-							if (job == LAST_JOB) {
-								break;
-							}
-
-							try {
-
-								job.futures.get();
-
-							} catch (Exception e) {
-								e.printStackTrace();
-							}
-						}
-					} catch (Exception e) {
-
-						e.printStackTrace();
-					} finally {
-
-					}
-
-					jobs.clear();
-
-					try {
-
-						if (lock != null) {
-							synchronized (lock) {
-								lock.notifyAll();
-
-							}
-						}
-
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-			});
-
-			receivingThread.start();
-
-			ExecutorService reloadExecutor = new ThreadPoolExecutor(1,
-					sources.size(), 0L, TimeUnit.MICROSECONDS,
-					new WaitingBlockingQueue<Runnable>(),
-					new NamedThreadFactory("Suggester"));
-
-			for (String path : sources) {
-
-				LoadingJob<Lookup> job = new LoadingJob<Lookup>(query, size,
-						path, allSuggestions, lock);
-				reloadExecutor.execute(job.inputTask);
-				jobs.add(new Job(job.result));
-
-			}
-
-			jobs.add(LAST_JOB);
-
+		for (Future<List<SuggestData>> suggestions : furtureList) {
 			try {
-				synchronized (lock) {
-					lock.wait();
-				}
-			} catch (Exception e) {
+				allSuggestions.addAll(suggestions.get(1000,
+						TimeUnit.MILLISECONDS));
+			} catch (InterruptedException | ExecutionException
+					| TimeoutException e) {
 				e.printStackTrace();
 			}
-
 		}
-		
-		System.out.println("===================================================");
-		System.out.println("===================================================");
-		System.out.println("===================================================");
-		System.out.println("===================================================");
-		System.out.println("===================================================");
-		System.out.println("The time taken in Second is  : :  "+(System.currentTimeMillis()-startTime));
-		System.out.println("===================================================");
-		System.out.println("===================================================");
-		System.out.println("===================================================");
-		System.out.println("===================================================");
-		System.out.println("===================================================");
 
 		return allSuggestions;
-	}
-
-	/** ==================================================================== **/
-
-	private class LoadingJob<K> {
-
-		private final List<SuggestData> allSuggestions;
-		private final String path;
-		private final String query;
-		private final int size;
-		private final Object lock;
-
-		public FutureTask<K> inputTask;
-
-		FutureResult<Object> result;
-
-		public LoadingJob(String query, int size, String path,
-				List<SuggestData> allSuggestions, Object lock) {
-			this.query = query;
-			this.size = size;
-			this.allSuggestions = allSuggestions;
-			this.path = path;
-			this.lock = lock;
-			inputTask = new FutureTask<K>(new PostRequest(this));
-			result = new FutureResult<Object>();
-		}
-
-		class PostRequest implements Callable<K> {
-
-			private LoadingJob<K> job;
-
-			public PostRequest(LoadingJob<K> job) {
-				this.job = job;
-
-			}
-
-			@Override
-			public K call() throws Exception {
-
-				recall();
-				return null;
-			}
-
-			public void recall() {
-				allSuggestions.addAll(lookup(path, query, size));
-				result.set(new Object());
-			}
-		}
-
-	}
-
-	public static class Job {
-
-		private final FutureResult futures;
-
-		public Job(FutureResult futures) {
-
-			this.futures = futures;
-		}
-
-	}
-
-	public class FutureResult<T> extends FutureTask<T> {
-
-		protected T result;
-		protected Exception exception;
-
-		Callable<T> callable = new Callable<T>() {
-			public T call() throws Exception {
-				if (exception != null)
-					throw exception;
-				return result;
-			}
-		};
-		FutureTask<T> innerTask = new FutureTask<T>(callable);
-
-		public FutureResult() {
-			super(new Callable<T>() {
-				public T call() throws Exception {
-					return null;
-				}
-			});
-		}
-
-		@Override
-		public void set(T v) {
-			this.result = v;
-			innerTask.run();
-
-		};
-
-		@Override
-		public void setException(Throwable t) {
-			if (!(t instanceof Exception))
-				throw new IllegalArgumentException(
-						"Only instances of Exception can be used with setException",
-						t);
-			this.exception = (Exception) t;
-			innerTask.run();
-		}
-
-		@Override
-		public T get() throws InterruptedException, ExecutionException {
-			if (this.result != null) {
-				return result;
-			}
-
-			return innerTask.get();
-		}
-
 	}
 
 }

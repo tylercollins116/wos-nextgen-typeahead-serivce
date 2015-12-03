@@ -4,9 +4,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -26,76 +25,21 @@ import com.thomsonreuters.models.services.suggesterOperation.models.PatentEntry;
 import com.thomsonreuters.models.services.suggesterOperation.models.PeopleEntry;
 import com.thomsonreuters.models.services.suggesterOperation.models.TopicEntry;
 
-public class PrepareDictionary {
+public class PrepareDictionary
+		implements
+		Iterator<com.thomsonreuters.models.services.suggesterOperation.models.Entry> {
 
 	private static final Logger log = LoggerFactory
 			.getLogger(PrepareDictionary.class);
 
-	public static List<com.thomsonreuters.models.services.suggesterOperation.models.Entry> initDictonary(
-			InputStream is, Class entryClass) throws IOException {
-		log.info("**************************************************************");
-		log.info("Pre-initilalizing Started");
-		log.info("**************************************************************");
-		List<com.thomsonreuters.models.services.suggesterOperation.models.Entry> EntryList = new ArrayList<com.thomsonreuters.models.services.suggesterOperation.models.Entry>();
+	private String jsonAsLine = "";
+	private final BufferedReader br;
+	private final Class entryClass;
 
-		BufferedReader br = new BufferedReader(new InputStreamReader(is));
-		String jsonAsLine = null;
+	public PrepareDictionary(InputStream is, Class entryClass) {
+		this.entryClass = entryClass;
+		br = new BufferedReader(new InputStreamReader(is));
 
-		List<String> list = new ArrayList<String>();
-
-		while ((jsonAsLine = br.readLine()) != null) {
-
-			Map<String, String> jsonToMap = processJson(jsonAsLine);
-
-			try {
-				if (entryClass == OrganizationEntry.class) {
-
-					com.thomsonreuters.models.services.suggesterOperation.models.Entry entry = new OrganizationEntry(
-							jsonToMap);
-					EntryList.add(entry);
-
-				} else if (entryClass == TopicEntry.class) {
-
-					com.thomsonreuters.models.services.suggesterOperation.models.Entry entry = new TopicEntry(
-							jsonToMap);
-					EntryList.add(entry);
-
-				} else if (entryClass == ArticleEntry.class) {
-
-					com.thomsonreuters.models.services.suggesterOperation.models.Entry entry = new ArticleEntry(
-							jsonToMap);
-					EntryList.add(entry);
-
-				} else if (entryClass == KeywordEntry.class) {
-
-					com.thomsonreuters.models.services.suggesterOperation.models.Entry entry = new KeywordEntry(
-							jsonToMap);
-					EntryList.add(entry);
-				} else if (entryClass == CategoryEntry.class) {
-
-					com.thomsonreuters.models.services.suggesterOperation.models.Entry entry = new CategoryEntry(
-							jsonToMap);
-					EntryList.add(entry);
-				} else if (entryClass == PeopleEntry.class) {
-
-					PeopleEntry entry = new PeopleEntry(jsonToMap);
-					EntryList.add(entry);
-				} else if (entryClass == PatentEntry.class) {
-
-					PatentEntry entry = new PatentEntry(jsonToMap);
-					EntryList.add(entry);
-				}
-
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
-		}
-		log.info("**************************************************************");
-		log.info("Pre-initilalizing Completed Successfully");
-		log.info("**************************************************************");
-
-		return EntryList;
 	}
 
 	public static Map<String, String> processJson(String Json) {
@@ -144,6 +88,80 @@ public class PrepareDictionary {
 
 		ArticleEntry article = new ArticleEntry(map);
 		System.out.println(article.getJson());
+	}
+
+	@Override
+	public boolean hasNext() {
+
+		if (br == null) {
+			return false;
+		}
+		try {
+			if ((jsonAsLine = br.readLine()) != null) {
+				return true;
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return false;
+	}
+
+	@Override
+	public com.thomsonreuters.models.services.suggesterOperation.models.Entry next() {
+
+		Map<String, String> jsonToMap = processJson(jsonAsLine);
+
+		com.thomsonreuters.models.services.suggesterOperation.models.Entry entry = null;
+		try {
+			if (entryClass == OrganizationEntry.class) {
+
+				entry = new OrganizationEntry(jsonToMap);
+
+			} else if (entryClass == TopicEntry.class) {
+
+				entry = new TopicEntry(jsonToMap);
+
+			} else if (entryClass == ArticleEntry.class) {
+
+				entry = new ArticleEntry(jsonToMap);
+
+			} else if (entryClass == KeywordEntry.class) {
+
+				entry = new KeywordEntry(jsonToMap);
+
+			} else if (entryClass == CategoryEntry.class) {
+
+				entry = new CategoryEntry(jsonToMap);
+
+			} else if (entryClass == PeopleEntry.class) {
+
+				entry = new PeopleEntry(jsonToMap);
+
+			} else if (entryClass == PatentEntry.class) {
+
+				entry = new PatentEntry(jsonToMap);
+
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return entry;
+
+	}
+	
+	public void close() {
+
+		if (br != null) {
+			try {
+				br.close();
+
+			} catch (Exception e) {
+				// TODO: handle exception
+			}
+		}
 	}
 
 }

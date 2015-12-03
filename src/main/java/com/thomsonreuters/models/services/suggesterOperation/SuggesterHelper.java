@@ -3,7 +3,6 @@ package com.thomsonreuters.models.services.suggesterOperation;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,7 +33,6 @@ import com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggeste
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggesterExt;
 import com.thomsonreuters.models.services.suggesterOperation.models.ArticleEntry;
 import com.thomsonreuters.models.services.suggesterOperation.models.CategoryEntry;
-import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
 import com.thomsonreuters.models.services.suggesterOperation.models.EntryIterator;
 import com.thomsonreuters.models.services.suggesterOperation.models.KeywordEntry;
 import com.thomsonreuters.models.services.suggesterOperation.models.OrganizationEntry;
@@ -398,17 +396,16 @@ public abstract class SuggesterHelper {
 		TRAnalyzingSuggesterExt suggester = null;
 		try {
 
-			List<Entry> organizationList = PrepareDictionary.initDictonary(is,
+			PrepareDictionary dictionary = new PrepareDictionary(is,
 					OrganizationEntry.class);
 
 			suggester = new TRFuzzySuggesterExt(indexAnalyzer, queryAnalyzer);
 
-			suggester.build(new EntryIterator(organizationList.iterator()));
+			suggester.build(new EntryIterator(dictionary));
 
-			WeakReference<List<Entry>> weakreference = new WeakReference<List<Entry>>(
-					organizationList);
-			organizationList = weakreference.get();
-			organizationList = null;
+			dictionary.close();
+			is.close();
+
 			System.gc();
 			System.gc();
 
@@ -424,18 +421,17 @@ public abstract class SuggesterHelper {
 		TRAnalyzingSuggester suggester = null;
 		try {
 
-			List<Entry> articleList = PrepareDictionary.initDictonary(is,
+			PrepareDictionary dictionary = new PrepareDictionary(is,
 					enteryClass);
 
 			suggester = new com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester(
 					indexAnalyzer, queryAnalyzer);
 
-			suggester.build(new EntryIterator(articleList.iterator()));
+			suggester.build(new EntryIterator(dictionary));
 
-			WeakReference<List<Entry>> weakreference = new WeakReference<List<Entry>>(
-					articleList);
-			articleList = weakreference.get();
-			articleList = null;
+			dictionary.close();
+			is.close();
+
 			System.gc();
 			System.gc();
 
@@ -451,17 +447,15 @@ public abstract class SuggesterHelper {
 		TRAnalyzingSuggester suggester = null;
 		try {
 
-			List<Entry> articleList = PrepareDictionary.initDictonary(is,
+			PrepareDictionary dictionary = new PrepareDictionary(is,
 					enteryClass);
-
 			suggester = new TRFuzzySuggester(indexAnalyzer, queryAnalyzer);
 
-			suggester.build(new EntryIterator(articleList.iterator()));
+			suggester.build(new EntryIterator(dictionary));
 
-			WeakReference<List<Entry>> weakreference = new WeakReference<List<Entry>>(
-					articleList);
-			articleList = weakreference.get();
-			articleList = null;
+			dictionary.close();
+			is.close();
+
 			System.gc();
 			System.gc();
 
@@ -476,18 +470,17 @@ public abstract class SuggesterHelper {
 		TRAnalyzingInfixSuggester suggester = null;
 		try {
 
-			List<Entry> peopleList = PrepareDictionary.initDictonary(is,
+			PrepareDictionary dictionary = new PrepareDictionary(is,
 					ArticleEntry.class);
 
 			suggester = new TRAnalyzingInfixSuggester(new RAMDirectory(),
 					indexAnalyzer);
 
-			suggester.build(new EntryIterator(peopleList.iterator()));
+			suggester.build(new EntryIterator(dictionary));
 
-			WeakReference<List<Entry>> weakreference = new WeakReference<List<Entry>>(
-					peopleList);
-			peopleList = weakreference.get();
-			peopleList = null;
+			dictionary.close();
+			is.close();
+
 			System.gc();
 			System.gc();
 
@@ -503,17 +496,16 @@ public abstract class SuggesterHelper {
 		AnalyzingInfixSuggester suggester = null;
 		try {
 
-			List<Entry> peopleList = PrepareDictionary.initDictonary(is, c);
+			PrepareDictionary dictionary = new PrepareDictionary(is, c);
 
 			suggester = new AnalyzingInfixSuggester(new RAMDirectory(),
 					indexAnalyzer);
 
-			suggester.build(new EntryIterator(peopleList.iterator()));
+			suggester.build(new EntryIterator(dictionary));
 
-			WeakReference<List<Entry>> weakreference = new WeakReference<List<Entry>>(
-					peopleList);
-			peopleList = weakreference.get();
-			peopleList = null;
+			dictionary.close();
+			is.close();
+
 			System.gc();
 			System.gc();
 

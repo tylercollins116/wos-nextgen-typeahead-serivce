@@ -21,15 +21,13 @@ public class ArticleESEntry extends IQueryGenerator {
 		this.from = from;
 		this.size = size;
 		this.source = source;
-		super.analyzer="en_std_syn";
-		this.aliasFields=aliasFields;
+		super.analyzer = "en_std_syn";
+		this.aliasFields = aliasFields;
 	}
 
 	public void setFrom(int from) {
 		this.from = from;
 	}
-	
-
 
 	public void setSize(int size) {
 		this.size = size;
@@ -43,6 +41,7 @@ public class ArticleESEntry extends IQueryGenerator {
 
 	@Override
 	public String createQuery() {
+		super.sorts.add(new sort("citingsrcscount", orderAs.desc));
 		return generatESQuery("title", from, size, query, returnFields);
 	}
 
