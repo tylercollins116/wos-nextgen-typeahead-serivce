@@ -7,6 +7,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.search.suggest.Lookup.LookupResult;
@@ -38,6 +45,9 @@ public class Suggester implements SuggesterHandler {
 	private static final Logger log = LoggerFactory.getLogger(Suggester.class);
 
 	private final SuggesterConfigurationHandler suggesterConfigurationHandler;
+
+	private final ExecutorService reloadExecutor = Executors
+			.newFixedThreadPool(50);
 
 	private final IESQueryExecutor ESQueryExecutor;
 
@@ -75,8 +85,10 @@ public class Suggester implements SuggesterHandler {
 
 					String returnVaule[] = new String[] {
 							"fullrecord.summary.title", "cuid", "fuid" };
-					// didn't find cuid in patent fullrecord.summary. and fuid I
-					// find it fullrecord.summary.uid but ignored
+					/**
+					 * didn't find cuid in patent fullrecord.summary. and fuid I
+					 * find it fullrecord.summary.uid but ignored
+					 **/
 
 					HashMap<String, String> aliasField = new HashMap<String, String>(
 							1);
@@ -587,8 +599,39 @@ public class Suggester implements SuggesterHandler {
 
 		}
 
+		/**
+		 * for (String path : sources) {
+		 * 
+		 * allSuggestions.addAll(lookup(path, query, size));
+		 * 
+		 * }
+		 **/
+
+		List<Future<List<SuggestData>>> furtureList = new ArrayList<Future<List<SuggestData>>>();
+
 		for (String path : sources) {
-			allSuggestions.addAll(lookup(path, query, size));
+
+			Future<List<SuggestData>> future = reloadExecutor
+					.submit(new Callable<List<SuggestData>>() {
+
+						@Override
+						public List<SuggestData> call() throws Exception {
+							return lookup(path, query, size);
+						}
+					});
+
+			furtureList.add(future);
+
+		}
+
+		for (Future<List<SuggestData>> suggestions : furtureList) {
+			try {
+				allSuggestions.addAll(suggestions.get(1000,
+						TimeUnit.MILLISECONDS));
+			} catch (InterruptedException | ExecutionException
+					| TimeoutException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return allSuggestions;

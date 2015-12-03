@@ -1,6 +1,12 @@
 package com.thomsonreuters.handler;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -14,9 +20,12 @@ import org.apache.lucene.search.suggest.Lookup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.config.ConfigurationManager;
+import com.netflix.governator.annotations.Configuration;
 import com.thomsonreuters.eiddo.client.EiddoClient;
 import com.thomsonreuters.eiddo.client.EiddoListener;
 import com.thomsonreuters.models.SuggesterConfigurationHandler;
@@ -33,6 +42,15 @@ public class HealthCheck implements HealthCheckHandler {
 	private boolean eiddoCorrupted = false;
 
 	private final SuggesterConfigurationHandler suggesterConfigurationHandler;
+
+	@Configuration(value = "search.host", documentation = "search host")
+	private Supplier<String> host = Suppliers.ofInstance("localhost");
+
+	@Configuration(value = "search.port", documentation = "search port")
+	private Supplier<String> port = Suppliers.ofInstance("9200");
+
+	@Configuration(value = "search.path", documentation = "search path")
+	private Supplier<String> path = Suppliers.ofInstance("/");
 
 	@Inject
 	public HealthCheck(EiddoClient eiddo,
@@ -71,6 +89,16 @@ public class HealthCheck implements HealthCheckHandler {
 			log.error("Eiddo appears to be corrupted. The instance has to be terminated and relaunched");
 			return 500;
 		}
+
+		if (checkLoadedDictionaries() == 200 && checkESConnection() == 200) {
+			return 200;
+		} else {
+			return 500;
+		}
+
+	}
+
+	private int checkLoadedDictionaries() {
 
 		/** check for all the dictionaries successfully loaded or not **/
 
@@ -151,5 +179,82 @@ public class HealthCheck implements HealthCheckHandler {
 		/**************************************************************/
 
 		return 200;
+
 	}
+
+	private int checkESConnection() {
+
+		boolean success = false;
+
+		InetAddress[] hostAddresses;
+		try {
+			hostAddresses = InetAddress.getAllByName(host.get());
+		} catch (UnknownHostException e) {
+			log.warn("Unable to lookup hosts for {}", host.get());
+			return 500;
+		}
+
+		// for each address returned by the dns lookup, perform a HEAD request
+		// against
+		// the configured path to verify that ES is up AND that the configured
+		// path is accessible
+		// a http timeout or a non-200 response indicates an error on the given
+		// host address.
+		// at least one of the host addresses must be up and running for a
+		// health check to be successful
+		for (InetAddress hostAddress : hostAddresses) {
+			URL url;
+			try {
+				url = new URL(String.format("http://%s:%s%s",
+						hostAddress.getCanonicalHostName(), port.get(),
+						path.get()));
+			} catch (MalformedURLException e) {
+				log.warn(
+						"Unable to generate a valid url for host: {} with host address: {}",
+						host.get(), hostAddress.getCanonicalHostName());
+
+				// stop processing this host address, it is bad
+				continue;
+			}
+
+			String hostUrl = url.toExternalForm();
+			HttpURLConnection connection;
+			try {
+				connection = (HttpURLConnection) url.openConnection();
+				connection.setConnectTimeout(2000);
+				connection.setReadTimeout(2000);
+				connection.setRequestMethod("HEAD");
+
+				int responseCode = connection.getResponseCode();
+				if (responseCode != 200) {
+					log.warn("{} test failed.  Response: {}", hostUrl,
+							responseCode);
+					continue;
+				} else {
+					success = true;
+					if (log.isDebugEnabled()) {
+						log.debug("{} passed", hostUrl);
+					}
+				}
+			} catch (IOException e) {
+				log.warn(
+						"Error connecting to host: {} with host address: {}: {}",
+						host.get(), url.getHost(), e.getMessage());
+			}
+		}
+
+		// if success flag was set by any of the host addresses return a
+		// successful health check, otherwise error out
+		if (!success) {
+			log.warn("Health Check Failed, no valid host addresses are up");
+			return 500;
+		} else {
+			if (log.isDebugEnabled()) {
+				log.debug("Health Check Successful, at least one host address is up");
+			}
+
+			return 200;
+		}
+	}
+
 }
