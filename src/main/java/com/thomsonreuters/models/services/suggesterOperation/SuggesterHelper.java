@@ -339,7 +339,7 @@ public abstract class SuggesterHelper {
 			suggesterList.put(property.getDictionayName(), suggester);
 		} else if (property.getDictionayName().equalsIgnoreCase("wos")) {
 
-			com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggester suggester = createAnalyzingSuggesterForWos(
+			com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
 					is, KeywordEntry.class);
 			suggesterList.put(property.getDictionayName(), suggester);
 		} else if (property.getDictionayName().equalsIgnoreCase("categories")) {
@@ -416,31 +416,7 @@ public abstract class SuggesterHelper {
 		return suggester;
 	}
 
-	public TRAnalyzingSuggester createAnalyzingSuggesterForWos(InputStream is,
-			Class enteryClass) {
-		TRAnalyzingSuggester suggester = null;
-		try {
-
-			PrepareDictionary dictionary = new PrepareDictionary(is,
-					enteryClass);
-
-			suggester = new com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester(
-					indexAnalyzer, queryAnalyzer);
-
-			suggester.build(new EntryIterator(dictionary));
-
-			dictionary.close();
-			is.close();
-
-			System.gc();
-			System.gc();
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return suggester;
-	}
+	 
 
 	public TRAnalyzingSuggester createAnalyzingSuggesterForOthers(
 			InputStream is, Class enteryClass) {
