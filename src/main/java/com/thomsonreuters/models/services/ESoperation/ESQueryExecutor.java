@@ -42,7 +42,7 @@ public class ESQueryExecutor implements IESQueryExecutor {
 	public ESQueryExecutor() {
 		PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
 		cm.setMaxTotal(200);
-		cm.setDefaultMaxPerRoute(20);
+		cm.setDefaultMaxPerRoute(50);
 		httpClient = HttpClients.createMinimal(cm);
 
 	}
