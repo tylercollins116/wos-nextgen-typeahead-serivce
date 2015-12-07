@@ -2,6 +2,9 @@ package com.thomsonreuters.models.services.ESoperation;
 
 import java.util.HashMap;
 
+import com.thomsonreuters.models.services.ESoperation.IQueryGenerator.orderAs;
+import com.thomsonreuters.models.services.ESoperation.IQueryGenerator.sort;
+
 public class PatentESEntry extends IQueryGenerator {
 
 	private final String returnFields[];
@@ -43,7 +46,8 @@ public class PatentESEntry extends IQueryGenerator {
 	}
 
 	@Override
-	public String createQuery() {
+	public String createQuery() {		
+		super.sorts.add(new sort("citingsrcscount", orderAs.desc));
 		return generatESQuery("title", from, size, query, returnFields);
 	}
 

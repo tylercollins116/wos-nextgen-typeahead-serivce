@@ -174,13 +174,16 @@ public class Suggester implements SuggesterHandler {
 
 						String returnVaule[] = new String[] {
 								"fullrecord.summary.patentno",
-								"fullrecord.summary.title" };
+								"fullrecord.summary.title",
+								"fullrecord.summary.citingsrcscount" };
 
 						HashMap<String, String> aliasField = new HashMap<String, String>(
 								2);
 						aliasField.put("fullrecord.summary.title", "title");
 						aliasField.put("fullrecord.summary.patentno",
 								"patentno");
+						aliasField.put("fullrecord.summary.citingsrcscount",
+								"timeCited");
 
 						IQueryGenerator entry = new PatentESEntry(returnVaule,
 								query, 0, n, "patent", aliasField);
