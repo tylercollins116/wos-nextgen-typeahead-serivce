@@ -185,6 +185,7 @@ public abstract class IQueryGenerator {
 						suggestions.info.add(info$);
 					}
 				} catch (Exception e) {
+					e.printStackTrace();
 				}
 			}
 

@@ -8,7 +8,7 @@ public class PeopleESEntry extends IQueryGenerator {
 	public String query = "";
 
 	private int from = 0;
-	private int size = 10;
+	private int size = 4;
 	private static final String type = "people";
 	private final String source; // for type article the content type is wos so
 									// it must be different then type
