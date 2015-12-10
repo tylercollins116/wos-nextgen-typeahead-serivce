@@ -2,23 +2,18 @@ package com.thomsonreuters.models.services.ESoperation;
 
 import java.util.HashMap;
 
-import com.thomsonreuters.models.services.ESoperation.IQueryGenerator.orderAs;
-import com.thomsonreuters.models.services.ESoperation.IQueryGenerator.sort;
-
-public class PatentESEntry extends IQueryGenerator {
+public class PostESEntry extends IQueryGenerator {
 
 	private final String returnFields[];
 	public String query = "";
 
 	private int from = 0;
 	private int size = 4;
-	private static final String type = "patent";
+	private static final String type = "posts";
 	private final String source; // for type article the content type is wos so
 									// it must be different then type
-	
-	
 
-	public PatentESEntry(String[] returnFields, String userQuery, int from,
+	public PostESEntry(String[] returnFields, String userQuery, int from,
 			int size, String source, HashMap<String, String> aliasFields) {
 		super(type, returnFields);
 		this.returnFields = returnFields;
@@ -26,7 +21,6 @@ public class PatentESEntry extends IQueryGenerator {
 		this.from = from;
 		this.size = size;
 		this.source = source;
-		super.analyzer="en_std_syn";
 		super.aliasFields = aliasFields;
 
 	}
@@ -46,8 +40,7 @@ public class PatentESEntry extends IQueryGenerator {
 	}
 
 	@Override
-	public String createQuery() {		
-		super.sorts.add(new sort("citingsrcscount", orderAs.desc));
+	public String createQuery() {
 		return generatESQuery("title", from, size, query, returnFields);
 	}
 

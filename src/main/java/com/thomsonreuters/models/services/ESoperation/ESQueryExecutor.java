@@ -145,8 +145,7 @@ public class ESQueryExecutor implements IESQueryExecutor {
 
 		String line;
 
-		while ((line = htmlReader.readLine()) != null) {
-			logger.debug(line);
+		while ((line = htmlReader.readLine()) != null) {			 
 			jsonBuffer.append(line);
 		}
 		htmlReader.close(); 

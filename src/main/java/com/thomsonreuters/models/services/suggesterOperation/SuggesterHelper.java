@@ -357,6 +357,12 @@ public abstract class SuggesterHelper {
 					is, PatentEntry.class);
 			suggesterList.put(property.getDictionayName(), suggester);
 
+		} else if (property.getDictionayName().equalsIgnoreCase("topic")) {
+
+			TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
+					is, TopicEntry.class);
+
+			suggesterList.put(property.getDictionayName(), suggester);
 		}
 
 		/***************************** End **********************************/
@@ -415,8 +421,6 @@ public abstract class SuggesterHelper {
 
 		return suggester;
 	}
-
-	 
 
 	public TRAnalyzingSuggester createAnalyzingSuggesterForOthers(
 			InputStream is, Class enteryClass) {

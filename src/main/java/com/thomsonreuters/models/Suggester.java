@@ -30,6 +30,7 @@ import com.thomsonreuters.models.services.ESoperation.IESQueryExecutor;
 import com.thomsonreuters.models.services.ESoperation.IQueryGenerator;
 import com.thomsonreuters.models.services.ESoperation.PatentESEntry;
 import com.thomsonreuters.models.services.ESoperation.PeopleESEntry;
+import com.thomsonreuters.models.services.ESoperation.PostESEntry;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingInfixSuggester;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggester;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt;
@@ -67,7 +68,6 @@ public class Suggester implements SuggesterHandler {
 
 	@Override
 	public List<SuggestData> lookup(String path, String query, int n) {
-
 		long startTime = -1L;
 
 		List<SuggestData> results = new ArrayList<SuggestData>();
@@ -75,7 +75,7 @@ public class Suggester implements SuggesterHandler {
 		/** These code are execute against ElasticSearch **/
 
 		if (path.equals("article") || path.equals("people")
-				|| path.equals("patent")) {
+				|| path.equals("patent") || path.equals("posts")) {
 
 			if (path.equals("article")) {
 
@@ -141,7 +141,7 @@ public class Suggester implements SuggesterHandler {
 								"fullrecord.summary.uid" };
 
 						HashMap<String, String> aliasField = new HashMap<String, String>(
-								2);
+								3);
 						aliasField.put("fullrecord.summary.country", "country");
 						aliasField.put("fullrecord.summary.authors", "name");
 						aliasField.put("fullrecord.summary.uid", "id");
@@ -178,7 +178,7 @@ public class Suggester implements SuggesterHandler {
 								"fullrecord.summary.citingsrcscount" };
 
 						HashMap<String, String> aliasField = new HashMap<String, String>(
-								2);
+								3);
 						aliasField.put("fullrecord.summary.title", "title");
 						aliasField.put("fullrecord.summary.patentno",
 								"patentno");
@@ -187,6 +187,46 @@ public class Suggester implements SuggesterHandler {
 
 						IQueryGenerator entry = new PatentESEntry(returnVaule,
 								query, 0, n, "patent", aliasField);
+						SuggestData data = null;
+						try {
+							data = this.ESQueryExecutor.formatResult(entry);
+						} catch (Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+
+						data.took = (System.currentTimeMillis() - start) + "";
+
+						results.add(data);
+					}
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+			} else if (path.equals("posts")) {
+
+				try {
+					if (Property.ES_SEARCH_PATH.containsKey("posts")) {
+
+						long start = System.currentTimeMillis();
+
+						String returnVaule[] = new String[] {
+								"fullrecord.summary.uid",
+								"fullrecord.summary.title",
+								"fullrecord.summary.truid",
+								"fullrecord.summary.pubdate" };
+
+						HashMap<String, String> aliasField = new HashMap<String, String>(
+								4);
+						aliasField.put("fullrecord.summary.title", "title");
+						aliasField.put("fullrecord.summary.uid", "uid");
+						aliasField.put("fullrecord.summary.truid", "truid");
+						aliasField.put("fullrecord.summary.pubdate",
+								"publishdate");
+
+						IQueryGenerator entry = new PostESEntry(returnVaule,
+								query, 0, n, "post", aliasField);
 						SuggestData data = null;
 						try {
 							data = this.ESQueryExecutor.formatResult(entry);
