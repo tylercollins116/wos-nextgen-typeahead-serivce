@@ -226,7 +226,7 @@ public class Suggester implements SuggesterHandler {
 								"publishdate");
 
 						IQueryGenerator entry = new PostESEntry(returnVaule,
-								query, 0, n, "post", aliasField);
+								query, 0, n, "posts", aliasField);
 						SuggestData data = null;
 						try {
 							data = this.ESQueryExecutor.formatResult(entry);
