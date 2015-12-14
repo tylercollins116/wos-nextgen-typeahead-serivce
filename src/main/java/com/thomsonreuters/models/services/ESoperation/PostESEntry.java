@@ -2,6 +2,9 @@ package com.thomsonreuters.models.services.ESoperation;
 
 import java.util.HashMap;
 
+import com.thomsonreuters.models.services.ESoperation.IQueryGenerator.orderAs;
+import com.thomsonreuters.models.services.ESoperation.IQueryGenerator.sort;
+
 public class PostESEntry extends IQueryGenerator {
 
 	private final String returnFields[];
@@ -41,6 +44,7 @@ public class PostESEntry extends IQueryGenerator {
 
 	@Override
 	public String createQuery() {
+		super.sorts.add(new sort("sortdate", orderAs.desc));
 		return generatESQuery("title", from, size, query, returnFields);
 	}
 
