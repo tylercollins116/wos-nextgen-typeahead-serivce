@@ -6,7 +6,7 @@ apply plugin: 'java-library-distribution'
 apply plugin: 'os-package'
 apply plugin: 'sonar-runner'
 apply plugin: 'net.researchgate.release'
-apply plugin: 'cobertura'
+apply plugin: 'jacoco'
 
 sourceCompatibility = 1.8
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
@@ -29,7 +29,6 @@ buildscript {
     }
 
     dependencies {
-        classpath group: 'net.saliman',         name: 'gradle-cobertura-plugin', version: '2.2.8'
         classpath 'com.netflix.nebula:gradle-ospackage-plugin:2.2.0'
         classpath 'net.researchgate:gradle-release:2.1.1'
     }
@@ -158,6 +157,25 @@ sonarRunner {
   }
 }
 
-cobertura {
-  coverageFormats = ['html', 'xml']  
+// Sonar recommends 7.4
+jacoco {
+    toolVersion = "0.7.4.+"
+    reportsDir = file("$buildDir/reports/coverage")
+
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled true
+        csv.enabled false
+        html.destination "${buildDir}/reports/coverage/html"
+    }
+// Uncomment to exclude items you wish to ignore
+//    afterEvaluate {
+//        classDirectories = files(classDirectories.files.collect {
+//            fileTree(dir: it,
+//                    exclude: ['com/thomsonreuters/injection/**',
+//                              'com/blah/injection/**'])
+//        })
+//   }
 }
