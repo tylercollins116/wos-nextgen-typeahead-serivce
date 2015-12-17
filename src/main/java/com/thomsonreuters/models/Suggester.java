@@ -173,14 +173,14 @@ public class Suggester implements SuggesterHandler {
 						long start = System.currentTimeMillis();
 
 						String returnVaule[] = new String[] {
-								"fullrecord.summary.patentno",
+								"fullrecord.summary.uid",
 								"fullrecord.summary.title",
 								"fullrecord.summary.citingsrcscount" };
 
 						HashMap<String, String> aliasField = new HashMap<String, String>(
 								3);
 						aliasField.put("fullrecord.summary.title", "title");
-						aliasField.put("fullrecord.summary.patentno",
+						aliasField.put("fullrecord.summary.uid",
 								"patentno");
 						aliasField.put("fullrecord.summary.citingsrcscount",
 								"timeCited");
