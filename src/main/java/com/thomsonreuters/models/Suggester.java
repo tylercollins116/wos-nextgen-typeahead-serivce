@@ -34,6 +34,7 @@ import com.thomsonreuters.models.services.ESoperation.PostESEntry;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingInfixSuggester;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggester;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt;
+import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt.Process;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester;
 import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
@@ -180,8 +181,7 @@ public class Suggester implements SuggesterHandler {
 						HashMap<String, String> aliasField = new HashMap<String, String>(
 								3);
 						aliasField.put("fullrecord.summary.title", "title");
-						aliasField.put("fullrecord.summary.uid",
-								"patentno");
+						aliasField.put("fullrecord.summary.uid", "patentno");
 						aliasField.put("fullrecord.summary.citingsrcscount",
 								"timeCited");
 
@@ -387,7 +387,6 @@ public class Suggester implements SuggesterHandler {
 
 					results.add(suggestData);
 				}
-
 			} else if (suggester instanceof TRAnalyzingSuggesterExt) {
 
 				startTime = System.currentTimeMillis();
@@ -397,11 +396,17 @@ public class Suggester implements SuggesterHandler {
 
 				List<Map<String, String>> typeSuggestions = new ArrayList<Map<String, String>>();
 				try {
-					for (LookupResult result : ((TRAnalyzingSuggesterExt) suggester)
-							.lookup(query, false, n)) {
+
+					List<LookupResult> allResults = ((TRAnalyzingSuggesterExt) suggester)
+							.lookup(query, false, n);
+					for (LookupResult result : allResults) {
 
 						Map<String, String> map = PrepareDictionary
-								.processJson(new String(result.payload.bytes));
+								.processJson(new String(
+										((TRAnalyzingSuggesterExt) suggester)
+												.getReturn(new String(
+														result.payload.bytes),
+														Process.json)));
 
 						Suggestions suggestions = suggestData.new Suggestions();
 						suggestions.keyword = map.remove(Entry.TERM);

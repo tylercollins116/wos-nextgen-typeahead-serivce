@@ -90,12 +90,12 @@ public final class TRFuzzySuggesterExt extends TRAnalyzingSuggesterExt {
 	 * The default minimum length of the key passed to {@link #lookup} before
 	 * any edits are allowed.
 	 */
-	public static final int DEFAULT_MIN_FUZZY_LENGTH = 3;
+	public static final int DEFAULT_MIN_FUZZY_LENGTH = 5;
 
 	/**
 	 * The default prefix length where edits are not allowed.
 	 */
-	public static final int DEFAULT_NON_FUZZY_PREFIX = 3;
+	public static final int DEFAULT_NON_FUZZY_PREFIX = 5;
 
 	/**
 	 * The default maximum number of edits for fuzzy suggestions.
