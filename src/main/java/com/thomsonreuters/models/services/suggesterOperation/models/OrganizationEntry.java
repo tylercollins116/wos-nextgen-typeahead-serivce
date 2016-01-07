@@ -3,6 +3,8 @@ package com.thomsonreuters.models.services.suggesterOperation.models;
 import java.util.Map;
 import java.util.Set;
 
+import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt;
+
 public class OrganizationEntry extends Entry {
 
 	private final String ALIAS = "alias";
@@ -20,6 +22,8 @@ public class OrganizationEntry extends Entry {
 
 	@Override
 	public String getJson() {
+		
+		String alias=null;
 
 		StringBuilder sb = new StringBuilder("{");
 
@@ -32,6 +36,7 @@ public class OrganizationEntry extends Entry {
 				if (key.toLowerCase().equals(ALIAS)) {
 					sb.append("\"" + TERM + "\":");
 					sb.append("\"" + JsonToMap.get(key) + "\"");
+					alias=JsonToMap.get(key);
 				} else {
 
 					sb.append("\"" + key + "\":");
@@ -43,7 +48,6 @@ public class OrganizationEntry extends Entry {
 
 		sb.append("}");
 
-		return sb.toString();
-	}
+		return alias+TRAnalyzingSuggesterExt.deliminator+sb.toString();}
 
 }

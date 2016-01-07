@@ -68,6 +68,7 @@ import org.apache.lucene.util.fst.Util;
 import org.apache.lucene.util.fst.Util.Result;
 import org.apache.lucene.util.fst.Util.TopResults;
 
+ 
 import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
 
@@ -122,8 +123,11 @@ public class TRAnalyzingSuggesterExt extends Lookup {
 	 * surface is the original, unanalyzed form.
 	 * 
 	 */
-	
-	public static final String deliminator = "[:!@#$@!:]";
+	public enum Process {
+		keyword, json
+	}
+
+	public static final String deliminator = ":::::";
 	
 	private FST<Pair<Long, BytesRef>> fst = null;
 
@@ -811,7 +815,7 @@ public class TRAnalyzingSuggesterExt extends Lookup {
 							fst);
 
 			/** to remove duplicate **/
-			final Set<BytesRef> globalSeen = new HashSet<>();
+			final Set<String> globalSeen = new HashSet<String>();
 
 			/** Exact match on the top **/
 			if (exactFirst) {
@@ -883,8 +887,12 @@ public class TRAnalyzingSuggesterExt extends Lookup {
 						LookupResult result = getLookupResult(
 								completion.output.output1, output2, spare);
 
-						if (!globalSeen.contains(result.payload)) {
-							globalSeen.add(result.payload);
+	/** This is to handle JSON**/
+						
+						String alias=getReturn(new String(result.payload.bytes), Process.keyword);
+
+						if (!globalSeen.contains(alias)) {							 
+							globalSeen.add(alias);
 							results.add(result);
 						}
 
@@ -1006,8 +1014,9 @@ public class TRAnalyzingSuggesterExt extends Lookup {
 						completion.output.output1, completion.output.output2,
 						spare);
 
-				if (!globalSeen.contains(result.payload)) {
-					globalSeen.add(result.payload);
+				String alias=getReturn(new String(result.payload.bytes), Process.keyword);
+				if (!globalSeen.contains(alias)) {					 
+					globalSeen.add(alias);
 					results.add(result);
 				}
 
@@ -1260,4 +1269,17 @@ public class TRAnalyzingSuggesterExt extends Lookup {
 			return left.output1.compareTo(right.output1);
 		}
 	};
+	
+	public  String getReturn(String data, Process process) {
+
+		String[] result = data.split(deliminator);
+		if (process == process.json) {
+			return result[1];
+		} else if (process == process.keyword) {
+			return result[0].trim().toLowerCase();
+		} else {
+			return "";
+		}
+
+	}
 }
