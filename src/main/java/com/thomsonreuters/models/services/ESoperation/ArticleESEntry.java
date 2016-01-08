@@ -2,6 +2,8 @@ package com.thomsonreuters.models.services.ESoperation;
 
 import java.util.HashMap;
 
+import com.thomsonreuters.models.services.util.Property;
+
 public class ArticleESEntry extends IQueryGenerator {
 
 	private final String returnFields[];
@@ -9,7 +11,7 @@ public class ArticleESEntry extends IQueryGenerator {
 
 	private int from = 0;
 	private int size = 4;
-	private static final String type = "article";
+	private static final String type = Property.article;
 	private final String source; // for type article the content type is wos so
 									// it must be different then type
 
