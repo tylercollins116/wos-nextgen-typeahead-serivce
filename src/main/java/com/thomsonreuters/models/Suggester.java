@@ -75,64 +75,66 @@ public class Suggester implements SuggesterHandler {
 
 		/** These code are execute against ElasticSearch **/
 
-		if (path.equals("article") || path.equals("people")
-				|| path.equals("patent") || path.equals("posts")) {
+		if (path.equals(Property.article) || path.equals(Property.people)
+				|| path.equals(Property.patent) || path.equals(Property.post)) {
 
-			if (path.equals("article")) {
+			if (path.equals(Property.article)) {
 
 				try {
 
-					long start = System.currentTimeMillis();
+					if (Property.ES_SEARCH_PATH.containsKey(Property.article)) {
 
-					String returnVaule[] = new String[] {
-							"fullrecord.summary.title", "cuid", "fuid" };
-					/**
-					 * didn't find cuid in patent fullrecord.summary. and fuid I
-					 * find it fullrecord.summary.uid but ignored
-					 **/
+						long start = System.currentTimeMillis();
 
-					HashMap<String, String> aliasField = new HashMap<String, String>(
-							1);
-					aliasField.put("fullrecord.summary.title", "title");
+						String returnVaule[] = new String[] {
+								"fullrecord.summary.title", "cuid", "fuid" };
+						/**
+						 * didn't find cuid in patent fullrecord.summary. and
+						 * fuid I find it fullrecord.summary.uid but ignored
+						 **/
 
-					IQueryGenerator entry = new ArticleESEntry(returnVaule,
-							query, 0, n, "article", aliasField);
+						HashMap<String, String> aliasField = new HashMap<String, String>(
+								1);
+						aliasField.put("fullrecord.summary.title", "title");
 
-					SuggestData data = new SuggestData();
-					for (int count = 0; count <= 3; count++) {
+						IQueryGenerator entry = new ArticleESEntry(returnVaule,
+								query, 0, n, "article", aliasField);
 
-						if (data.suggestions.size() <= 0) {
-							if (count == 1) {
-								entry.setMax_expansion(50);
-							} else if (count == 1) {
-								entry.setMax_expansion(500);
-							} else if (count == 2) {
-								entry.setMax_expansion(1500);
-							} else if (count == 3) {
-								entry.setMax_expansion(4000);
+						SuggestData data = new SuggestData();
+						for (int count = 0; count <= 3; count++) {
+
+							if (data.suggestions.size() <= 0) {
+								if (count == 1) {
+									entry.setMax_expansion(50);
+								} else if (count == 1) {
+									entry.setMax_expansion(500);
+								} else if (count == 2) {
+									entry.setMax_expansion(1500);
+								} else if (count == 3) {
+									entry.setMax_expansion(4000);
+								}
+
+								data = this.ESQueryExecutor.formatResult(entry);
+
+							} else {
+								break;
 							}
 
-							data = this.ESQueryExecutor.formatResult(entry);
-
-						} else {
-							break;
 						}
 
+						data.took = (System.currentTimeMillis() - start) + "";
+						results.add(data);
 					}
-
-					data.took = (System.currentTimeMillis() - start) + "";
-
-					results.add(data);
 
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 
-			} else if (path.equals("people")) {
+			} else if (path.equals(Property.people)) {
 
 				try {
-					if (Property.ES_SEARCH_PATH.containsKey("people")) {
+					if (Property.ES_SEARCH_PATH.containsKey(Property.people)) {
 
 						long start = System.currentTimeMillis();
 
@@ -166,10 +168,10 @@ public class Suggester implements SuggesterHandler {
 					e.printStackTrace();
 				}
 
-			} else if (path.equals("patent")) {
+			} else if (path.equals(Property.patent)) {
 
 				try {
-					if (Property.ES_SEARCH_PATH.containsKey("patent")) {
+					if (Property.ES_SEARCH_PATH.containsKey(Property.patent)) {
 
 						long start = System.currentTimeMillis();
 
@@ -204,10 +206,10 @@ public class Suggester implements SuggesterHandler {
 					e.printStackTrace();
 				}
 
-			} else if (path.equals("posts")) {
+			} else if (path.equals(Property.post)) {
 
 				try {
-					if (Property.ES_SEARCH_PATH.containsKey("posts")) {
+					if (Property.ES_SEARCH_PATH.containsKey(Property.post)) {
 
 						long start = System.currentTimeMillis();
 
@@ -265,7 +267,7 @@ public class Suggester implements SuggesterHandler {
 					suggester = ((TRFuzzySuggester) suggester).setMaxEdits(1);
 				}
 
-				if (path.equalsIgnoreCase("categories")) {
+				if (path.equalsIgnoreCase(Property.category)) {
 
 					startTime = System.currentTimeMillis();
 					SuggestData suggestData = new SuggestData();
@@ -304,7 +306,7 @@ public class Suggester implements SuggesterHandler {
 							+ "";
 					results.add(suggestData);
 
-				} else if (path.equalsIgnoreCase("wos")) {
+				} else if (path.equalsIgnoreCase(Property.wos)) {
 
 					startTime = System.currentTimeMillis();
 
@@ -345,7 +347,7 @@ public class Suggester implements SuggesterHandler {
 							+ "";
 
 					results.add(suggestData);
-				} else if (path.equalsIgnoreCase("topic")) {
+				} else if (path.equalsIgnoreCase(Property.topic)) {
 
 					startTime = System.currentTimeMillis();
 
@@ -432,7 +434,7 @@ public class Suggester implements SuggesterHandler {
 
 			} else if (suggester instanceof AnalyzingInfixSuggester) {
 
-				if (path.equalsIgnoreCase("people")) {
+				if (path.equalsIgnoreCase(Property.people)) {
 
 					startTime = System.currentTimeMillis();
 
@@ -477,7 +479,7 @@ public class Suggester implements SuggesterHandler {
 							+ "";
 
 					results.add(suggestData);
-				} else if (path.equalsIgnoreCase("patent")) {
+				} else if (path.equalsIgnoreCase(Property.patent)) {
 
 					startTime = System.currentTimeMillis();
 
@@ -525,7 +527,7 @@ public class Suggester implements SuggesterHandler {
 				}
 			} else if (suggester instanceof TRAnalyzingInfixSuggester) {
 
-				if (path.equalsIgnoreCase("article")) {
+				if (path.equalsIgnoreCase(Property.article)) {
 
 					startTime = System.currentTimeMillis();
 

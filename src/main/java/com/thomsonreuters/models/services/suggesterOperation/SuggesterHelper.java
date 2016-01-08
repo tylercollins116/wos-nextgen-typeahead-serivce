@@ -216,52 +216,45 @@ public abstract class SuggesterHelper {
 
 					/********** Important code to work on ************************/
 
-					if (property.getDictionayName().equalsIgnoreCase(
-							"organization")) {
+					if (property.getDictionayName().equalsIgnoreCase(Property.organization)) {
 
 						TRAnalyzingSuggesterExt suggester = createAnalyzingSuggesterForOrganization(is);
 						suggesterList.put(property.getDictionayName(),
 								suggester);
 
-					} else if (property.getDictionayName().equalsIgnoreCase(
-							"wos")) {
+					} else if (property.getDictionayName().equalsIgnoreCase(Property.wos)) {
 
 						TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
 								is, KeywordEntry.class);
 
 						suggesterList.put(property.getDictionayName(),
 								suggester);
-					} else if (property.getDictionayName().equalsIgnoreCase(
-							"topic")) {
+					} else if (property.getDictionayName().equalsIgnoreCase(Property.topic)) {
 
 						TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
 								is, TopicEntry.class);
 
 						suggesterList.put(property.getDictionayName(),
 								suggester);
-					} else if (property.getDictionayName().equalsIgnoreCase(
-							"categories")) {
+					} else if (property.getDictionayName().equalsIgnoreCase(Property.category)) {
 						TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
 								is, CategoryEntry.class);
 						suggesterList.put(property.getDictionayName(),
 								suggester);
 
-					} else if (property.getDictionayName().equalsIgnoreCase(
-							"people") && false) {
+					} else if (property.getDictionayName().equalsIgnoreCase(Property.people) && false) {
 						AnalyzingInfixSuggester suggester = createAnalyzingForPeopleAndPatent(
 								is, PeopleEntry.class);
 						suggesterList.put(property.getDictionayName(),
 								suggester);
 
-					} else if (property.getDictionayName().equalsIgnoreCase(
-							"patent") && false) {
+					} else if (property.getDictionayName().equalsIgnoreCase(Property.patent) && false) {
 						AnalyzingInfixSuggester suggester = createAnalyzingForPeopleAndPatent(
 								is, PatentEntry.class);
 						suggesterList.put(property.getDictionayName(),
 								suggester);
 
-					} else if (property.getDictionayName().equalsIgnoreCase(
-							"article") && false) {
+					} else if (property.getDictionayName().equalsIgnoreCase(Property.article) && false) {
 
 						TRAnalyzingInfixSuggester suggester = createAnalyzingForArticle(is);
 						suggesterList.put(property.getDictionayName(),
@@ -328,36 +321,36 @@ public abstract class SuggesterHelper {
 
 		/********** Important code to work on ************************/
 
-		if (property.getDictionayName().equalsIgnoreCase("organization")) {
+		if (property.getDictionayName().equalsIgnoreCase(Property.organization)) {
 
 			TRAnalyzingSuggesterExt suggester = createAnalyzingSuggesterForOrganization(is);
 			suggesterList.put(property.getDictionayName(), suggester);
 
-		} else if (property.getDictionayName().equalsIgnoreCase("article")) {
+		} else if (property.getDictionayName().equalsIgnoreCase(Property.article)) {
 
 			TRAnalyzingInfixSuggester suggester = createAnalyzingForArticle(is);
 			suggesterList.put(property.getDictionayName(), suggester);
-		} else if (property.getDictionayName().equalsIgnoreCase("wos")) {
+		} else if (property.getDictionayName().equalsIgnoreCase(Property.wos)) {
 
 			com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
 					is, KeywordEntry.class);
 			suggesterList.put(property.getDictionayName(), suggester);
-		} else if (property.getDictionayName().equalsIgnoreCase("categories")) {
+		} else if (property.getDictionayName().equalsIgnoreCase(Property.category)) {
 			TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
 					is, CategoryEntry.class);
 			suggesterList.put(property.getDictionayName(), suggester);
 
-		} else if (property.getDictionayName().equalsIgnoreCase("people")) {
+		} else if (property.getDictionayName().equalsIgnoreCase(Property.people)) {
 			AnalyzingInfixSuggester suggester = createAnalyzingForPeopleAndPatent(
 					is, PeopleEntry.class);
 			suggesterList.put(property.getDictionayName(), suggester);
 
-		} else if (property.getDictionayName().equalsIgnoreCase("patent")) {
+		} else if (property.getDictionayName().equalsIgnoreCase(Property.patent)) {
 			AnalyzingInfixSuggester suggester = createAnalyzingForPeopleAndPatent(
 					is, PatentEntry.class);
 			suggesterList.put(property.getDictionayName(), suggester);
 
-		} else if (property.getDictionayName().equalsIgnoreCase("topic")) {
+		} else if (property.getDictionayName().equalsIgnoreCase(Property.topic)) {
 
 			TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
 					is, TopicEntry.class);
