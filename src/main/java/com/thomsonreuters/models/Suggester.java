@@ -98,7 +98,7 @@ public class Suggester implements SuggesterHandler {
 						aliasField.put("fullrecord.summary.title", "title");
 
 						IQueryGenerator entry = new ArticleESEntry(returnVaule,
-								query, 0, n, "article", aliasField);
+								query, 0, n,Property.article, aliasField);
 
 						SuggestData data = new SuggestData();
 						for (int count = 0; count <= 3; count++) {
@@ -150,7 +150,7 @@ public class Suggester implements SuggesterHandler {
 						aliasField.put("fullrecord.summary.uid", "id");
 
 						IQueryGenerator entry = new PeopleESEntry(returnVaule,
-								query, 0, n, "people", aliasField);
+								query, 0, n, Property.people, aliasField);
 						SuggestData data = null;
 						try {
 							data = this.ESQueryExecutor.formatResult(entry);
@@ -188,7 +188,7 @@ public class Suggester implements SuggesterHandler {
 								"timeCited");
 
 						IQueryGenerator entry = new PatentESEntry(returnVaule,
-								query, 0, n, "patent", aliasField);
+								query, 0, n, Property.patent, aliasField);
 						SuggestData data = null;
 						try {
 							data = this.ESQueryExecutor.formatResult(entry);
@@ -228,7 +228,7 @@ public class Suggester implements SuggesterHandler {
 								"publishdate");
 
 						IQueryGenerator entry = new PostESEntry(returnVaule,
-								query, 0, n, "posts", aliasField);
+								query, 0, n, Property.post, aliasField);
 						SuggestData data = null;
 						try {
 							data = this.ESQueryExecutor.formatResult(entry);
