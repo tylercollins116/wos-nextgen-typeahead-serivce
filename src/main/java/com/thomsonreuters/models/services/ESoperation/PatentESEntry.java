@@ -4,6 +4,7 @@ import java.util.HashMap;
 
 import com.thomsonreuters.models.services.ESoperation.IQueryGenerator.orderAs;
 import com.thomsonreuters.models.services.ESoperation.IQueryGenerator.sort;
+import com.thomsonreuters.models.services.util.Property;
 
 public class PatentESEntry extends IQueryGenerator {
 
@@ -12,7 +13,7 @@ public class PatentESEntry extends IQueryGenerator {
 
 	private int from = 0;
 	private int size = 4;
-	private static final String type = "patent";
+	private static final String type = Property.patent;
 	private final String source; // for type article the content type is wos so
 									// it must be different then type
 	
