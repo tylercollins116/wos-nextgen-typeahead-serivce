@@ -74,8 +74,11 @@ public class ESQueryExecutor implements IESQueryExecutor {
 				+ PropertyValue.getProperty(queryGenerator.getSource())
 				+ "/_search");
 		
+		logger.info("URL of ElasticSearch " +"http://"+PropertyValue.ELASTIC_SEARCH_URL
+				+ Property.ES_SEARCH_PATH.get(queryGenerator.getSource())
+				+ "/_search");
+		
 		 
-
 		HttpURLConnection con = (HttpURLConnection) url.openConnection();
 
 		con.setRequestMethod("POST");
@@ -122,7 +125,9 @@ public class ESQueryExecutor implements IESQueryExecutor {
 				+ "/_search");
 		
 		
-	 
+		logger.info("URL of ElasticSearch " +"http://"+PropertyValue.ELASTIC_SEARCH_URL
+				+ Property.ES_SEARCH_PATH.get(queryGenerator.getSource())
+				+ "/_search");
 
 		HttpContext gbPostContext = new BasicHttpContext();
 
