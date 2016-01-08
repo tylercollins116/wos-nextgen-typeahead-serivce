@@ -29,7 +29,7 @@ public interface Property {
 	public boolean isBucketName();
 
 	public static final String article = "articles";
-	public static final String people = "peoples";
+	public static final String people = "people";
 	public static final String post = "posts";
 	public static final String patent = "patents";
 	public static final String wos = "wos";
