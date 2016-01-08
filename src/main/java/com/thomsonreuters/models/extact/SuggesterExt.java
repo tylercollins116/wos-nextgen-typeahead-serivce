@@ -20,6 +20,7 @@ import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSugg
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
+import com.thomsonreuters.models.services.util.Property;
 import com.thomsonreuters.models.services.util.PropertyValue;
 
 @Singleton
@@ -59,7 +60,7 @@ public class SuggesterExt implements SuggesterHandlerExt {
 				suggester = ((TRFuzzySuggester) suggester).setMaxEdits(1);
 			}
 
-			if (path.equalsIgnoreCase("categories")) {
+			if (path.equalsIgnoreCase(Property.category)) {
 
 				startTime = System.currentTimeMillis();
 
@@ -90,7 +91,7 @@ public class SuggesterExt implements SuggesterHandlerExt {
 
 				jsonarray.add(actualSuggestions);
 
-			} else if (path.equalsIgnoreCase("wos")) {
+			} else if (path.equalsIgnoreCase(Property.wos)) {
 
 				List<Map<String, String>> allSuggestions = new ArrayList<Map<String, String>>();
 
@@ -158,7 +159,7 @@ public class SuggesterExt implements SuggesterHandlerExt {
 			jsonarray.add(actualSuggestions);
 		} else if (suggester instanceof AnalyzingInfixSuggester) {
 
-			if (path.equalsIgnoreCase("people")) {
+			if (path.equalsIgnoreCase(Property.people)) {
 
 				List<Map<String, String>> allSuggestions = new ArrayList<Map<String, String>>();
 
@@ -191,7 +192,7 @@ public class SuggesterExt implements SuggesterHandlerExt {
 						took, allSuggestions);
 
 				jsonarray.add(actualSuggestions);
-			} else if (path.equalsIgnoreCase("patent")) {
+			} else if (path.equalsIgnoreCase(Property.patent)) {
 
 				List<Map<String, String>> allSuggestions = new ArrayList<Map<String, String>>();
 
@@ -227,7 +228,7 @@ public class SuggesterExt implements SuggesterHandlerExt {
 			}
 		} else if (suggester instanceof TRAnalyzingInfixSuggester) {
 
-			if (path.equalsIgnoreCase("article")) {
+			if (path.equalsIgnoreCase(Property.article)) {
 
 				List<Map<String, String>> allSuggestions = new ArrayList<Map<String, String>>();
 
