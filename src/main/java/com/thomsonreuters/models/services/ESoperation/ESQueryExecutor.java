@@ -74,7 +74,7 @@ public class ESQueryExecutor implements IESQueryExecutor {
 				+ PropertyValue.getProperty(queryGenerator.getSource())
 				+ "/_search");
 		
-		logger.info("URL of ElasticSearch " +"http://"+PropertyValue.ELASTIC_SEARCH_URL
+		logger.debug("URL of ElasticSearch " +"http://"+PropertyValue.ELASTIC_SEARCH_URL
 				+ Property.ES_SEARCH_PATH.get(queryGenerator.getSource())
 				+ "/_search");
 		
@@ -125,7 +125,7 @@ public class ESQueryExecutor implements IESQueryExecutor {
 				+ "/_search");
 		
 		
-		logger.info("URL of ElasticSearch " +"http://"+PropertyValue.ELASTIC_SEARCH_URL
+		logger.debug("URL of ElasticSearch " +"http://"+PropertyValue.ELASTIC_SEARCH_URL
 				+ Property.ES_SEARCH_PATH.get(queryGenerator.getSource())
 				+ "/_search");
 
