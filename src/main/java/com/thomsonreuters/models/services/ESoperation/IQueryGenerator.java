@@ -162,8 +162,13 @@ public abstract class IQueryGenerator {
 
 				try {
 
-					JSONArray fieldValue = new JSONObject(fielddata)
-							.getJSONArray(field);
+					JSONObject fieldObject = new JSONObject(fielddata);
+
+					if (! fieldObject.has(field)) {
+						fieldObject.put(field, new JSONArray());
+					}
+
+					JSONArray fieldValue = fieldObject.getJSONArray(field);
 
 					if (fieldValue.length() > 0) {
 
