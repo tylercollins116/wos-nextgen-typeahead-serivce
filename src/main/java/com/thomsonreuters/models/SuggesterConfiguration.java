@@ -42,7 +42,7 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 					new WaitingBlockingQueue<Runnable>(),
 					new NamedThreadFactory("Suggester"));
 
-			dictionaryReader = SuggesterFactory.createSuggesters("S3IAM");
+			dictionaryReader = SuggesterFactory.createSuggesters("S3");
 
 		} catch (Exception e) {
 			e.printStackTrace();

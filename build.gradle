@@ -101,6 +101,8 @@ dependencies {
   compile group: 'com.thomsonreuters', name: 'eiddo-client', version: '0.4.+'
   compile  'com.amazonaws:aws-java-sdk:1.10.2'
   
+   compile group: 'com.thomsonreuters', name: '1p-statistics-client', version: '0.1.+'
+  
   compile 'org.apache.lucene:lucene-core:5.2.1'
   compile 'org.apache.lucene:lucene-suggest:5.2.1'
   testCompile group:  'junit', name: 'junit-dep', version: '4.11'
