@@ -1,6 +1,7 @@
 package com.thomsonreuters.models;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,12 +32,14 @@ import com.thomsonreuters.models.services.ESoperation.IQueryGenerator;
 import com.thomsonreuters.models.services.ESoperation.PatentESEntry;
 import com.thomsonreuters.models.services.ESoperation.PeopleESEntry;
 import com.thomsonreuters.models.services.ESoperation.PostESEntry;
+import com.thomsonreuters.models.services.suggesterOperation.IProcessPreSearchTerm;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingInfixSuggester;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggester;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt.Process;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester;
 import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
+import com.thomsonreuters.models.services.suggesters.ProcessPreSearchTerm;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
 import com.thomsonreuters.models.services.util.Property;
 import com.thomsonreuters.models.services.util.PropertyValue;
@@ -50,6 +53,8 @@ public class Suggester implements SuggesterHandler {
 
 	private final ExecutorService reloadExecutor = Executors
 			.newFixedThreadPool(50);
+
+	private final IProcessPreSearchTerm processPreSearchTerm = new ProcessPreSearchTerm();
 
 	private final IESQueryExecutor ESQueryExecutor;
 
@@ -98,7 +103,7 @@ public class Suggester implements SuggesterHandler {
 						aliasField.put("fullrecord.summary.title", "title");
 
 						IQueryGenerator entry = new ArticleESEntry(returnVaule,
-								query, 0, n,Property.article, aliasField);
+								query, 0, n, Property.article, aliasField);
 
 						SuggestData data = new SuggestData();
 						for (int count = 0; count <= 3; count++) {
@@ -685,6 +690,24 @@ public class Suggester implements SuggesterHandler {
 		}
 
 		return allSuggestions;
+	}
+
+	@Override
+	public String[] lookup(String query, int size, String uid) {
+		// TODO Auto-generated method stub
+		List<SuggestData> allSuggestions = new ArrayList<SuggestData>();
+		long startTime = System.currentTimeMillis();
+
+		String[] presearchedTerms = processPreSearchTerm
+				.getPreSearchedTerm(uid);
+		String[] suggestions = processPreSearchTerm.getSuggestions(
+				presearchedTerms, query);
+
+		if (size > suggestions.length) {
+			suggestions = Arrays.<String> copyOf(suggestions, size - 1);
+		}
+
+		return suggestions;
 	}
 
 }

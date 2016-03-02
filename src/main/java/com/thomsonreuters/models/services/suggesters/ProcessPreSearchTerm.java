@@ -15,7 +15,7 @@ import java.util.StringTokenizer;
 
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
-
+ 
 import com.thomsonreuters.client.statistics.StatisticsServiceClient;
 import com.thomsonreuters.client.statistics.impl.StatisticsServiceClientImpl;
 import com.thomsonreuters.models.services.suggesterOperation.IProcessPreSearchTerm;
@@ -76,7 +76,7 @@ public class ProcessPreSearchTerm implements IProcessPreSearchTerm {
 	}
 
 	@Override
-	public String[] getSearchedTerm(String[] terms, String query) {
+	public String[] getSuggestions(String[] terms, String query) {
 
 		final Map<String, String> tokens = new HashMap<String, String>();
 		final List<String> processedToken = new ArrayList<String>();
@@ -165,28 +165,6 @@ public class ProcessPreSearchTerm implements IProcessPreSearchTerm {
 		return fromIndex;
 	}
 
-	public static void main(String[] args) {
-
-		List<String> preSearchedTerms = new ArrayList<String>();
-		preSearchedTerms.add("Manan");
-		preSearchedTerms.add("Manoj");
-		preSearchedTerms.add("Manandhar");
-		preSearchedTerms.add("sabina");
-		preSearchedTerms.add("Manina");
-		preSearchedTerms.add("Miroj");
-		preSearchedTerms.add("Narayandevi manandhar");
-		preSearchedTerms.add("sumitra");
-		preSearchedTerms.add("sanu");
-
-		ProcessPreSearchTerm object = new ProcessPreSearchTerm();
-
-		String[] result = object.getSearchedTerm(
-				preSearchedTerms.toArray(new String[] {}), "na");
-
-		for (String st : result) {
-			System.out.println(st);
-		}
-
-	}
+	public static void main(String[] args) {}
 
 }
