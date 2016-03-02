@@ -758,7 +758,7 @@ public class Suggester implements SuggesterHandler {
 			perSearchedTermsCategories.suggestions = allCategoriesSuggestions;
 
 			SuggestData perSearchedTerms = new SuggestData();
-			perSearchedTerms.source = "presearcedhterms";
+			perSearchedTerms.source = "presearcedterms";
 			perSearchedTerms.suggestions = allKeywordSuggestions;
 
 			allsuggestions.add(perSearchedTerms);
