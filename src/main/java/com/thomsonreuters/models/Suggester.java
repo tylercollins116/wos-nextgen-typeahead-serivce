@@ -740,8 +740,10 @@ public class Suggester implements SuggesterHandler {
 
 						String keyword = suggestionInfo.keyword;
 						if (processPreSearchTerm
-								.processAndNormalizeToken(keyword).trim()
-								.equals(processedQueryTerm)) {
+
+						.processAndNormalizeToken(keyword).trim()
+
+						.equals(processedQueryTerm)) {
 							allCategoriesSuggestions.add(suggestionInfo);
 						}
 
@@ -756,7 +758,7 @@ public class Suggester implements SuggesterHandler {
 			perSearchedTermsCategories.suggestions = allCategoriesSuggestions;
 
 			SuggestData perSearchedTerms = new SuggestData();
-			perSearchedTerms.source = "presearcedhterms";
+			perSearchedTerms.source = "presearcedterms";
 			perSearchedTerms.suggestions = allKeywordSuggestions;
 
 			allsuggestions.add(perSearchedTerms);
