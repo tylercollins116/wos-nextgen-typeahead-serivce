@@ -7,13 +7,12 @@ public interface SuggesterHandler {
 	public List<SuggestData> lookup(String query, int n);
 
 	public List<SuggestData> lookup(String path, String query, int n);
-	
-		/** added **/
+
+	/** added **/
 	public List<SuggestData> lookup(String query, List<String> sources,
-			List<String> infos,int size);
-	
-	
-	
-	public String[] lookup(String query, int size,String uid, boolean all);
+			List<String> infos, int size);
+
+	public List<SuggestData> lookup(String query, int size, String uid,
+			boolean all);
 
 }
