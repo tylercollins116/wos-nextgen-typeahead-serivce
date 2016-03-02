@@ -693,18 +693,27 @@ public class Suggester implements SuggesterHandler {
 	}
 
 	@Override
-	public String[] lookup(String query, int size, String uid) {
+	public String[] lookup(String query, int size, String uid, boolean all) {
 		// TODO Auto-generated method stub
-		List<SuggestData> allSuggestions = new ArrayList<SuggestData>();
+
 		long startTime = System.currentTimeMillis();
+
+		String[] suggestions = null;
 
 		String[] presearchedTerms = processPreSearchTerm
 				.getPreSearchedTerm(uid);
-		String[] suggestions = processPreSearchTerm.getSuggestions(
-				presearchedTerms, query);
 
-		if (suggestions.length > size) {
-			suggestions = Arrays.<String> copyOf(suggestions, size - 1);
+		if (!all) {
+			suggestions = processPreSearchTerm.getSuggestions(presearchedTerms,
+					query);
+
+			if (suggestions.length > size) {
+				suggestions = Arrays.<String> copyOf(suggestions, size - 1);
+			}
+
+		} else {
+
+			suggestions = presearchedTerms;
 		}
 
 		return suggestions;

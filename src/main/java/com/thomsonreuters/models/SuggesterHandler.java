@@ -14,6 +14,6 @@ public interface SuggesterHandler {
 	
 	
 	
-	public String[] lookup(String query, int size,String uid);
+	public String[] lookup(String query, int size,String uid, boolean all);
 
 }
