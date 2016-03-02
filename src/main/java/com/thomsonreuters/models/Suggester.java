@@ -703,7 +703,7 @@ public class Suggester implements SuggesterHandler {
 		String[] suggestions = processPreSearchTerm.getSuggestions(
 				presearchedTerms, query);
 
-		if (size > suggestions.length) {
+		if (suggestions.length > size) {
 			suggestions = Arrays.<String> copyOf(suggestions, size - 1);
 		}
 
