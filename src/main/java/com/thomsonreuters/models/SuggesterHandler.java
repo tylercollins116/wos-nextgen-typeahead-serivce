@@ -11,5 +11,9 @@ public interface SuggesterHandler {
 		/** added **/
 	public List<SuggestData> lookup(String query, List<String> sources,
 			List<String> infos,int size);
+	
+	
+	
+	public String[] lookup(String query, int size,String uid);
 
 }

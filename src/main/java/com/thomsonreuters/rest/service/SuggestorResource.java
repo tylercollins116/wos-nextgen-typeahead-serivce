@@ -121,6 +121,35 @@ public class SuggestorResource {
 
 	@ApiOperation(value = "Suggest check", notes = "Returns list of suggestion for query prefix")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "RESPONSE_OK") })
+	@GET
+	@Path("/preterms")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response searchWithQueryParam(@QueryParam("query") String query,
+			@DefaultValue("10") @QueryParam("size") int size,
+			@QueryParam("uid") String uid) {
+
+		/**
+		 * example of executing endpoints
+		 * 
+		 * http://localhost:7001/suggest?query=medi
+		 * &sources=wos&sources=countries&info=health&info=sports
+		 * 
+		 * **/
+
+		try {
+
+			ObjectMapper mapper = new ObjectMapper();
+			return Response.ok(
+					mapper.writeValueAsString(suggesterHandler.lookup(query,size, uid))).build();
+		} catch (IOException e) {
+			logger.error("Error creating json response.", e);
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.build();
+		}
+	}
+
+	@ApiOperation(value = "Suggest check", notes = "Returns list of suggestion for query prefix")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "RESPONSE_OK") })
 	@Path("/ext/act")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
