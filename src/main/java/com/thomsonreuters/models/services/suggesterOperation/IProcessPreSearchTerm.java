@@ -6,6 +6,9 @@ public interface IProcessPreSearchTerm {
 	 
 	
 	public String[] getSuggestions(String[] terms,String query);
+
+
+	public String processAndNormalizeToken(String token);
 	
 
 }

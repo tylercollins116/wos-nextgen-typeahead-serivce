@@ -91,14 +91,15 @@ public class ProcessPreSearchTerm implements IProcessPreSearchTerm {
 			final List<String> processedToken, final Map<String, String> tokens) {
 
 		for (String searchedTerm : allSearchedTokens) {
-			String processed = processToken(searchedTerm);
+			String processed = processAndNormalizeToken(searchedTerm);
 			tokens.put(processed, searchedTerm);
 			processedToken.add(processed);
 		}
 		Collections.sort(processedToken);
 	}
 
-	private String processToken(String token) {
+	@Override
+	public String processAndNormalizeToken(String token) {
 
 		StringBuilder filterCharacter = new StringBuilder();
 

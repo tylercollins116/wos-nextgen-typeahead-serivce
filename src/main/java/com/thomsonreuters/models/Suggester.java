@@ -693,9 +693,11 @@ public class Suggester implements SuggesterHandler {
 	}
 
 	@Override
-	public String[] lookup(String query, int size, String uid, boolean all) {
+	public List<SuggestData> lookup(String query, int size, String uid,
+			boolean all) {
 		// TODO Auto-generated method stub
 
+		List<SuggestData> allsuggestions = new ArrayList<SuggestData>();
 		long startTime = System.currentTimeMillis();
 
 		String[] suggestions = null;
@@ -707,16 +709,79 @@ public class Suggester implements SuggesterHandler {
 			suggestions = processPreSearchTerm.getSuggestions(presearchedTerms,
 					query);
 
-			if (suggestions.length > size) {
+			if (suggestions != null && suggestions.length > size) {
 				suggestions = Arrays.<String> copyOf(suggestions, size - 1);
 			}
 
+			List<SuggestData.Suggestions> allCategoriesSuggestions = new ArrayList<SuggestData.Suggestions>();
+			List<SuggestData.Suggestions> allKeywordSuggestions = new ArrayList<SuggestData.Suggestions>();
+
+			for (String suggestion : suggestions) {
+
+				/*****************************************************/
+
+				SuggestData.Suggestions tempSuggestions = new SuggestData().new Suggestions();
+				tempSuggestions.keyword = suggestion;
+				allKeywordSuggestions.add(tempSuggestions);
+
+				/*****************************************************/
+
+				String processedQueryTerm = processPreSearchTerm
+						.processAndNormalizeToken(suggestion);
+
+				List<SuggestData> allSuggestdata = lookup("categories",
+						suggestion, 10);
+
+				for (SuggestData suggestdata : allSuggestdata) {
+
+					List<SuggestData.Suggestions> allSuggestDataSuggestions = suggestdata.suggestions;
+
+					for (SuggestData.Suggestions suggestionInfo : allSuggestDataSuggestions) {
+
+						String keyword = suggestionInfo.keyword;
+						if (processPreSearchTerm
+								.processAndNormalizeToken(keyword).trim()
+								.equals(processedQueryTerm)) {
+							allCategoriesSuggestions.add(suggestionInfo);
+						}
+
+					}
+
+				}
+
+			}
+
+			SuggestData perSearchedTermsCategories = new SuggestData();
+			perSearchedTermsCategories.source = "categories";
+			perSearchedTermsCategories.suggestions = allCategoriesSuggestions;
+
+			SuggestData perSearchedTerms = new SuggestData();
+			perSearchedTerms.source = "presearcedhterms";
+			perSearchedTerms.suggestions = allKeywordSuggestions;
+
+			allsuggestions.add(perSearchedTerms);
+			allsuggestions.add(perSearchedTermsCategories);
+
 		} else {
 
-			suggestions = presearchedTerms;
+			SuggestData data = new SuggestData();
+			data.source = "All PreSearchedTerms";
+			List<SuggestData.Suggestions> allSuggestions = new ArrayList<SuggestData.Suggestions>();
+
+			for (String keyword : presearchedTerms) {
+				SuggestData.Suggestions tempSuggestions = new SuggestData().new Suggestions();
+				tempSuggestions.keyword = keyword;
+				allSuggestions.add(tempSuggestions);
+			}
+
+			data.suggestions = allSuggestions;
+
+			allsuggestions.add(data);
+
 		}
 
-		return suggestions;
+		return allsuggestions;
+
 	}
 
 }
