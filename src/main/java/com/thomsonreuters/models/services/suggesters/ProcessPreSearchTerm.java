@@ -48,6 +48,8 @@ public class ProcessPreSearchTerm implements IProcessPreSearchTerm {
 
 		}
 		return new String[] {};
+		
+		//return new String[]{"sgro","cancer","ski binding","gallagher","posts"};
 
 	}
 

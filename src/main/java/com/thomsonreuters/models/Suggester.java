@@ -692,6 +692,12 @@ public class Suggester implements SuggesterHandler {
 		return allSuggestions;
 	}
 
+	/**
+	 * 
+	 * This is for Pre-Searched Terms
+	 * 
+	 */
+	
 	@Override
 	public List<SuggestData> lookup(String query, int size, String uid,
 			boolean all) {
@@ -704,6 +710,8 @@ public class Suggester implements SuggesterHandler {
 
 		String[] presearchedTerms = processPreSearchTerm
 				.getPreSearchedTerm(uid);
+		
+		query=processPreSearchTerm.processAndNormalizeToken(query);
 
 		if (!all) {
 			suggestions = processPreSearchTerm.getSuggestions(presearchedTerms,
@@ -785,5 +793,14 @@ public class Suggester implements SuggesterHandler {
 		return allsuggestions;
 
 	}
+	
+	
+	public static void main(String[] args) {
+		
+		Suggester suggester=new Suggester(null, null);
+		suggester.lookup("ski bin", 10, "111", false);
+		
+	}
+	
 
 }
