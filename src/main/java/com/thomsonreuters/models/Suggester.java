@@ -74,11 +74,20 @@ public class Suggester implements SuggesterHandler {
 
 	@Override
 	public List<SuggestData> lookup(String path, String query, int n) {
+
+		return lookup(path, query, n, null);
+
+	}
+
+	public List<SuggestData> lookup(String path, String query, int n,
+			Map<String, List<SuggestData.Suggestions>> preSearchedTermsInfo) {
 		long startTime = -1L;
 
 		List<SuggestData> results = new ArrayList<SuggestData>();
 
+		/*************************************************************************************/
 		/** These code are execute against ElasticSearch **/
+		/*************************************************************************************/
 
 		if (path.equals(Property.article) || path.equals(Property.people)
 				|| path.equals(Property.patent) || path.equals(Property.post)) {
@@ -254,10 +263,14 @@ public class Suggester implements SuggesterHandler {
 			}
 
 		}
-
+		/*************************************************************************************/
 		/** End of codes that execute against ElasticSearch **/
+		/*************************************************************************************/
 
+		/*************************************************************************************/
 		/** The below codes are execute against Dictionary in S3 bucket **/
+		/*************************************************************************************/
+
 		else {
 
 			Lookup suggester = suggesterConfigurationHandler
@@ -278,6 +291,23 @@ public class Suggester implements SuggesterHandler {
 					SuggestData suggestData = new SuggestData();
 					suggestData.source = path;
 
+					/****************************/
+					/**** For pre searched Terms **/
+					/****************************/
+					List<SuggestData.Suggestions> preSearchTerms = new ArrayList<SuggestData.Suggestions>();
+					if (preSearchedTermsInfo != null
+							&& (preSearchTerms = preSearchedTermsInfo
+									.get(Property.category)) != null
+							&& preSearchTerms.size() > 0) {
+						suggestData.suggestions.addAll(preSearchTerms);
+					} else {
+						preSearchTerms = new ArrayList<SuggestData.Suggestions>();
+					}
+
+					/************************************/
+					/** End of for pre searched Terms **/
+					/************************************/
+
 					try {
 						for (LookupResult result : ((TRAnalyzingSuggester) suggester)
 								.lookup(query, false, n)) {
@@ -285,7 +315,12 @@ public class Suggester implements SuggesterHandler {
 							/** output[] **/
 
 							Suggestions suggestions = suggestData.new Suggestions();
+
 							suggestions.keyword = result.key.toString();
+
+							if (preSearchTerms.contains(suggestions)) {
+								continue;
+							}
 
 							Map<String, String> map = PrepareDictionary
 									.processJson(new String(
@@ -318,6 +353,23 @@ public class Suggester implements SuggesterHandler {
 					SuggestData suggestData = new SuggestData();
 					suggestData.source = path;
 
+					/****************************/
+					/**** For pre searched Terms **/
+					/****************************/
+					List<SuggestData.Suggestions> preSearchTerms = new ArrayList<SuggestData.Suggestions>();
+					if (preSearchedTermsInfo != null
+							&& (preSearchTerms = preSearchedTermsInfo
+									.get(Property.category)) != null
+							&& preSearchTerms.size() > 0) {
+						suggestData.suggestions.addAll(preSearchTerms);
+					} else {
+						preSearchTerms = new ArrayList<SuggestData.Suggestions>();
+					}
+
+					/************************************/
+					/** End of for pre searched Terms **/
+					/************************************/
+
 					try {
 
 						for (LookupResult result : ((com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester) suggester)
@@ -325,6 +377,10 @@ public class Suggester implements SuggesterHandler {
 
 							Suggestions suggestions = suggestData.new Suggestions();
 							suggestions.keyword = result.key.toString();
+
+							if (preSearchTerms.contains(suggestions)) {
+								continue;
+							}
 
 							Map<String, String> map = PrepareDictionary
 									.processJson(new String(
@@ -587,7 +643,30 @@ public class Suggester implements SuggesterHandler {
 	/** added **/
 	@Override
 	public List<SuggestData> lookup(String query, List<String> sources,
-			List<String> infos, int size) {
+			List<String> infos, int size, String uid) {
+
+		/***************************************************/
+		/** preSearchedTermsInfo will never null **/
+		/***************************************************/
+
+		Map<String, List<SuggestData.Suggestions>> preSearchedTermsInfo = new HashMap<String, List<SuggestData.Suggestions>>();
+
+		if (uid != null && uid.trim().length() > 0) {
+
+			List<SuggestData> preSearchedTerms = lookup(query, size, uid, false);
+
+			if (preSearchedTerms != null && preSearchedTerms.size() > 0) {
+
+				for (SuggestData preSearchedTerm : preSearchedTerms) {
+
+					preSearchedTermsInfo.put(preSearchedTerm.source,
+							preSearchedTerm.suggestions);
+
+				}
+
+			}
+
+		}
 
 		List<SuggestData> allSuggestions = new ArrayList<SuggestData>();
 
@@ -671,7 +750,8 @@ public class Suggester implements SuggesterHandler {
 
 						@Override
 						public List<SuggestData> call() throws Exception {
-							return lookup(path, query, size);
+							return lookup(path, query, size,
+									preSearchedTermsInfo);
 						}
 					});
 
@@ -697,7 +777,7 @@ public class Suggester implements SuggesterHandler {
 	 * This is for Pre-Searched Terms
 	 * 
 	 */
-	
+
 	@Override
 	public List<SuggestData> lookup(String query, int size, String uid,
 			boolean all) {
@@ -710,8 +790,8 @@ public class Suggester implements SuggesterHandler {
 
 		String[] presearchedTerms = processPreSearchTerm
 				.getPreSearchedTerm(uid);
-		
-		query=processPreSearchTerm.processAndNormalizeToken(query);
+
+		query = processPreSearchTerm.processAndNormalizeToken(query);
 
 		if (!all) {
 			suggestions = processPreSearchTerm.getSuggestions(presearchedTerms,
@@ -737,7 +817,7 @@ public class Suggester implements SuggesterHandler {
 				String processedQueryTerm = processPreSearchTerm
 						.processAndNormalizeToken(suggestion);
 
-				List<SuggestData> allSuggestdata = lookup("categories",
+				List<SuggestData> allSuggestdata = lookup(Property.category,
 						suggestion, 10);
 
 				for (SuggestData suggestdata : allSuggestdata) {
@@ -762,7 +842,7 @@ public class Suggester implements SuggesterHandler {
 			}
 
 			SuggestData perSearchedTermsCategories = new SuggestData();
-			perSearchedTermsCategories.source = "categories";
+			perSearchedTermsCategories.source = Property.category;
 			perSearchedTermsCategories.suggestions = allCategoriesSuggestions;
 
 			SuggestData perSearchedTerms = new SuggestData();
@@ -793,14 +873,12 @@ public class Suggester implements SuggesterHandler {
 		return allsuggestions;
 
 	}
-	
-	
+
 	public static void main(String[] args) {
-		
-		Suggester suggester=new Suggester(null, null);
+
+		Suggester suggester = new Suggester(null, null);
 		suggester.lookup("ski bin", 10, "111", false);
-		
+
 	}
-	
 
 }
