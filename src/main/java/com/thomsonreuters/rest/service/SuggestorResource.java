@@ -96,7 +96,8 @@ public class SuggestorResource {
 	public Response searchWithQueryParam(@QueryParam("query") String query,
 			@QueryParam("source") List<String> source,
 			@QueryParam("info") List<String> info,
-			@DefaultValue("10") @QueryParam("size") int size) {
+			@DefaultValue("10") @QueryParam("size") int size,
+			@QueryParam("uid") String uid) {
 
 		/**
 		 * example of executing endpoints
@@ -111,7 +112,7 @@ public class SuggestorResource {
 			ObjectMapper mapper = new ObjectMapper();
 			return Response.ok(
 					mapper.writeValueAsString(suggesterHandler.lookup(query,
-							source, info, size))).build();
+							source, info, size, uid))).build();
 		} catch (IOException e) {
 			logger.error("Error creating json response.", e);
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
