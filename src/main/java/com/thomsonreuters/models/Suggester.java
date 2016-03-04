@@ -294,7 +294,9 @@ public class Suggester implements SuggesterHandler {
 					/****************************/
 					/**** For pre searched Terms **/
 					/****************************/
-					List<SuggestData.Suggestions> preSearchTerms = new ArrayList<SuggestData.Suggestions>();
+ 
+					List<SuggestData.Suggestions> preSearchTerms = null;
+ 
 					if (preSearchedTermsInfo != null
 							&& (preSearchTerms = preSearchedTermsInfo
 									.get(Property.category)) != null
@@ -356,10 +358,12 @@ public class Suggester implements SuggesterHandler {
 					/****************************/
 					/**** For pre searched Terms **/
 					/****************************/
-					List<SuggestData.Suggestions> preSearchTerms = new ArrayList<SuggestData.Suggestions>();
+ 
+					List<SuggestData.Suggestions> preSearchTerms = null;
 					if (preSearchedTermsInfo != null
 							&& (preSearchTerms = preSearchedTermsInfo
-									.get(Property.category)) != null
+									.get(Property.wos)) != null
+ 
 							&& preSearchTerms.size() > 0) {
 						suggestData.suggestions.addAll(preSearchTerms);
 					} else {
@@ -846,7 +850,7 @@ public class Suggester implements SuggesterHandler {
 			perSearchedTermsCategories.suggestions = allCategoriesSuggestions;
 
 			SuggestData perSearchedTerms = new SuggestData();
-			perSearchedTerms.source = "presearcedterms";
+			perSearchedTerms.source = Property.wos;
 			perSearchedTerms.suggestions = allKeywordSuggestions;
 
 			allsuggestions.add(perSearchedTerms);
