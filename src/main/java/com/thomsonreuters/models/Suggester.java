@@ -294,7 +294,9 @@ public class Suggester implements SuggesterHandler {
 					/****************************/
 					/**** For pre searched Terms **/
 					/****************************/
+ 
 					List<SuggestData.Suggestions> preSearchTerms = null;
+ 
 					if (preSearchedTermsInfo != null
 							&& (preSearchTerms = preSearchedTermsInfo
 									.get(Property.category)) != null
@@ -356,10 +358,12 @@ public class Suggester implements SuggesterHandler {
 					/****************************/
 					/**** For pre searched Terms **/
 					/****************************/
+ 
 					List<SuggestData.Suggestions> preSearchTerms = null;
 					if (preSearchedTermsInfo != null
 							&& (preSearchTerms = preSearchedTermsInfo
 									.get(Property.wos)) != null
+ 
 							&& preSearchTerms.size() > 0) {
 						suggestData.suggestions.addAll(preSearchTerms);
 					} else {
