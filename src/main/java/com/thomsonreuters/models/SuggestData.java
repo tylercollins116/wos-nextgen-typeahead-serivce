@@ -9,12 +9,12 @@ public class SuggestData {
 
 	@JsonProperty("source")
 	public String source;
-	
+
 	@JsonProperty("took")
 	public String took;
 
 	@JsonProperty("suggestions")
-	public List<Suggestions> suggestions=new ArrayList<SuggestData.Suggestions>();
+	public List<Suggestions> suggestions = new ArrayList<SuggestData.Suggestions>();
 
 	public class Suggestions {
 		@JsonProperty("keyword")
@@ -22,6 +22,20 @@ public class SuggestData {
 
 		@JsonProperty("info")
 		public List<Info> info = new ArrayList<SuggestData.Info>();
+
+		@Override
+		public boolean equals(Object obj) {
+			if (obj instanceof Suggestions) {
+
+				String keyword = null;
+
+				if ((keyword = ((Suggestions) obj).keyword) != null
+						&& keyword.equalsIgnoreCase(this.keyword)) {
+					return true;
+				}
+			}
+			return false;
+		}
 
 	}
 
