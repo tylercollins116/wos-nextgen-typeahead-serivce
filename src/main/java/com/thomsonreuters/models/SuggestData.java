@@ -38,6 +38,13 @@ public class SuggestData {
 		}
 
 		public Integer countToSort() {
+			
+			if(info.size()==0){
+				SuggestData.Info tmpInfo=new SuggestData.Info();
+				tmpInfo.key="count";
+				tmpInfo.value="0";
+				info.add(tmpInfo);
+			}
 
 			for (Info info$ : info) {
 				if (info$.key != null

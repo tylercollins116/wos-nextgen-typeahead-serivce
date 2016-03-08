@@ -912,7 +912,9 @@ public class Suggester implements SuggesterHandler {
 
 		@Override
 		public int compare(Suggestions o1, Suggestions o2) {
+ 
 			return o2.countToSort().compareTo(o1.countToSort());
+ 
 		}
 
 	}
