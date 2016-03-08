@@ -14,6 +14,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -93,7 +95,8 @@ public class SuggestorResource {
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "RESPONSE_OK") })
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response searchWithQueryParam(@QueryParam("query") String query,
+	public Response searchWithQueryParam(@Context HttpHeaders headers,
+			@QueryParam("query") String query,
 			@QueryParam("source") List<String> source,
 			@QueryParam("info") List<String> info,
 			@DefaultValue("10") @QueryParam("size") int size,
@@ -108,6 +111,11 @@ public class SuggestorResource {
 		 * **/
 
 		try {
+
+			if (uid == null || uid.trim().length() <= 0) {
+				uid = Utils.getUserid(headers);
+				logger.info("User Id from Header" + uid);
+			}
 
 			ObjectMapper mapper = new ObjectMapper();
 			return Response.ok(
