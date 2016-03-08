@@ -37,6 +37,24 @@ public class SuggestData {
 			return false;
 		}
 
+		public Integer getCount() {
+
+			for (Info info$ : info) {
+				if (info$.key != null
+						&& info$.key.trim().equalsIgnoreCase("count")) {
+
+					try {
+						return Integer.parseInt(info$.value.trim());
+					} catch (Exception e) {
+						info$.value = 0 + "";
+						return 0;
+					}
+				}
+			}
+
+			return 0;
+		}
+
 	}
 
 	public class Info {
