@@ -37,7 +37,14 @@ public class SuggestData {
 			return false;
 		}
 
-		public Integer getCount() {
+		public Integer countToSort() {
+			
+			if(info.size()==0){
+				SuggestData.Info tmpInfo=new SuggestData.Info();
+				tmpInfo.key="count";
+				tmpInfo.value="0";
+				info.add(tmpInfo);
+			}
 
 			for (Info info$ : info) {
 				if (info$.key != null
@@ -46,7 +53,6 @@ public class SuggestData {
 					try {
 						return Integer.parseInt(info$.value.trim());
 					} catch (Exception e) {
-						info$.value = 0 + "";
 						return 0;
 					}
 				}
