@@ -2,6 +2,8 @@ package com.thomsonreuters.models;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -294,9 +296,9 @@ public class Suggester implements SuggesterHandler {
 					/****************************/
 					/**** For pre searched Terms **/
 					/****************************/
- 
+
 					List<SuggestData.Suggestions> preSearchTerms = null;
- 
+
 					if (preSearchedTermsInfo != null
 							&& (preSearchTerms = preSearchedTermsInfo
 									.get(Property.category)) != null
@@ -358,12 +360,12 @@ public class Suggester implements SuggesterHandler {
 					/****************************/
 					/**** For pre searched Terms **/
 					/****************************/
- 
+
 					List<SuggestData.Suggestions> preSearchTerms = null;
 					if (preSearchedTermsInfo != null
 							&& (preSearchTerms = preSearchedTermsInfo
 									.get(Property.wos)) != null
- 
+
 							&& preSearchTerms.size() > 0) {
 						suggestData.suggestions.addAll(preSearchTerms);
 					} else {
@@ -810,21 +812,13 @@ public class Suggester implements SuggesterHandler {
 
 			for (String suggestion : suggestions) {
 
-				/*****************************************************/
-
-				SuggestData.Suggestions tempSuggestions = new SuggestData().new Suggestions();
-				tempSuggestions.keyword = suggestion;
-				allKeywordSuggestions.add(tempSuggestions);
-
-				/*****************************************************/
-
 				String processedQueryTerm = processPreSearchTerm
 						.processAndNormalizeToken(suggestion);
 
-				List<SuggestData> allSuggestdata = lookup(Property.category,
-						suggestion, 10);
+				List<SuggestData> allSuggestdataForCategories = lookup(
+						Property.category, suggestion, 50);
 
-				for (SuggestData suggestdata : allSuggestdata) {
+				for (SuggestData suggestdata : allSuggestdataForCategories) {
 
 					List<SuggestData.Suggestions> allSuggestDataSuggestions = suggestdata.suggestions;
 
@@ -843,7 +837,43 @@ public class Suggester implements SuggesterHandler {
 
 				}
 
+				List<SuggestData> allSuggestdataForKeywords = lookup(
+						Property.wos, suggestion, 50);
+
+				for (SuggestData suggestdata : allSuggestdataForKeywords) {
+
+					boolean include = false;
+
+					List<SuggestData.Suggestions> allSuggestDataSuggestions = suggestdata.suggestions;
+
+					for (SuggestData.Suggestions suggestionInfo : allSuggestDataSuggestions) {
+
+						String keyword = suggestionInfo.keyword;
+						if (processPreSearchTerm
+								.processAndNormalizeToken(keyword).trim()
+
+								.equals(processedQueryTerm)) {
+							allKeywordSuggestions.add(suggestionInfo);
+							include = true;
+						}
+
+					}
+
+					if (!include) {
+
+						SuggestData.Suggestions tempSuggestions = new SuggestData().new Suggestions();
+						tempSuggestions.keyword = suggestion;
+						allKeywordSuggestions.add(tempSuggestions);
+					}
+
+				}
+
 			}
+
+			/********************* Sorting occurs *****************************/
+			Collections.sort(allCategoriesSuggestions, new sortByCount());
+			Collections.sort(allKeywordSuggestions, new sortByCount());
+			/********************* Sorting Ends *****************************/
 
 			SuggestData perSearchedTermsCategories = new SuggestData();
 			perSearchedTermsCategories.source = Property.category;
@@ -878,11 +908,12 @@ public class Suggester implements SuggesterHandler {
 
 	}
 
-	public static void main(String[] args) {
+	private class sortByCount implements Comparator<SuggestData.Suggestions> {
 
-		Suggester suggester = new Suggester(null, null);
-		suggester.lookup("ski bin", 10, "111", false);
+		@Override
+		public int compare(Suggestions o1, Suggestions o2) {
+			return o2.countToSort().compareTo(o1.countToSort());
+		}
 
 	}
-
 }
