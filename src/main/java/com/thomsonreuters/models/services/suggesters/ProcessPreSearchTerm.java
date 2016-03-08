@@ -23,6 +23,9 @@ import com.thomsonreuters.models.services.suggesterOperation.IProcessPreSearchTe
 public class ProcessPreSearchTerm implements IProcessPreSearchTerm {
 
 	private final StatisticsServiceClient statisticsServiceClient = new StatisticsServiceClientImpl();
+	
+	
+	 
 
 	@Override
 	public String[] getPreSearchedTerm(String truid, String... info) {
@@ -36,7 +39,7 @@ public class ProcessPreSearchTerm implements IProcessPreSearchTerm {
 		try {
 			dataBytes = statisticsServiceClient
 					.getStatisticsTerms("user", truid.trim(), "queries",
-							startDate, endDate).observe().toBlocking()
+							startDate, endDate,1000).observe().toBlocking()
 					.lastOrDefault(Unpooled.copiedBuffer("".getBytes()));
 
 			String statisticsResponse = dataBytes.toString(Charset
@@ -47,6 +50,7 @@ public class ProcessPreSearchTerm implements IProcessPreSearchTerm {
 		} catch (Exception e) {
 
 		}
+		
 		return new String[] {};
 		
 		//return new String[]{"sgro","cancer","ski binding","gallagher","posts"};
