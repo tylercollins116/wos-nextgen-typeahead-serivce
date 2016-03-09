@@ -112,7 +112,7 @@ public class ProcessPreSearchTerm implements IProcessPreSearchTerm {
 		char[] filterChars = token.toCharArray();
 		for (char c : filterChars) {
 			if (c == '\'' || c == '"' || c == '?' || c == '*' || c == ','
-					|| c == '[' || c == ']') {
+					|| c == '[' || c == ']'|| c == '|') {
 				continue;
 			}
 			filterCharacter.append(Character.toLowerCase(c));

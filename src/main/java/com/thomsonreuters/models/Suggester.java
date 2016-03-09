@@ -819,6 +819,7 @@ public class Suggester implements SuggesterHandler {
 						Property.category, suggestion, 50);
 
 				for (SuggestData suggestdata : allSuggestdataForCategories) {
+					boolean include = false;
 
 					List<SuggestData.Suggestions> allSuggestDataSuggestions = suggestdata.suggestions;
 
@@ -831,6 +832,11 @@ public class Suggester implements SuggesterHandler {
 
 						.equals(processedQueryTerm)) {
 							allCategoriesSuggestions.add(suggestionInfo);
+							include = true;
+						}
+
+						if (include) {
+							break;
 						}
 
 					}
@@ -864,6 +870,11 @@ public class Suggester implements SuggesterHandler {
 						SuggestData.Suggestions tempSuggestions = new SuggestData().new Suggestions();
 						tempSuggestions.keyword = suggestion;
 						allKeywordSuggestions.add(tempSuggestions);
+						include = true;
+					}
+
+					if (include) {
+						break;
 					}
 
 				}
