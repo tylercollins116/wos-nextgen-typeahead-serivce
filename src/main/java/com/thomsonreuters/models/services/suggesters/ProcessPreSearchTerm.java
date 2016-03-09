@@ -15,7 +15,7 @@ import java.util.StringTokenizer;
 
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
- 
+
 import com.thomsonreuters.client.statistics.StatisticsServiceClient;
 import com.thomsonreuters.client.statistics.impl.StatisticsServiceClientImpl;
 import com.thomsonreuters.models.services.suggesterOperation.IProcessPreSearchTerm;
@@ -23,9 +23,6 @@ import com.thomsonreuters.models.services.suggesterOperation.IProcessPreSearchTe
 public class ProcessPreSearchTerm implements IProcessPreSearchTerm {
 
 	private final StatisticsServiceClient statisticsServiceClient = new StatisticsServiceClientImpl();
-	
-	
-	 
 
 	@Override
 	public String[] getPreSearchedTerm(String truid, String... info) {
@@ -39,7 +36,7 @@ public class ProcessPreSearchTerm implements IProcessPreSearchTerm {
 		try {
 			dataBytes = statisticsServiceClient
 					.getStatisticsTerms("user", truid.trim(), "queries",
-							startDate, endDate,1000).observe().toBlocking()
+							startDate, endDate, 1000).observe().toBlocking()
 					.lastOrDefault(Unpooled.copiedBuffer("".getBytes()));
 
 			String statisticsResponse = dataBytes.toString(Charset
@@ -50,10 +47,11 @@ public class ProcessPreSearchTerm implements IProcessPreSearchTerm {
 		} catch (Exception e) {
 
 		}
-		
+
 		return new String[] {};
-		
-		//return new String[]{"sgro","cancer","ski binding","gallagher","posts"};
+
+		// return new
+		// String[]{"sgro","cancer","ski binding","gallagher","posts"};
 
 	}
 
@@ -98,8 +96,18 @@ public class ProcessPreSearchTerm implements IProcessPreSearchTerm {
 
 		for (String searchedTerm : allSearchedTokens) {
 			String processed = processAndNormalizeToken(searchedTerm);
-			tokens.put(processed, searchedTerm);
-			processedToken.add(processed);
+			
+			/**Removing Duplicates**/
+			/**
+			 * what if Searched Terms are "Blood Pressure" and "blood pressure " we have to remove the duplicate
+				
+			 */
+			/**********************/
+
+			if (!processedToken.contains(processed)) {
+				tokens.put(processed, searchedTerm);
+				processedToken.add(processed);
+			}
 		}
 		Collections.sort(processedToken);
 	}
@@ -112,7 +120,7 @@ public class ProcessPreSearchTerm implements IProcessPreSearchTerm {
 		char[] filterChars = token.toCharArray();
 		for (char c : filterChars) {
 			if (c == '\'' || c == '"' || c == '?' || c == '*' || c == ','
-					|| c == '[' || c == ']'|| c == '|') {
+					|| c == '[' || c == ']' || c == '|') {
 				continue;
 			}
 			filterCharacter.append(Character.toLowerCase(c));
@@ -172,6 +180,7 @@ public class ProcessPreSearchTerm implements IProcessPreSearchTerm {
 		return fromIndex;
 	}
 
-	public static void main(String[] args) {}
+	public static void main(String[] args) {
+	}
 
 }
