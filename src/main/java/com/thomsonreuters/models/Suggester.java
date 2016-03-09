@@ -857,10 +857,13 @@ public class Suggester implements SuggesterHandler {
 						String keyword = suggestionInfo.keyword;
 						if (processPreSearchTerm
 								.processAndNormalizeToken(keyword).trim()
-
 								.equals(processedQueryTerm)) {
 							allKeywordSuggestions.add(suggestionInfo);
 							include = true;
+						}
+
+						if (include) {
+							break;
 						}
 
 					}
@@ -870,11 +873,7 @@ public class Suggester implements SuggesterHandler {
 						SuggestData.Suggestions tempSuggestions = new SuggestData().new Suggestions();
 						tempSuggestions.keyword = suggestion;
 						allKeywordSuggestions.add(tempSuggestions);
-						include = true;
-					}
 
-					if (include) {
-						break;
 					}
 
 				}
