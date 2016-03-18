@@ -67,6 +67,14 @@ public class Suggester implements SuggesterHandler {
 		this.suggesterConfigurationHandler = suggesterConfigurationHandler;
 		this.ESQueryExecutor = queryExecutor;
 	}
+	
+	
+
+	public SuggesterConfigurationHandler getSuggesterConfigurationHandler() {
+		return suggesterConfigurationHandler;
+	}
+
+
 
 	@Override
 	public List<SuggestData> lookup(String query, int n) {

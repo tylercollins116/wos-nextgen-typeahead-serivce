@@ -76,19 +76,7 @@ public class PrepareDictionary
 
 	}
 
-	public static void main(String[] args) {
-		Map<String, String> map = PrepareDictionary
-				.processJson("{\"keyword\":\"underage\",\"count\":20,\"id\":\"WOS:000283688100012\",\"title\":\"Why Might Adverse Childhood Experiences Lead to Underage Drinking Among US Youth? Findings From an Emergency Department-Based Qualitative Pilot Study\"}");
-
-		Set<String> keys = map.keySet();
-
-		for (String key : keys) {
-			System.out.println(key + "\t\t" + map.get(key));
-		}
-
-		ArticleEntry article = new ArticleEntry(map);
-		System.out.println(article.getJson());
-	}
+	
 
 	@Override
 	public boolean hasNext() {

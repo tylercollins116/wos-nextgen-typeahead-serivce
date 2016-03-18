@@ -51,3 +51,5 @@ public class OrganizationEntry extends Entry {
 		return alias+TRAnalyzingSuggesterExt.deliminator+sb.toString();}
 
 }
+
+

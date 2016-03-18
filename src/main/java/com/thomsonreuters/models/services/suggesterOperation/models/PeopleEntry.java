@@ -46,14 +46,6 @@ public class PeopleEntry extends Entry {
 		return sb.toString();
 	}
 
-	public static void main(String[] args) {
-
-		Map<String, String> JsonToMap = PrepareDictionary
-				.processJson("{\"keyword\":\"Ginoux, A Paul\",\"count\":1,\"id\":\"ee3faaf5-1486-4cb5-9a29-88468106e1f8\",\"institution\":\"NOAA\",\"image\":\"http://example.com/imageName.jpg\",\"country\":\"USA\",\"role\":\"Chaplain\"}");
-
-		PeopleEntry entry = new PeopleEntry(JsonToMap);
-		System.out.println(entry.getJson());
-
-	}
+	 
 
 }

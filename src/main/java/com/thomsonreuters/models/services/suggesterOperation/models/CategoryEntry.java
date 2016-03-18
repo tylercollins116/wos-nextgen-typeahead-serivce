@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import com.thomsonreuters.models.services.util.PrepareDictionary;
+
 public class CategoryEntry extends Entry {
 
 	private static final String CATEGORY = "category";
@@ -50,20 +52,5 @@ public class CategoryEntry extends Entry {
 		return sb.toString();
 	}
 
-	public static void main(String[] args) {
-		
-		/**{"keyword":"pulmonary endothelial dysfunction","category":"PHYSIOLOGY","count":16,"manoj":"home"}**/
-
-		Map<String, String> datas = new HashMap<String, String>();
-		datas.put("keyword", "pulmonary endothelial dysfunction");
-		datas.put("count", "16");
-		datas.put("category", "PHYSIOLOGY");
-		datas.put("manoj", "home");
-		 
-
-		Entry article = new CategoryEntry(datas);
-		System.out.println(article.getJson());
-
-	}
-
+	 
 }

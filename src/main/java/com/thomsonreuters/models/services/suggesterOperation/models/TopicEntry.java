@@ -1,7 +1,6 @@
 package com.thomsonreuters.models.services.suggesterOperation.models;
 
 import java.util.Map;
-import java.util.Set;
 
 import com.thomsonreuters.models.services.util.PrepareDictionary;
 
@@ -10,13 +9,13 @@ public class TopicEntry extends Entry {
 	private Map<String, String> JsonToMap = null;
 
 	public TopicEntry(Map<String, String> JsonToMap) {
-		setTerm(JsonToMap.remove(Entry.TERM));	
-		try{
-		setWeight(Integer.parseInt((JsonToMap.get(Entry.WEIGHT)).trim()));
-		}catch(Exception e){
+		setTerm(JsonToMap.remove(Entry.TERM));
+		try {
+			setWeight(Integer.parseInt((JsonToMap.get(Entry.WEIGHT)).trim()));
+		} catch (Exception e) {
 			setWeight(1);
 		}
-		 
+
 		this.JsonToMap = JsonToMap;
 
 	}
@@ -24,17 +23,6 @@ public class TopicEntry extends Entry {
 	@Override
 	public String getJson() {
 		return "";
-	}
-
-	public static void main(String[] args) {
-
-		Map<String, String> JsonToMap = PrepareDictionary
-				.processJson("{\"keyword\":\"undulation and bio composite\",\"count\":5}");
-
-		KeywordEntry entry = new KeywordEntry(JsonToMap);
-
-		System.out.println(entry.getJson());
-
-	}
+	} 
 
 }

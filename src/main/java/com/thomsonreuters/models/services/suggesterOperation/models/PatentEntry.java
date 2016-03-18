@@ -3,6 +3,8 @@ package com.thomsonreuters.models.services.suggesterOperation.models;
 import java.util.Map;
 import java.util.Set;
 
+import com.thomsonreuters.models.services.util.PrepareDictionary;
+
 public class PatentEntry extends Entry {
 
 	private Map<String, String> JsonToMap = null;
@@ -37,5 +39,7 @@ public class PatentEntry extends Entry {
 
 		return sb.toString();
 	}
+	
+	 
 
 }
