@@ -13,17 +13,17 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.util.CharArraySet;
 import org.junit.Test;
 
-import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt;
-import com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggesterExt;
+import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggester;
+import com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester;
 import com.thomsonreuters.models.services.suggesterOperation.models.EntryIterator;
 import com.thomsonreuters.models.services.suggesterOperation.models.OrganizationEntry;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
 
-public class TRAnalyzingInfixSuggesterTest {
+public class TRAnalyzingSuggesterTest {
 
-	public TRAnalyzingSuggesterExt suggester = null;
+	TRAnalyzingSuggester suggester = null;
 
-	public TRAnalyzingInfixSuggesterTest() {
+	public TRAnalyzingSuggesterTest() {
 		doTest();
 	}
 
@@ -56,7 +56,7 @@ public class TRAnalyzingInfixSuggesterTest {
 			PrepareDictionary dictionary = new PrepareDictionary(is,
 					OrganizationEntry.class);
 
-			suggester = new TRFuzzySuggesterExt(indexAnalyzer, queryAnalyzer);
+			suggester = new TRFuzzySuggester(indexAnalyzer, queryAnalyzer);
 
 			suggester.build(new EntryIterator(dictionary));
 
@@ -104,22 +104,30 @@ public class TRAnalyzingInfixSuggesterTest {
 
 	private List<String> getValuesToIndex() {
 		List<String> list = new ArrayList<String>();
-		list.add("{\"keyword\":\"1 DECEMBRIE 1918 UNIV ALBA IULIA UNIV\",\"count\":2,\"alias\":\"1 Decembrie 1918 University Alba Iulia\",\"id\":\"40270007289368\"}");
-		list.add("{\"keyword\":\"1 DECEMBRIE 1918 UNIV ALBA JULIA\",\"count\":13,\"alias\":\"1 Decembrie 1918 University Alba Iulia\",\"id\":\"40270007289368\"}");
-		list.add("{\"keyword\":\"1 DECEMBRIE 1918 UNIV ALBA LULIA\",\"count\":1,\"alias\":\"1 Decembrie 1918 University Alba Iulia\",\"id\":\"40270007289368\"}");
-		list.add("{\"keyword\":\"1 DECEMBRIE 1918 UNIVERSITY ALBA IULIA\",\"count\":718,\"alias\":\"1 Decembrie 1918 University Alba Iulia\",\"id\":\"40270007289368\"}");
-		list.add("{\"keyword\":\"1 DECEMBRIE UNIV\",\"count\":2,\"alias\":\"1 Decembrie 1918 University Alba Iulia\",\"id\":\"40270007289368\"}");
-		list.add("{\"keyword\":\"1 DECEMBRIE UNIV ALBA JULIA\",\"count\":1,\"alias\":\"1 Decembrie 1918 University Alba Iulia\",\"id\":\"40270007289368\"}");
-		list.add("{\"keyword\":\"1918\",\"count\":718,\"alias\":\"1 Decembrie 1918 University Alba Iulia\",\"id\":\"40270007289368\"}");
-		list.add("{\"keyword\":\"1ST DECEMBER 1918 UNIV ALBA IULIA\",\"count\":12,\"alias\":\"1 Decembrie 1918 University Alba Iulia\",\"id\":\"40270007289368\"}");
-		list.add("{\"keyword\":\"ALBA\",\"count\":718,\"alias\":\"1 Decembrie 1918 University Alba Iulia\",\"id\":\"40270007289368\"}");
-		list.add("{\"keyword\":\"ALBA IULIA\",\"count\":180,\"alias\":\"1 Decembrie 1918 University Alba Iulia\",\"id\":\"40270007289368\"}");
-		list.add("{\"keyword\":\"ALBA IULIA UNIV\",\"count\":3,\"alias\":\"1 Decembrie 1918 University Alba Iulia\",\"id\":\"40270007289368\"}");
-		list.add("{\"keyword\":\"DECEMBER 1ST UNIV ALBA IULIA\",\"count\":2,\"alias\":\"1 Decembrie 1918 University Alba Iulia\",\"id\":\"40270007289368\"}");
-		list.add("{\"keyword\":\"DECEMBRIE\",\"count\":718,\"alias\":\"1 Decembrie 1918 University Alba Iulia\",\"id\":\"40270007289368\"}");
-		list.add("{\"keyword\":\"DECEMBRIE 1918 UNIV\",\"count\":1,\"alias\":\"1 Decembrie 1918 University Alba Iulia\",\"id\":\"40270007289368\"}");
-		list.add("{\"keyword\":\"DECEMBRIE 1918 UNIV ALBA JULIA\",\"count\":3,\"alias\":\"1 Decembrie 1918 University Alba Iulia\",\"id\":\"40270007289368\"}");
-
+		list.add("{\"keyword\":\"growth\",\"count\":40137}");
+		list.add("{\"keyword\":\"growth analysis\",\"count\":282}");
+		list.add("{\"keyword\":\"growth and yield\",\"count\":107}");
+		list.add("{\"keyword\":\"growth arrest\",\"count\":241}");
+		list.add("{\"keyword\":\"growth cone\",\"count\":340}");
+		list.add("{\"keyword\":\"habitat\",\"count\":3889}");
+		list.add("{\"keyword\":\"habitat complexity\",\"count\":228}");
+		list.add("{\"keyword\":\"habitat fragmentation\",\"count\":2192}");
+		list.add("{\"keyword\":\"habitat heterogeneity\",\"count\":233}");
+		list.add("{\"keyword\":\"habitat loss\",\"count\":574}");
+		list.add("{\"keyword\":\"habitat management\",\"count\":175}");
+		list.add("{\"keyword\":\"masseter muscle\",\"count\":127}");
+		list.add("{\"keyword\":\"mast cells\",\"count\":5387}");
+		list.add("{\"keyword\":\"mastectomy\",\"count\":678}");
+		list.add("{\"keyword\":\"master equation\",\"count\":297}");
+		list.add("{\"keyword\":\"mastication\",\"count\":338}");
+		list.add("{\"keyword\":\"mastitis\",\"count\":3008}");
+		list.add("{\"keyword\":\"matched filter\",\"count\":227}");
+		list.add("{\"keyword\":\"matching\",\"count\":2207}");
+		list.add("{\"keyword\":\"measure of noncompactness\",\"count\":167}");
+		list.add("{\"keyword\":\"measurement\",\"count\":18874}");
+		list.add("{\"keyword\":\"measurement error\",\"count\":1550}");
+		list.add("{\"keyword\":\"measurement invariance\",\"count\":251}");
+		list.add("{\"keyword\":\"scrapie\",\"count\":541}");
 		return list;
 	}
 
