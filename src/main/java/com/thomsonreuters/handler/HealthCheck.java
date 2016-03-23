@@ -156,12 +156,12 @@ public class HealthCheck implements HealthCheckHandler {
 
 		if (!allSet) {
 
-			log.error("========= Available dictionary in eiddo===========");
+			log.error("========= Available dictionary in eiddo===========\t:"+dictionaryProperties.size());
 			for (String name : dictionaryProperties) {
 				log.error("\t\t" + name + "\t\t");
 			}
 
-			log.error("========= Available dictionary in applications===========");
+			log.error("========= Available dictionary in applications===========\t:"+dictionaryNames.size());
 			Iterator<String> enums = dictionaryNames.iterator();
 			while (enums.hasNext()) {
 				log.error("\t\t" + enums.next() + "\t\t");
@@ -169,6 +169,8 @@ public class HealthCheck implements HealthCheckHandler {
 			log.error("===========================================================");
 
 			log.error("Total number of Dictionary Names mismatch with Eiddo Dictionary Name , returning error code :500");
+			
+			 
 
 			return 500;
 		} else {
