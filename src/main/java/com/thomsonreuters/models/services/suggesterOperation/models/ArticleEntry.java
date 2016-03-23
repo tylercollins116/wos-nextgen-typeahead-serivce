@@ -3,8 +3,6 @@ package com.thomsonreuters.models.services.suggesterOperation.models;
 import java.util.Map;
 import java.util.Set;
 
-import com.thomsonreuters.models.services.util.PrepareDictionary;
-
 public class ArticleEntry extends Entry {
 
 	public static final String TERM = "title";
@@ -42,16 +40,6 @@ public class ArticleEntry extends Entry {
 		sb.append("}");
 
 		return sb.toString();
-	}
-
-	public static void main(String[] args) {
-
-		Map<String, String> JsonToMap = PrepareDictionary
-				.processJson("{\"keyword\":\"adsorption\",\"count\":11,\"UT\":\"WOS:000337985600052\",\"title\":\"Adsorption behavior and mechanism of perfluorinated compounds on various adsorbents-A review\",\"fuid\":\"472494968WOS1\"}");
-
-		ArticleEntry entry = new ArticleEntry(JsonToMap);
-		System.out.println(entry.getJson());
-
 	}
 
 }

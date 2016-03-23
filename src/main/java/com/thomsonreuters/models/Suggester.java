@@ -35,7 +35,6 @@ import com.thomsonreuters.models.services.ESoperation.PatentESEntry;
 import com.thomsonreuters.models.services.ESoperation.PeopleESEntry;
 import com.thomsonreuters.models.services.ESoperation.PostESEntry;
 import com.thomsonreuters.models.services.suggesterOperation.IProcessPreSearchTerm;
-import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingInfixSuggester;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggester;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt.Process;
@@ -66,6 +65,10 @@ public class Suggester implements SuggesterHandler {
 			IESQueryExecutor queryExecutor) {
 		this.suggesterConfigurationHandler = suggesterConfigurationHandler;
 		this.ESQueryExecutor = queryExecutor;
+	}
+
+	public SuggesterConfigurationHandler getSuggesterConfigurationHandler() {
+		return suggesterConfigurationHandler;
 	}
 
 	@Override
@@ -499,150 +502,11 @@ public class Suggester implements SuggesterHandler {
 						+ "";
 				results.add(suggestData);
 
-			} else if (suggester instanceof AnalyzingInfixSuggester) {
-
-				if (path.equalsIgnoreCase(Property.people)) {
-
-					startTime = System.currentTimeMillis();
-
-					SuggestData suggestData = new SuggestData();
-					suggestData.source = path;
-
-					try {
-
-						for (LookupResult result : ((AnalyzingInfixSuggester) suggester)
-								.lookup(query, false, n)) {
-
-							Map<String, String> map = PrepareDictionary
-									.processJson(new String(
-											result.payload.bytes));
-
-							Suggestions suggestions = suggestData.new Suggestions();
-							suggestions.keyword = "";
-							suggestData.suggestions.add(suggestions);
-
-							Info info1 = suggestData.new Info();
-							info1.key = "name";
-							info1.value = result.key.toString();
-							suggestions.info.add(info1);
-
-							Set<String> keys = map.keySet();
-
-							for (String key : keys) {
-
-								Info info = suggestData.new Info();
-								info.key = key;
-								info.value = map.get(key);
-								suggestions.info.add(info);
-							}
-
-						}
-
-					} catch (Exception e) {
-						log.info("cannot find the suggester ");
-					}
-
-					suggestData.took = (System.currentTimeMillis() - startTime)
-							+ "";
-
-					results.add(suggestData);
-				} else if (path.equalsIgnoreCase(Property.patent)) {
-
-					startTime = System.currentTimeMillis();
-
-					SuggestData suggestData = new SuggestData();
-					suggestData.source = path;
-
-					try {
-
-						for (LookupResult result : ((AnalyzingInfixSuggester) suggester)
-								.lookup(query, false, n)) {
-
-							Map<String, String> map = PrepareDictionary
-									.processJson(new String(
-											result.payload.bytes));
-
-							Suggestions suggestions = suggestData.new Suggestions();
-							suggestions.keyword = "";
-							suggestData.suggestions.add(suggestions);
-
-							Info info1 = suggestData.new Info();
-							info1.key = "title";
-							info1.value = result.key.toString();
-							suggestions.info.add(info1);
-
-							Set<String> keys = map.keySet();
-
-							for (String key : keys) {
-
-								Info info = suggestData.new Info();
-								info.key = key;
-								info.value = map.get(key);
-								suggestions.info.add(info);
-							}
-
-						}
-
-					} catch (Exception e) {
-						log.info("cannot find the suggester ");
-					}
-
-					suggestData.took = (System.currentTimeMillis() - startTime)
-							+ "";
-
-					results.add(suggestData);
-				}
-			} else if (suggester instanceof TRAnalyzingInfixSuggester) {
-
-				if (path.equalsIgnoreCase(Property.article)) {
-
-					startTime = System.currentTimeMillis();
-
-					SuggestData suggestData = new SuggestData();
-					suggestData.source = path;
-
-					try {
-						for (LookupResult result : ((TRAnalyzingInfixSuggester) suggester)
-								.lookup(query, false, n)) {
-
-							Map<String, String> map = PrepareDictionary
-									.processJson(new String(
-											result.payload.bytes));
-
-							Suggestions suggestions = suggestData.new Suggestions();
-							suggestions.keyword = map.remove(Entry.TERM);
-
-							Set<String> keys = map.keySet();
-
-							for (String key : keys) {
-
-								Info info$ = suggestData.new Info();
-								info$.key = key;
-								info$.value = map.get(key);
-								suggestions.info.add(info$);
-							}
-
-							Info info$ = suggestData.new Info();
-							info$.key = "title";
-							info$.value = result.key.toString();
-							suggestions.info.add(info$);
-
-							suggestData.suggestions.add(suggestions);
-
-						}
-					} catch (Exception e) {
-						log.info("cannot find the suggester ");
-					}
-
-					suggestData.took = (System.currentTimeMillis() - startTime)
-							+ "";
-
-					results.add(suggestData);
-
-				}
-			}
+			}  
 		}
+		/***************************************************/
 		/** End of codes that execute against dictionary in S3 Buckets **/
+		/***************************************************/
 		return results;
 	}
 

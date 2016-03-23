@@ -43,18 +43,6 @@ public class KeywordEntry extends Entry {
 		return sb.toString();
 	}
 
-	public static void main(String[] args) {
-		
-		
-
-		Map<String, String> JsonToMap = PrepareDictionary
-				.processJson("{\"keyword\":\"undulation and bio composite\",\"count\":5}");
-
-		 KeywordEntry entry=new KeywordEntry(JsonToMap);
-
-		 
-		System.out.println(entry.getJson());
-
-	}
+ 
 
 }

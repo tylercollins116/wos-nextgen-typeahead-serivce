@@ -29,7 +29,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.governator.annotations.Configuration;
 import com.thomsonreuters.models.SuggesterHandler;
-import com.thomsonreuters.models.extact.SuggesterHandlerExt;
 
 @Singleton
 @Api(value = "/suggest", description = "Suggest WS entry point")
@@ -43,13 +42,11 @@ public class SuggestorResource {
 	private Supplier<String> appName = Suppliers.ofInstance("One Platform");
 
 	private final SuggesterHandler suggesterHandler;
-	private final SuggesterHandlerExt suggesterHandlerExt;
 
 	@Inject
-	public SuggestorResource(SuggesterHandler suggesterHandler,
-			SuggesterHandlerExt suggesterHandlerExt) {
+	public SuggestorResource(SuggesterHandler suggesterHandler) {
 		this.suggesterHandler = suggesterHandler;
-		this.suggesterHandlerExt = suggesterHandlerExt;
+
 	}
 
 	@ApiOperation(value = "Suggest check", notes = "Returns list of suggestion for query prefix")
@@ -159,26 +156,6 @@ public class SuggestorResource {
 		}
 	}
 
-	@ApiOperation(value = "Suggest check", notes = "Returns list of suggestion for query prefix")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "RESPONSE_OK") })
-	@Path("/ext/act")
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response searchQuery(@QueryParam("query") String query,
-			@QueryParam("source") List<String> source,
-			@QueryParam("info") List<String> info,
-			@DefaultValue("10") @QueryParam("size") int size) {
-		try {
-
-			ObjectMapper mapper = new ObjectMapper();
-			return Response.ok(
-					mapper.writeValueAsString(suggesterHandlerExt.lookup(query,
-							source, info, size))).build();
-		} catch (IOException e) {
-			logger.error("Error creating json response.", e);
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.build();
-		}
-	}
+	 
 
 }

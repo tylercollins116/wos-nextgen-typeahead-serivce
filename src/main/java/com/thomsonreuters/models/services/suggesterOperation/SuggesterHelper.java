@@ -17,8 +17,6 @@ import org.apache.lucene.analysis.util.CharArraySet;
 import org.apache.lucene.analysis.util.WordlistLoader;
 import org.apache.lucene.search.suggest.FileDictionary;
 import org.apache.lucene.search.suggest.Lookup;
-import org.apache.lucene.search.suggest.analyzing.AnalyzingInfixSuggester;
-import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,18 +24,14 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.S3Object;
 import com.netflix.config.ConfigurationManager;
-import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingInfixSuggester;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggester;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggesterExt;
-import com.thomsonreuters.models.services.suggesterOperation.models.ArticleEntry;
 import com.thomsonreuters.models.services.suggesterOperation.models.CategoryEntry;
 import com.thomsonreuters.models.services.suggesterOperation.models.EntryIterator;
 import com.thomsonreuters.models.services.suggesterOperation.models.KeywordEntry;
 import com.thomsonreuters.models.services.suggesterOperation.models.OrganizationEntry;
-import com.thomsonreuters.models.services.suggesterOperation.models.PatentEntry;
-import com.thomsonreuters.models.services.suggesterOperation.models.PeopleEntry;
 import com.thomsonreuters.models.services.suggesterOperation.models.TopicEntry;
 import com.thomsonreuters.models.services.util.Blockable;
 import com.thomsonreuters.models.services.util.BlockingHashTable;
@@ -216,49 +210,36 @@ public abstract class SuggesterHelper {
 
 					/********** Important code to work on ************************/
 
-					if (property.getDictionayName().equalsIgnoreCase(Property.organization)) {
+					if (property.getDictionayName().equalsIgnoreCase(
+							Property.organization)) {
 
 						TRAnalyzingSuggesterExt suggester = createAnalyzingSuggesterForOrganization(is);
 						suggesterList.put(property.getDictionayName(),
 								suggester);
 
-					} else if (property.getDictionayName().equalsIgnoreCase(Property.wos)) {
+					} else if (property.getDictionayName().equalsIgnoreCase(
+							Property.wos)) {
 
 						TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
 								is, KeywordEntry.class);
 
 						suggesterList.put(property.getDictionayName(),
 								suggester);
-					} else if (property.getDictionayName().equalsIgnoreCase(Property.topic)) {
+					} else if (property.getDictionayName().equalsIgnoreCase(
+							Property.topic)) {
 
 						TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
 								is, TopicEntry.class);
 
 						suggesterList.put(property.getDictionayName(),
 								suggester);
-					} else if (property.getDictionayName().equalsIgnoreCase(Property.category)) {
+					} else if (property.getDictionayName().equalsIgnoreCase(
+							Property.category)) {
 						TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
 								is, CategoryEntry.class);
 						suggesterList.put(property.getDictionayName(),
 								suggester);
 
-					} else if (property.getDictionayName().equalsIgnoreCase(Property.people) && false) {
-						AnalyzingInfixSuggester suggester = createAnalyzingForPeopleAndPatent(
-								is, PeopleEntry.class);
-						suggesterList.put(property.getDictionayName(),
-								suggester);
-
-					} else if (property.getDictionayName().equalsIgnoreCase(Property.patent) && false) {
-						AnalyzingInfixSuggester suggester = createAnalyzingForPeopleAndPatent(
-								is, PatentEntry.class);
-						suggesterList.put(property.getDictionayName(),
-								suggester);
-
-					} else if (property.getDictionayName().equalsIgnoreCase(Property.article) && false) {
-
-						TRAnalyzingInfixSuggester suggester = createAnalyzingForArticle(is);
-						suggesterList.put(property.getDictionayName(),
-								suggester);
 					}
 
 					/***************************** End **********************************/
@@ -326,31 +307,20 @@ public abstract class SuggesterHelper {
 			TRAnalyzingSuggesterExt suggester = createAnalyzingSuggesterForOrganization(is);
 			suggesterList.put(property.getDictionayName(), suggester);
 
-		} else if (property.getDictionayName().equalsIgnoreCase(Property.article)) {
-
-			TRAnalyzingInfixSuggester suggester = createAnalyzingForArticle(is);
-			suggesterList.put(property.getDictionayName(), suggester);
 		} else if (property.getDictionayName().equalsIgnoreCase(Property.wos)) {
 
 			com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
 					is, KeywordEntry.class);
 			suggesterList.put(property.getDictionayName(), suggester);
-		} else if (property.getDictionayName().equalsIgnoreCase(Property.category)) {
+		} else if (property.getDictionayName().equalsIgnoreCase(
+				Property.category)) {
 			TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
 					is, CategoryEntry.class);
 			suggesterList.put(property.getDictionayName(), suggester);
 
-		} else if (property.getDictionayName().equalsIgnoreCase(Property.people)) {
-			AnalyzingInfixSuggester suggester = createAnalyzingForPeopleAndPatent(
-					is, PeopleEntry.class);
-			suggesterList.put(property.getDictionayName(), suggester);
+		}
 
-		} else if (property.getDictionayName().equalsIgnoreCase(Property.patent)) {
-			AnalyzingInfixSuggester suggester = createAnalyzingForPeopleAndPatent(
-					is, PatentEntry.class);
-			suggesterList.put(property.getDictionayName(), suggester);
-
-		} else if (property.getDictionayName().equalsIgnoreCase(Property.topic)) {
+		else if (property.getDictionayName().equalsIgnoreCase(Property.topic)) {
 
 			TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
 					is, TopicEntry.class);
@@ -445,53 +415,4 @@ public abstract class SuggesterHelper {
 		return suggester;
 	}
 
-	public TRAnalyzingInfixSuggester createAnalyzingForArticle(InputStream is) {
-		TRAnalyzingInfixSuggester suggester = null;
-		try {
-
-			PrepareDictionary dictionary = new PrepareDictionary(is,
-					ArticleEntry.class);
-
-			suggester = new TRAnalyzingInfixSuggester(new RAMDirectory(),
-					indexAnalyzer);
-
-			suggester.build(new EntryIterator(dictionary));
-
-			dictionary.close();
-			is.close();
-
-			System.gc();
-			System.gc();
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return suggester;
-	}
-
-	public AnalyzingInfixSuggester createAnalyzingForPeopleAndPatent(
-			InputStream is, Class c) {
-		AnalyzingInfixSuggester suggester = null;
-		try {
-
-			PrepareDictionary dictionary = new PrepareDictionary(is, c);
-
-			suggester = new AnalyzingInfixSuggester(new RAMDirectory(),
-					indexAnalyzer);
-
-			suggester.build(new EntryIterator(dictionary));
-
-			dictionary.close();
-			is.close();
-
-			System.gc();
-			System.gc();
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return suggester;
-	}
 }
