@@ -43,7 +43,7 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 			reloadExecutor = new ThreadPoolExecutor(1, 6, 0L, TimeUnit.MICROSECONDS,
 					new WaitingBlockingQueue<Runnable>(), new NamedThreadFactory("Suggester"));
 
-			// dictionaryReader = SuggesterFactory.createSuggesters("S3");
+			//dictionaryReader = SuggesterFactory.createSuggesters("S3");
 
 			dictionaryReader = SuggesterFactory.createSuggesters("S3IAM");
 
@@ -55,6 +55,7 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 
 		// build ES URL
 		prepareESURL();
+		prepareESEntities();
 
 		ConfigurationManager.getConfigInstance().addConfigurationListener(new ConfigurationListener() {
 
