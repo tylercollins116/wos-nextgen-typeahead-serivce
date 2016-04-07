@@ -20,7 +20,6 @@ import java.util.concurrent.TimeoutException;
 
 import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.search.suggest.Lookup.LookupResult;
-import org.apache.lucene.search.suggest.analyzing.AnalyzingInfixSuggester;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +28,7 @@ import com.google.inject.Singleton;
 import com.thomsonreuters.models.SuggestData.Info;
 import com.thomsonreuters.models.SuggestData.Suggestions;
 import com.thomsonreuters.models.services.ESoperation.ArticleESEntry;
+import com.thomsonreuters.models.services.ESoperation.ESEntry;
 import com.thomsonreuters.models.services.ESoperation.IESQueryExecutor;
 import com.thomsonreuters.models.services.ESoperation.IQueryGenerator;
 import com.thomsonreuters.models.services.ESoperation.PatentESEntry;
@@ -41,6 +41,7 @@ import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSugg
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester;
 import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
 import com.thomsonreuters.models.services.suggesters.ProcessPreSearchTerm;
+import com.thomsonreuters.models.services.util.ElasticEntityProperties;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
 import com.thomsonreuters.models.services.util.Property;
 import com.thomsonreuters.models.services.util.PropertyValue;
@@ -52,17 +53,14 @@ public class Suggester implements SuggesterHandler {
 
 	private final SuggesterConfigurationHandler suggesterConfigurationHandler;
 
-	private final ExecutorService reloadExecutor = Executors
-			.newFixedThreadPool(50);
+	private final ExecutorService reloadExecutor = Executors.newFixedThreadPool(50);
 
 	private final IProcessPreSearchTerm processPreSearchTerm = new ProcessPreSearchTerm();
 
 	private final IESQueryExecutor ESQueryExecutor;
 
 	@Inject
-	public Suggester(
-			SuggesterConfigurationHandler suggesterConfigurationHandler,
-			IESQueryExecutor queryExecutor) {
+	public Suggester(SuggesterConfigurationHandler suggesterConfigurationHandler, IESQueryExecutor queryExecutor) {
 		this.suggesterConfigurationHandler = suggesterConfigurationHandler;
 		this.ESQueryExecutor = queryExecutor;
 	}
@@ -89,13 +87,13 @@ public class Suggester implements SuggesterHandler {
 		long startTime = -1L;
 
 		List<SuggestData> results = new ArrayList<SuggestData>();
-
+		ElasticEntityProperties eep = suggesterConfigurationHandler.getElasticEntityProperties("entity." + path);
 		/*************************************************************************************/
 		/** These code are execute against ElasticSearch **/
 		/*************************************************************************************/
 
-		if (path.equals(Property.article) || path.equals(Property.people)
-				|| path.equals(Property.patent) || path.equals(Property.post)) {
+		if (path.equals(Property.article) || path.equals(Property.people) || path.equals(Property.patent)
+				|| path.equals(Property.post)) {
 
 			if (path.equals(Property.article)) {
 
@@ -105,19 +103,17 @@ public class Suggester implements SuggesterHandler {
 
 						long start = System.currentTimeMillis();
 
-						String returnVaule[] = new String[] {
-								"fullrecord.summary.title", "cuid", "fuid" };
+						String returnVaule[] = new String[] { "fullrecord.summary.title", "cuid", "fuid" };
 						/**
 						 * didn't find cuid in patent fullrecord.summary. and
 						 * fuid I find it fullrecord.summary.uid but ignored
 						 **/
 
-						HashMap<String, String> aliasField = new HashMap<String, String>(
-								1);
+						HashMap<String, String> aliasField = new HashMap<String, String>(1);
 						aliasField.put("fullrecord.summary.title", "title");
 
-						IQueryGenerator entry = new ArticleESEntry(returnVaule,
-								query, 0, n, Property.article, aliasField);
+						IQueryGenerator entry = new ArticleESEntry(returnVaule, query, 0, n, Property.article,
+								aliasField);
 
 						SuggestData data = new SuggestData();
 						for (int count = 0; count <= 3; count++) {
@@ -157,19 +153,16 @@ public class Suggester implements SuggesterHandler {
 
 						long start = System.currentTimeMillis();
 
-						String returnVaule[] = new String[] {
-								"fullrecord.summary.country", "institution",
-								"role", "fullrecord.summary.authors",
-								"fullrecord.summary.uid" };
+						String returnVaule[] = new String[] { "fullrecord.summary.country", "institution", "role",
+								"fullrecord.summary.authors", "fullrecord.summary.uid" };
 
-						HashMap<String, String> aliasField = new HashMap<String, String>(
-								3);
+						HashMap<String, String> aliasField = new HashMap<String, String>(3);
 						aliasField.put("fullrecord.summary.country", "country");
 						aliasField.put("fullrecord.summary.authors", "name");
 						aliasField.put("fullrecord.summary.uid", "id");
 
-						IQueryGenerator entry = new PeopleESEntry(returnVaule,
-								query, 0, n, Property.people, aliasField);
+						IQueryGenerator entry = new PeopleESEntry(returnVaule, query, 0, n, Property.people,
+								aliasField);
 						SuggestData data = null;
 						try {
 							data = this.ESQueryExecutor.formatResult(entry);
@@ -194,20 +187,16 @@ public class Suggester implements SuggesterHandler {
 
 						long start = System.currentTimeMillis();
 
-						String returnVaule[] = new String[] {
-								"fullrecord.summary.uid",
-								"fullrecord.summary.title",
+						String returnVaule[] = new String[] { "fullrecord.summary.uid", "fullrecord.summary.title",
 								"fullrecord.summary.citingsrcscount" };
 
-						HashMap<String, String> aliasField = new HashMap<String, String>(
-								3);
+						HashMap<String, String> aliasField = new HashMap<String, String>(3);
 						aliasField.put("fullrecord.summary.title", "title");
 						aliasField.put("fullrecord.summary.uid", "patentno");
-						aliasField.put("fullrecord.summary.citingsrcscount",
-								"timeCited");
+						aliasField.put("fullrecord.summary.citingsrcscount", "timeCited");
 
-						IQueryGenerator entry = new PatentESEntry(returnVaule,
-								query, 0, n, Property.patent, aliasField);
+						IQueryGenerator entry = new PatentESEntry(returnVaule, query, 0, n, Property.patent,
+								aliasField);
 						SuggestData data = null;
 						try {
 							data = this.ESQueryExecutor.formatResult(entry);
@@ -232,22 +221,16 @@ public class Suggester implements SuggesterHandler {
 
 						long start = System.currentTimeMillis();
 
-						String returnVaule[] = new String[] {
-								"fullrecord.summary.uid",
-								"fullrecord.summary.title",
-								"fullrecord.summary.truid",
-								"fullrecord.summary.pubdate" };
+						String returnVaule[] = new String[] { "fullrecord.summary.uid", "fullrecord.summary.title",
+								"fullrecord.summary.truid", "fullrecord.summary.pubdate" };
 
-						HashMap<String, String> aliasField = new HashMap<String, String>(
-								4);
+						HashMap<String, String> aliasField = new HashMap<String, String>(4);
 						aliasField.put("fullrecord.summary.title", "title");
 						aliasField.put("fullrecord.summary.uid", "uid");
 						aliasField.put("fullrecord.summary.truid", "truid");
-						aliasField.put("fullrecord.summary.pubdate",
-								"publishdate");
+						aliasField.put("fullrecord.summary.pubdate", "publishdate");
 
-						IQueryGenerator entry = new PostESEntry(returnVaule,
-								query, 0, n, Property.post, aliasField);
+						IQueryGenerator entry = new PostESEntry(returnVaule, query, 0, n, Property.post, aliasField);
 						SuggestData data = null;
 						try {
 							data = this.ESQueryExecutor.formatResult(entry);
@@ -275,11 +258,18 @@ public class Suggester implements SuggesterHandler {
 		/*************************************************************************************/
 		/** The below codes are execute against Dictionary in S3 bucket **/
 		/*************************************************************************************/
+		else if (eep != null) {
+			IQueryGenerator entry = new ESEntry(eep.getType(), eep.getReturnFields(), query, 0, n, path,
+					eep.getAliasFields(), eep.getAnalyzer(), eep.getSearchField(), eep.getSortFields());
 
-		else {
+			try {
+				results.add(getSuggestionsData(entry, eep.getMaxExpansion()));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		} else {
 
-			Lookup suggester = suggesterConfigurationHandler
-					.getDictionaryAnalyzer().getSuggesterList().get(path);
+			Lookup suggester = suggesterConfigurationHandler.getDictionaryAnalyzer().getSuggesterList().get(path);
 
 			if (suggester instanceof TRAnalyzingSuggester) {
 
@@ -303,8 +293,7 @@ public class Suggester implements SuggesterHandler {
 					List<SuggestData.Suggestions> preSearchTerms = null;
 
 					if (preSearchedTermsInfo != null
-							&& (preSearchTerms = preSearchedTermsInfo
-									.get(Property.category)) != null
+							&& (preSearchTerms = preSearchedTermsInfo.get(Property.category)) != null
 							&& preSearchTerms.size() > 0) {
 						suggestData.suggestions.addAll(preSearchTerms);
 					} else {
@@ -316,8 +305,7 @@ public class Suggester implements SuggesterHandler {
 					/************************************/
 
 					try {
-						for (LookupResult result : ((TRAnalyzingSuggester) suggester)
-								.lookup(query, false, n)) {
+						for (LookupResult result : ((TRAnalyzingSuggester) suggester).lookup(query, false, n)) {
 
 							/** output[] **/
 
@@ -329,9 +317,7 @@ public class Suggester implements SuggesterHandler {
 								continue;
 							}
 
-							Map<String, String> map = PrepareDictionary
-									.processJson(new String(
-											result.payload.bytes));
+							Map<String, String> map = PrepareDictionary.processJson(new String(result.payload.bytes));
 							Set<String> keys = map.keySet();
 
 							for (String key : keys) {
@@ -349,8 +335,7 @@ public class Suggester implements SuggesterHandler {
 						log.info("cannot find the suggester ");
 					}
 
-					suggestData.took = (System.currentTimeMillis() - startTime)
-							+ "";
+					suggestData.took = (System.currentTimeMillis() - startTime) + "";
 					results.add(suggestData);
 
 				} else if (path.equalsIgnoreCase(Property.wos)) {
@@ -366,8 +351,7 @@ public class Suggester implements SuggesterHandler {
 
 					List<SuggestData.Suggestions> preSearchTerms = null;
 					if (preSearchedTermsInfo != null
-							&& (preSearchTerms = preSearchedTermsInfo
-									.get(Property.wos)) != null
+							&& (preSearchTerms = preSearchedTermsInfo.get(Property.wos)) != null
 
 							&& preSearchTerms.size() > 0) {
 						suggestData.suggestions.addAll(preSearchTerms);
@@ -391,9 +375,7 @@ public class Suggester implements SuggesterHandler {
 								continue;
 							}
 
-							Map<String, String> map = PrepareDictionary
-									.processJson(new String(
-											result.payload.bytes));
+							Map<String, String> map = PrepareDictionary.processJson(new String(result.payload.bytes));
 
 							Set<String> keys = map.keySet();
 
@@ -413,8 +395,7 @@ public class Suggester implements SuggesterHandler {
 						log.info("cannot find the suggester ");
 					}
 
-					suggestData.took = (System.currentTimeMillis() - startTime)
-							+ "";
+					suggestData.took = (System.currentTimeMillis() - startTime) + "";
 
 					results.add(suggestData);
 				} else if (path.equalsIgnoreCase(Property.topic)) {
@@ -432,9 +413,7 @@ public class Suggester implements SuggesterHandler {
 							Suggestions suggestions = suggestData.new Suggestions();
 							suggestions.keyword = result.key.toString();
 
-							Map<String, String> map = PrepareDictionary
-									.processJson(new String(
-											result.payload.bytes));
+							Map<String, String> map = PrepareDictionary.processJson(new String(result.payload.bytes));
 
 							Set<String> keys = map.keySet();
 
@@ -454,8 +433,7 @@ public class Suggester implements SuggesterHandler {
 						log.info("cannot find the suggester ");
 					}
 
-					suggestData.took = (System.currentTimeMillis() - startTime)
-							+ "";
+					suggestData.took = (System.currentTimeMillis() - startTime) + "";
 
 					results.add(suggestData);
 				}
@@ -469,16 +447,12 @@ public class Suggester implements SuggesterHandler {
 				List<Map<String, String>> typeSuggestions = new ArrayList<Map<String, String>>();
 				try {
 
-					List<LookupResult> allResults = ((TRAnalyzingSuggesterExt) suggester)
-							.lookup(query, false, n);
+					List<LookupResult> allResults = ((TRAnalyzingSuggesterExt) suggester).lookup(query, false, n);
 					for (LookupResult result : allResults) {
 
 						Map<String, String> map = PrepareDictionary
-								.processJson(new String(
-										((TRAnalyzingSuggesterExt) suggester)
-												.getReturn(new String(
-														result.payload.bytes),
-														Process.json)));
+								.processJson(new String(((TRAnalyzingSuggesterExt) suggester)
+										.getReturn(new String(result.payload.bytes), Process.json)));
 
 						Suggestions suggestions = suggestData.new Suggestions();
 						suggestions.keyword = map.remove(Entry.TERM);
@@ -498,11 +472,10 @@ public class Suggester implements SuggesterHandler {
 					log.info("cannot find the suggester ");
 				}
 
-				suggestData.took = (System.currentTimeMillis() - startTime)
-						+ "";
+				suggestData.took = (System.currentTimeMillis() - startTime) + "";
 				results.add(suggestData);
 
-			}  
+			}
 		}
 		/***************************************************/
 		/** End of codes that execute against dictionary in S3 Buckets **/
@@ -512,8 +485,7 @@ public class Suggester implements SuggesterHandler {
 
 	/** added **/
 	@Override
-	public List<SuggestData> lookup(String query, List<String> sources,
-			List<String> infos, int size, String uid) {
+	public List<SuggestData> lookup(String query, List<String> sources, List<String> infos, int size, String uid) {
 
 		/***************************************************/
 		/** preSearchedTermsInfo will never null **/
@@ -529,8 +501,7 @@ public class Suggester implements SuggesterHandler {
 
 				for (SuggestData preSearchedTerm : preSearchedTerms) {
 
-					preSearchedTermsInfo.put(preSearchedTerm.source,
-							preSearchedTerm.suggestions);
+					preSearchedTermsInfo.put(preSearchedTerm.source, preSearchedTerm.suggestions);
 
 				}
 
@@ -552,9 +523,11 @@ public class Suggester implements SuggesterHandler {
 			 * -----------------------------------------------------------------
 			 **/
 
-			/** This is for dictionary in eiddo starts with "dictionary.path." **/
-			Enumeration<String> keysForDictionary = suggesterConfigurationHandler
-					.getDictionaryAnalyzer().getSuggesterList().getKeys();
+			/**
+			 * This is for dictionary in eiddo starts with "dictionary.path."
+			 **/
+			Enumeration<String> keysForDictionary = suggesterConfigurationHandler.getDictionaryAnalyzer()
+					.getSuggesterList().getKeys();
 
 			/**
 			 * -----------------------------------------------------------------
@@ -569,8 +542,7 @@ public class Suggester implements SuggesterHandler {
 				}
 			}
 
-			boolean defaulTypeExists = (includeType != null && includeType
-					.size() > 0);
+			boolean defaulTypeExists = (includeType != null && includeType.size() > 0);
 
 			// For dictionary
 
@@ -615,15 +587,13 @@ public class Suggester implements SuggesterHandler {
 
 		for (String path : sources) {
 
-			Future<List<SuggestData>> future = reloadExecutor
-					.submit(new Callable<List<SuggestData>>() {
+			Future<List<SuggestData>> future = reloadExecutor.submit(new Callable<List<SuggestData>>() {
 
-						@Override
-						public List<SuggestData> call() throws Exception {
-							return lookup(path, query, size,
-									preSearchedTermsInfo);
-						}
-					});
+				@Override
+				public List<SuggestData> call() throws Exception {
+					return lookup(path, query, size, preSearchedTermsInfo);
+				}
+			});
 
 			furtureList.add(future);
 
@@ -631,10 +601,8 @@ public class Suggester implements SuggesterHandler {
 
 		for (Future<List<SuggestData>> suggestions : furtureList) {
 			try {
-				allSuggestions.addAll(suggestions.get(1000,
-						TimeUnit.MILLISECONDS));
-			} catch (InterruptedException | ExecutionException
-					| TimeoutException e) {
+				allSuggestions.addAll(suggestions.get(1000, TimeUnit.MILLISECONDS));
+			} catch (InterruptedException | ExecutionException | TimeoutException e) {
 				e.printStackTrace();
 			}
 		}
@@ -649,8 +617,7 @@ public class Suggester implements SuggesterHandler {
 	 */
 
 	@Override
-	public List<SuggestData> lookup(String query, int size, String uid,
-			boolean all) {
+	public List<SuggestData> lookup(String query, int size, String uid, boolean all) {
 		// TODO Auto-generated method stub
 
 		List<SuggestData> allsuggestions = new ArrayList<SuggestData>();
@@ -658,14 +625,12 @@ public class Suggester implements SuggesterHandler {
 
 		String[] suggestions = null;
 
-		String[] presearchedTerms = processPreSearchTerm
-				.getPreSearchedTerm(uid);
+		String[] presearchedTerms = processPreSearchTerm.getPreSearchedTerm(uid);
 
 		query = processPreSearchTerm.processAndNormalizeToken(query);
 
 		if (!all) {
-			suggestions = processPreSearchTerm.getSuggestions(presearchedTerms,
-					query);
+			suggestions = processPreSearchTerm.getSuggestions(presearchedTerms, query);
 
 			if (suggestions != null && suggestions.length > size) {
 				suggestions = Arrays.<String> copyOf(suggestions, size - 1);
@@ -676,11 +641,9 @@ public class Suggester implements SuggesterHandler {
 
 			for (String suggestion : suggestions) {
 
-				String processedQueryTerm = processPreSearchTerm
-						.processAndNormalizeToken(suggestion);
+				String processedQueryTerm = processPreSearchTerm.processAndNormalizeToken(suggestion);
 
-				List<SuggestData> allSuggestdataForCategories = lookup(
-						Property.category, suggestion, 50);
+				List<SuggestData> allSuggestdataForCategories = lookup(Property.category, suggestion, 50);
 
 				for (SuggestData suggestdata : allSuggestdataForCategories) {
 					boolean include = false;
@@ -692,9 +655,9 @@ public class Suggester implements SuggesterHandler {
 						String keyword = suggestionInfo.keyword;
 						if (processPreSearchTerm
 
-						.processAndNormalizeToken(keyword).trim()
+								.processAndNormalizeToken(keyword).trim()
 
-						.equals(processedQueryTerm)) {
+								.equals(processedQueryTerm)) {
 							allCategoriesSuggestions.add(suggestionInfo);
 							include = true;
 						}
@@ -707,8 +670,7 @@ public class Suggester implements SuggesterHandler {
 
 				}
 
-				List<SuggestData> allSuggestdataForKeywords = lookup(
-						Property.wos, suggestion, 50);
+				List<SuggestData> allSuggestdataForKeywords = lookup(Property.wos, suggestion, 50);
 
 				for (SuggestData suggestdata : allSuggestdataForKeywords) {
 
@@ -719,9 +681,7 @@ public class Suggester implements SuggesterHandler {
 					for (SuggestData.Suggestions suggestionInfo : allSuggestDataSuggestions) {
 
 						String keyword = suggestionInfo.keyword;
-						if (processPreSearchTerm
-								.processAndNormalizeToken(keyword).trim()
-								.equals(processedQueryTerm)) {
+						if (processPreSearchTerm.processAndNormalizeToken(keyword).trim().equals(processedQueryTerm)) {
 							allKeywordSuggestions.add(suggestionInfo);
 							include = true;
 						}
@@ -791,4 +751,25 @@ public class Suggester implements SuggesterHandler {
 		}
 
 	}
+
+	private SuggestData getSuggestionsDataCaller(IQueryGenerator entry, int count, Integer[] expansion)
+			throws Exception {
+		SuggestData data = this.ESQueryExecutor.formatResult(entry);
+		if (data.suggestions.size() <= 0 && count <= 3) {
+			entry.setMax_expansion(expansion[count]);
+			data = getSuggestionsDataCaller(entry, count = count + 1, expansion);
+		}
+		return data;
+	}
+
+	private SuggestData getSuggestionsData(IQueryGenerator entry, Integer[] expansion) throws Exception {
+
+		List<SuggestData> results = new ArrayList<SuggestData>();
+		long start = System.currentTimeMillis();
+		SuggestData data = getSuggestionsDataCaller(entry, expansion.length, expansion);
+		data.took = (System.currentTimeMillis() - start) + "";
+		return data;
+
+	}
+
 }
