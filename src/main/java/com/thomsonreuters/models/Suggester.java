@@ -20,7 +20,6 @@ import java.util.concurrent.TimeoutException;
 
 import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.search.suggest.Lookup.LookupResult;
-import org.apache.lucene.search.suggest.analyzing.AnalyzingInfixSuggester;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +28,7 @@ import com.google.inject.Singleton;
 import com.thomsonreuters.models.SuggestData.Info;
 import com.thomsonreuters.models.SuggestData.Suggestions;
 import com.thomsonreuters.models.services.ESoperation.ArticleESEntry;
+import com.thomsonreuters.models.services.ESoperation.ESEntry;
 import com.thomsonreuters.models.services.ESoperation.IESQueryExecutor;
 import com.thomsonreuters.models.services.ESoperation.IQueryGenerator;
 import com.thomsonreuters.models.services.ESoperation.PatentESEntry;
@@ -41,6 +41,7 @@ import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSugg
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester;
 import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
 import com.thomsonreuters.models.services.suggesters.ProcessPreSearchTerm;
+import com.thomsonreuters.models.services.util.ElasticEntityProperties;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
 import com.thomsonreuters.models.services.util.Property;
 import com.thomsonreuters.models.services.util.PropertyValue;
@@ -89,7 +90,8 @@ public class Suggester implements SuggesterHandler {
 		long startTime = -1L;
 
 		List<SuggestData> results = new ArrayList<SuggestData>();
-
+		ElasticEntityProperties eep = suggesterConfigurationHandler
+				.getElasticEntityProperties("entity." + path);
 		/*************************************************************************************/
 		/** These code are execute against ElasticSearch **/
 		/*************************************************************************************/
@@ -275,8 +277,18 @@ public class Suggester implements SuggesterHandler {
 		/*************************************************************************************/
 		/** The below codes are execute against Dictionary in S3 bucket **/
 		/*************************************************************************************/
+		else if (eep != null) {
+			IQueryGenerator entry = new ESEntry(eep.getType(),
+					eep.getReturnFields(), query, 0, n, path,
+					eep.getAliasFields(), eep.getAnalyzer(),
+					eep.getSearchField(), eep.getSortFields());
 
-		else {
+			try {
+				results.add(getSuggestionsData(entry, eep.getMaxExpansion()));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		} else {
 
 			Lookup suggester = suggesterConfigurationHandler
 					.getDictionaryAnalyzer().getSuggesterList().get(path);
@@ -502,7 +514,7 @@ public class Suggester implements SuggesterHandler {
 						+ "";
 				results.add(suggestData);
 
-			}  
+			}
 		}
 		/***************************************************/
 		/** End of codes that execute against dictionary in S3 Buckets **/
@@ -552,7 +564,9 @@ public class Suggester implements SuggesterHandler {
 			 * -----------------------------------------------------------------
 			 **/
 
-			/** This is for dictionary in eiddo starts with "dictionary.path." **/
+			/**
+			 * This is for dictionary in eiddo starts with "dictionary.path."
+			 **/
 			Enumeration<String> keysForDictionary = suggesterConfigurationHandler
 					.getDictionaryAnalyzer().getSuggesterList().getKeys();
 
@@ -635,7 +649,7 @@ public class Suggester implements SuggesterHandler {
 						TimeUnit.MILLISECONDS));
 			} catch (InterruptedException | ExecutionException
 					| TimeoutException e) {
-				e.printStackTrace();
+				this.log.info("Grace fully handled time out exception ");
 			}
 		}
 
@@ -791,4 +805,25 @@ public class Suggester implements SuggesterHandler {
 		}
 
 	}
+
+
+private SuggestData getSuggestionsDataCaller(IQueryGenerator entry, int count, Integer[] expansion) throws Exception {
+        SuggestData data = this.ESQueryExecutor.formatResult(entry);
+         
+        if (data.suggestions.size() <= 0 && count <= expansion.length) {
+            entry.setMax_expansion(expansion[count]);
+            data = getSuggestionsDataCaller(entry, ++count, expansion);
+        }
+        return data;
+    }
+
+    private SuggestData getSuggestionsData(IQueryGenerator entry, Integer[] expansion) throws Exception {
+        
+        long start = System.currentTimeMillis();
+        SuggestData data = getSuggestionsDataCaller(entry, 0, expansion);
+        data.took = (System.currentTimeMillis() - start) + "";        
+        return data;
+
+    }
+
 }

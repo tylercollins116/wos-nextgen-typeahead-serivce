@@ -17,6 +17,7 @@ import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSugg
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt;
 import com.thomsonreuters.models.services.util.Blockable;
 import com.thomsonreuters.models.services.util.BlockingHashTable;
+import com.thomsonreuters.models.services.util.ElasticEntityProperties;
 import com.thomsonreuters.models.services.util.Property;
 
 public class SuggesterMainTest {
@@ -63,6 +64,12 @@ public class SuggesterMainTest {
 			@Override
 			public DictionaryLoader<Lookup> getDictionaryAnalyzer() {
 				return dictionaryLoader;
+			}
+
+			@Override
+			public ElasticEntityProperties getElasticEntityProperties(String esPath) {
+				// TODO Auto-generated method stub
+				return null;
 			}
 		}, null);
 
