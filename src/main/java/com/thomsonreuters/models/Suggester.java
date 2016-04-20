@@ -810,7 +810,7 @@ public class Suggester implements SuggesterHandler {
 private SuggestData getSuggestionsDataCaller(IQueryGenerator entry, int count, Integer[] expansion) throws Exception {
         SuggestData data = this.ESQueryExecutor.formatResult(entry);
          
-        if (data.suggestions.size() <= 0 && count <= expansion.length) {
+        if (data.suggestions.size() <= 0 && count < expansion.length) {
             entry.setMax_expansion(expansion[count]);
             data = getSuggestionsDataCaller(entry, ++count, expansion);
         }
