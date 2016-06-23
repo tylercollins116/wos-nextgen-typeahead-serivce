@@ -553,7 +553,7 @@ public class Suggester implements SuggesterHandler {
 					eep.getSearchField(), eep.getSortFields());
 			
 			try {
-				results.add(getSuggestionsData(entry, eep.getMaxExpansion()));
+				results.add(getSuggestionsDataWithCount(entry, eep.getMaxExpansion()));
 			} catch (Exception e) {
 				log.error("elastic search error", e);
 			}
@@ -863,6 +863,22 @@ private SuggestData getSuggestionsDataCaller(IQueryGenerator entry, int count, I
         data.took = (System.currentTimeMillis() - start) + "";        
         return data;
 
+    }
+    
+    /**
+     * provide suggest list and took is total count of hits
+     * @param entry 
+     * @param expansion
+     * @return suggest data list
+     * @throws Exception
+     */
+    private SuggestData getSuggestionsDataWithCount(IQueryGenerator entry, Integer[] expansion) throws Exception {
+    	SuggestData suggestData = getSuggestionsData(entry, expansion);
+    	// a temp fix to return total count of hits
+    	if (suggestData != null) {
+    		suggestData.took = suggestData.took + ":" + String.valueOf(entry.getTotalCount());
+    	}
+    	return suggestData;
     }
 
 }
