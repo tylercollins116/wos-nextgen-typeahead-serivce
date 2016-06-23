@@ -91,7 +91,7 @@ public class SuggestorResource {
 	@ApiOperation(value = "IPA Suggest", notes = "Returns list of suggestion for query")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "RESPONSE_OK") })
 	@GET
-	@Path("/es")
+	@Path("/search")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response searchByElastic(@Context HttpHeaders headers,
 			@QueryParam("query") String query,
