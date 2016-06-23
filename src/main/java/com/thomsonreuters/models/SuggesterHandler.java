@@ -19,5 +19,6 @@ public interface SuggesterHandler {
 	public List<SuggestData> lookup(String query, int size, String uid,
 			boolean all);
 	
-	 
+	public List<SuggestData> lookup(String query, String source, int offset, 
+			int size, String uid);
 }

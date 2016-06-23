@@ -522,6 +522,45 @@ public class Suggester implements SuggesterHandler {
 		return results;
 	}
 
+	/**
+	 * lookup suggest list from elastic
+	 * @param query	user input word
+	 * @param source elastic index
+	 * @param offset elastic offset 
+	 * @param size  total size of suggest list
+	 * @param uid user id
+	 * @return suggest data
+	 */
+	@Override
+	public List<SuggestData> lookup(String query, String source, int offset, 
+			int size, String uid) {
+		
+		List<SuggestData> results = new ArrayList<SuggestData>();
+		
+		// get avail search index
+		Set<String> keysForES = PropertyValue.ES_SEARCH_PATH.keySet();
+		// validate source index
+		if (source != null && source.length() > 0 
+				&& keysForES.contains(source.toLowerCase())) {
+			String path = source.toLowerCase();
+			
+			ElasticEntityProperties eep = suggesterConfigurationHandler
+					.getElasticEntityProperties("entity." + path);
+			
+			IQueryGenerator entry = new ESEntry(eep.getType(),
+					eep.getReturnFields(), query, offset, size, path,
+					eep.getAliasFields(), eep.getAnalyzer(),
+					eep.getSearchField(), eep.getSortFields());
+			
+			try {
+				results.add(getSuggestionsData(entry, eep.getMaxExpansion()));
+			} catch (Exception e) {
+				log.error("elastic search error", e);
+			}
+		}
+		return results;
+	}
+	
 	/** added **/
 	@Override
 	public List<SuggestData> lookup(String query, List<String> sources,

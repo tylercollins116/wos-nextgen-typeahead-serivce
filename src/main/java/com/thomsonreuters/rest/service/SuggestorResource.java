@@ -88,6 +88,33 @@ public class SuggestorResource {
 		}
 	}
 
+	@ApiOperation(value = "IPA Suggest", notes = "Returns list of suggestion for query")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "RESPONSE_OK") })
+	@GET
+	@Path("/es")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response searchByElastic(@Context HttpHeaders headers,
+			@QueryParam("query") String query,
+			@QueryParam("source") String source,
+			@DefaultValue("0") @QueryParam("offset") int offset,
+			@DefaultValue("10") @QueryParam("size") int size,
+			@QueryParam("uid") String uid) {
+		try {
+			if (uid == null || uid.trim().length() == 0) {
+				uid = Utils.getUserid(headers);
+				logger.info("User Id from Header " + uid);
+			}
+			ObjectMapper mapper = new ObjectMapper();
+			return Response.ok(
+					mapper.writeValueAsString(suggesterHandler.lookup(query, source,
+							offset, size, uid))).build();
+		} catch (IOException e) {
+			logger.error("Error creating json response.", e);
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.build();
+		}
+	}
+	
 	@ApiOperation(value = "Suggest check", notes = "Returns list of suggestion for query prefix")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "RESPONSE_OK") })
 	@GET
@@ -155,7 +182,4 @@ public class SuggestorResource {
 					.build();
 		}
 	}
-
-	 
-
 }
