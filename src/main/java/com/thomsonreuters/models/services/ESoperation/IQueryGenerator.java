@@ -249,4 +249,15 @@ public abstract class IQueryGenerator {
 
 	}
 
+	/**
+	 * get the total count of hits
+	 * @return total count of hits
+	 * @throws JSONException 
+	 */
+	public long getTotalCount() throws JSONException {
+		JSONObject sonObj = new JSONObject(getResponse());
+		JSONObject obj = sonObj.getJSONObject("hits");
+		long count = obj.getLong("total");
+		return count;
+	}
 }

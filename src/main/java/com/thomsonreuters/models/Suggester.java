@@ -522,6 +522,45 @@ public class Suggester implements SuggesterHandler {
 		return results;
 	}
 
+	/**
+	 * lookup suggest list from elastic
+	 * @param query	user input word
+	 * @param source elastic index
+	 * @param offset elastic offset 
+	 * @param size  total size of suggest list
+	 * @param uid user id
+	 * @return suggest data
+	 */
+	@Override
+	public List<SuggestData> lookup(String query, String source, int offset, 
+			int size, String uid) {
+		
+		List<SuggestData> results = new ArrayList<SuggestData>();
+		
+		// get avail search index
+		Set<String> keysForES = PropertyValue.ES_SEARCH_PATH.keySet();
+		// validate source index
+		if (source != null && source.length() > 0 
+				&& keysForES.contains(source.toLowerCase())) {
+			String path = source.toLowerCase();
+			
+			ElasticEntityProperties eep = suggesterConfigurationHandler
+					.getElasticEntityProperties("entity." + path);
+			
+			IQueryGenerator entry = new ESEntry(eep.getType(),
+					eep.getReturnFields(), query, offset, size, path,
+					eep.getAliasFields(), eep.getAnalyzer(),
+					eep.getSearchField(), eep.getSortFields());
+			
+			try {
+				results.add(getSuggestionsDataWithCount(entry, eep.getMaxExpansion()));
+			} catch (Exception e) {
+				log.error("elastic search error", e);
+			}
+		}
+		return results;
+	}
+	
 	/** added **/
 	@Override
 	public List<SuggestData> lookup(String query, List<String> sources,
@@ -824,6 +863,22 @@ private SuggestData getSuggestionsDataCaller(IQueryGenerator entry, int count, I
         data.took = (System.currentTimeMillis() - start) + "";        
         return data;
 
+    }
+    
+    /**
+     * provide suggest list and took is total count of hits
+     * @param entry 
+     * @param expansion
+     * @return suggest data list
+     * @throws Exception
+     */
+    private SuggestData getSuggestionsDataWithCount(IQueryGenerator entry, Integer[] expansion) throws Exception {
+    	SuggestData suggestData = getSuggestionsData(entry, expansion);
+    	// a temp fix to return total count of hits
+    	if (suggestData != null) {
+    		suggestData.took = suggestData.took + ":" + String.valueOf(entry.getTotalCount());
+    	}
+    	return suggestData;
     }
 
 }
