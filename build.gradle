@@ -4,7 +4,7 @@ apply plugin: 'idea'
 apply plugin: 'distribution'
 apply plugin: 'java-library-distribution'
 apply plugin: 'os-package'
-apply plugin: 'sonar-runner'
+apply plugin: 'org.sonarqube'
 apply plugin: 'net.researchgate.release'
 apply plugin: 'jacoco'
 
@@ -18,20 +18,70 @@ task wrapper(type: Wrapper) {
 def chosenEnv
 if ( System.getenv("POC_ENVIRONMENT") ) { chosenEnv = System.getenv("POC_ENVIRONMENT") } else { chosenEnv = "integration" }
 
-configurations.all {     
-	resolutionStrategy.cacheDynamicVersionsFor 1, 'hours'     
-	resolutionStrategy.cacheChangingModulesFor 1, 'hours' 
+configurations.all {
+	resolutionStrategy.cacheDynamicVersionsFor 1, 'hours'
+	resolutionStrategy.cacheChangingModulesFor 1, 'hours'
 }
 
 buildscript {
     repositories {
         jcenter()
+        maven {
+            url "http://repo.oneplatform.build/nexus/content/groups/public/"
+        }
+        maven {
+            url "http://repo.oneplatform.build/nexus/content/groups/private/"
+        }
     }
 
     dependencies {
         classpath 'com.netflix.nebula:gradle-ospackage-plugin:2.2.0'
         classpath 'net.researchgate:gradle-release:2.1.1'
+        classpath group: 'org.sonarsource.scanner.gradle', name: 'sonarqube-gradle-plugin', version: '1.2'
     }
+}
+
+allprojects {
+  apply plugin: 'jacoco'
+
+  jacoco {
+      toolVersion = "0.7.6.+"
+      reportsDir = file("${project.buildDir}/jacoco/reports")
+  }
+
+  sonarqube {
+      properties {
+          property "sonar.projectName", "1p-type-ahead-service"
+          property "sonar.projectKey", "1p-type-ahead-service"
+          property "sonar.branch", System.getenv("GIT_BRANCH") ?: ""
+          property "sonar.jacoco.reportPath", "${project.buildDir}/jacoco/test.exec"
+          property "sonar.exclusions", [
+              'src/main/java/com/thomsonreuters/handler/**',
+              'src/main/java/com/thomsonreuters/util/**',
+              'src/main/java/com/thomsonreuters/server/**',
+              'src/main/java/com/thomsonreuters/injection/**',
+              'src/main/java/com/thomsonreuters/rest/service/HealthcheckResource.java'
+          ]
+      }
+  }
+}
+
+subprojects {
+  buildscript {
+    repositories {
+      maven {
+        url "http://repo.oneplatform.build/nexus/content/groups/public/"
+      }
+      maven {
+        url "http://repo.oneplatform.build/nexus/content/groups/private/"
+      }
+    }
+  }
+  sonarqube {
+      properties {
+          property "sonar.projectName", project.name
+      }
+  }
 }
 
 def permanentPackageName = rootProject.name
@@ -100,9 +150,9 @@ dependencies {
   compile group: 'com.thomsonreuters', name: '1p-service-swagger', version: '0.30.+'
   compile group: 'com.thomsonreuters', name: 'eiddo-client', version: '0.4.+'
   compile  'com.amazonaws:aws-java-sdk:1.10.2'
-  
+
    compile group: 'com.thomsonreuters', name: '1p-statistics-client', version: '0.1.+'
-  
+
   compile 'org.apache.lucene:lucene-core:5.2.1'
   compile 'org.apache.lucene:lucene-suggest:5.2.1'
   testCompile group:  'junit', name: 'junit-dep', version: '4.11'
@@ -118,7 +168,7 @@ import org.apache.tools.ant.filters.ReplaceTokens
 distributions {
   main{
 		baseName = rootProject.name
-		
+
 		 contents {
       from ( 'scripts' ) {
           fileMode = 0755
@@ -148,36 +198,3 @@ ospackage {
 }
 
 buildRpm.dependsOn installDist
-
-sonarRunner {
-  sonarProperties {
-    property "sonar.host.url", "http://sonar.oneplatform.build"
-    property "sonar.jdbc.url", "jdbc:mysql://sonar.c35w2xq4gxyh.us-west-2.rds.amazonaws.com:3306/sonar?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true"
-    property "sonar.jdbc.driverClassName", "com.mysql.jdbc.Driver"
-    property "sonar.jdbc.username", "$System.env.sonarUsername"
-    property "sonar.jdbc.password", "$System.env.sonarPassword"
-  }
-}
-
-// Sonar recommends 7.4
-jacoco {
-    toolVersion = "0.7.4.+"
-    reportsDir = file("$buildDir/reports/coverage")
-
-}
-
-jacocoTestReport {
-    reports {
-        xml.enabled true
-        csv.enabled false
-        html.destination "${buildDir}/reports/coverage/html"
-    }
-// Uncomment to exclude items you wish to ignore
-//    afterEvaluate {
-//        classDirectories = files(classDirectories.files.collect {
-//            fileTree(dir: it,
-//                    exclude: ['com/thomsonreuters/injection/**',
-//                              'com/blah/injection/**'])
-//        })
-//   }
-}
