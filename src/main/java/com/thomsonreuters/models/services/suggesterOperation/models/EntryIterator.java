@@ -27,7 +27,7 @@ public class EntryIterator implements InputIterator {
 	public BytesRef next() {
 		if (organizationIterator.hasNext()) {
 			currentSuggest = organizationIterator.next();
-		 
+		 System.out.println(currentSuggest.getTerm());
 			try {
 				return new BytesRef(currentSuggest.getTerm().getBytes("UTF8"));
 			} catch (UnsupportedEncodingException e) {

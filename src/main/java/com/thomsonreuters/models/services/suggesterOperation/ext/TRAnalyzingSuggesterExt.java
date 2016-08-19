@@ -1061,9 +1061,19 @@ public class TRAnalyzingSuggesterExt extends Lookup {
 				 
 				long weight = lookupresult.value;
 				double normalizedWeight = (double) (weight / totalSumOfWeight);
+				
+				String payload="";
+				if(new String(lookupresult.payload.bytes).indexOf(deliminator)>0){
+					try{
+					payload=new String(lookupresult.payload.bytes).split(deliminator)[1];
+					}catch(Exception e){
+						payload=new String(lookupresult.payload.bytes);
+					}
+				}else{
+					payload=new String(lookupresult.payload.bytes);
+				}
 
-				double LevenshteinDistance = calculateLevenshteinDistance(
-						new String(lookupresult.payload.bytes), inputText,
+				double LevenshteinDistance = calculateLevenshteinDistance(payload, inputText,
 						luceneLevenshteinDistance);
 				double calculatedWeigth = normalizedWeight
 						+ (text_similarity_scale_factor * LevenshteinDistance);
