@@ -46,6 +46,9 @@ public class PeopleEntry extends Entry {
 		return sb.toString();
 	}
 
-	 
+	@Override
+	public Entry clone(Map<String, String> JsonToMap) {
+		 return new PeopleEntry(JsonToMap);
+	}
 
 }

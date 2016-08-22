@@ -9,6 +9,7 @@ import com.thomsonreuters.models.services.util.PrepareDictionary;
 public class KeywordEntry extends Entry {
 
 	private Map<String, String> JsonToMap = null;
+	public KeywordEntry(){}
 
 	public KeywordEntry(Map<String, String> JsonToMap) {
 		setTerm(JsonToMap.remove(Entry.TERM));
@@ -43,6 +44,9 @@ public class KeywordEntry extends Entry {
 		return sb.toString();
 	}
 
- 
+	@Override
+	public Entry clone(Map<String, String> JsonToMap) {
+		 return new KeywordEntry(JsonToMap);
+	}
 
 }

@@ -7,6 +7,8 @@ import com.thomsonreuters.models.services.util.PrepareDictionary;
 public class TopicEntry extends Entry {
 
 	private Map<String, String> JsonToMap = null;
+	
+	public TopicEntry(){}
 
 	public TopicEntry(Map<String, String> JsonToMap) {
 		setTerm(JsonToMap.remove(Entry.TERM));
@@ -25,4 +27,10 @@ public class TopicEntry extends Entry {
 		return "";
 	} 
 
+	
+	@Override
+	public Entry clone(Map<String, String> JsonToMap) {
+		 return new TopicEntry(JsonToMap);
+	}
+	
 }

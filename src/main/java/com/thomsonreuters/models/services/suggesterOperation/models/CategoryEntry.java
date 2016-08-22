@@ -11,6 +11,8 @@ public class CategoryEntry extends Entry {
 	private static final String CATEGORY = "category";
 
 	private Map<String, String> JsonToMap = null;
+	
+	public CategoryEntry(){}
 
 	public CategoryEntry(Map<String, String> JsonToMap) {
 		setTerm(JsonToMap.remove(Entry.TERM));
@@ -52,5 +54,8 @@ public class CategoryEntry extends Entry {
 		return sb.toString();
 	}
 
-	 
+	@Override
+	public Entry clone(Map<String, String> JsonToMap) {
+		 return new CategoryEntry(JsonToMap);
+	}
 }

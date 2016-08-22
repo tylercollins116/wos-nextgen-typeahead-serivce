@@ -54,7 +54,7 @@ public class TRAnalyzingSuggesterExtTest {
 		try {
 
 			PrepareDictionary dictionary = new PrepareDictionary(is,
-					OrganizationEntry.class);
+					new OrganizationEntry());
 
 			suggester = new TRFuzzySuggesterExt(indexAnalyzer, queryAnalyzer);
 

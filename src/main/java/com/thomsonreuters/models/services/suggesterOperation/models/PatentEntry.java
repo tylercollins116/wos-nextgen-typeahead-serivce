@@ -40,6 +40,9 @@ public class PatentEntry extends Entry {
 		return sb.toString();
 	}
 	
-	 
+	@Override
+	public Entry clone(Map<String, String> JsonToMap) {
+		 return new PatentEntry(JsonToMap);
+	}
 
 }

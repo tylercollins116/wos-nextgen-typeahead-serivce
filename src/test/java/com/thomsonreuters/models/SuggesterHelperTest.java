@@ -86,7 +86,7 @@ public class SuggesterHelperTest {
 		};
 
 		TRAnalyzingSuggester otherSuggester = helper
-				.createAnalyzingSuggesterForOthers(is, KeywordEntry.class);
+				.createAnalyzingSuggesterForOthers(is, new KeywordEntry());
 
 		List<Lookup.LookupResult> allResults = null;
 		try {

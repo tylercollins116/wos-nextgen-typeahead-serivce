@@ -10,6 +10,8 @@ public class OrganizationEntry extends Entry {
 	private final String ALIAS = "alias";
 
 	private Map<String, String> JsonToMap = null;
+	
+	public OrganizationEntry(){}
 
 	public OrganizationEntry(Map<String, String> JsonToMap) {
 
@@ -22,6 +24,7 @@ public class OrganizationEntry extends Entry {
 
 	@Override
 	public String getJson() {
+
 		
 		String alias=null;
 
@@ -40,7 +43,12 @@ public class OrganizationEntry extends Entry {
 				} else {
 
 					sb.append("\"" + key + "\":");
-					sb.append("\"" + JsonToMap.get(key) + "\"");
+					String value=JsonToMap.get(key);
+					if(value.startsWith("[") && value.endsWith("]")){
+					sb.append(JsonToMap.get(key)); //Treate as array
+					}else{
+						sb.append("\"" + JsonToMap.get(key) + "\"");
+					}
 				}
 			}
 
@@ -48,7 +56,14 @@ public class OrganizationEntry extends Entry {
 
 		sb.append("}");
 
-		return alias+TRAnalyzingSuggesterExt.deliminator+sb.toString();}
+		return alias+TRAnalyzingSuggesterExt.deliminator+sb.toString();
+	}
+	
+	
+	@Override
+	public Entry clone(Map<String, String> JsonToMap) {
+		 return new OrganizationEntry(JsonToMap);
+	}
 
 }
 
