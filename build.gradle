@@ -32,6 +32,10 @@ buildscript {
         maven {
             url "http://repo.oneplatform.build/nexus/content/groups/private/"
         }
+        
+        maven {
+     url "http://repo.oneplatform.build/nexus/content/repositories/thirdparty-snapshots/"
+   }
     }
 
     dependencies {
