@@ -1,0 +1,33 @@
+pipeline_dev_snapshot-us-west-2:
+  name: 1p-typeahead DEV Snapshot Deploy
+  application: 1ptypeahead
+  stages.0.clusters.0.application: 1ptypeahead
+  stages.0.clusters.0.keyPair: KP_developer
+  stages.0.clusters.0.iamRole: typehead
+  stages.0.clusters.0.tags.Name: 1p-typeahead
+  stages.0.clusters.0.account: tr-dev
+  stages.0.clusters.0.securityGroups: ["sg-9013eaf4", "sg-335a0857"]
+  stages.0.clusters.0.freeFormDetails: "d0snapshot-r010"
+  triggers.0.job: "karyon-snapshot-1p-typeahead"
+  triggers.0.propertyFile: "AMI-1p-typeahead.json"
+
+pipeline_dev_stable-us-west-2:
+  name: 1p-typeahead DEV Stable Deploy
+  application: 1ptypeahead
+  stages.0.clusters.0.application: 1ptypeahead
+  stages.0.clusters.0.keyPair: KP_developer
+  stages.0.clusters.0.iamRole: typehead
+  stages.0.clusters.0.tags.Name: 1p-typeahead
+  stages.0.clusters.0.account: tr-dev
+  stages.0.clusters.0.securityGroups: ["sg-9013eaf4", "sg-335a0857"]
+  stages.0.clusters.0.freeFormDetails: "d0stable-r01"
+  triggers.0.job: "karyon-snapshot-1p-typeahead"
+  triggers.0.propertyFile: "AMI-1p-typeahead.json"
+
+application:
+  application: 1ptypeahead
+  description: "Create Application: 1ptypeahead"
+  job.0.application.email: sam.sgro@thomsonreuters.com
+  job.0.application.name: 1ptypeahead
+
+accounts: [tr-dev]
