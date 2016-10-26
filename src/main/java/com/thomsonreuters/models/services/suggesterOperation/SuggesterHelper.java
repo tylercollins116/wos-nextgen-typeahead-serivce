@@ -220,7 +220,9 @@ public abstract class SuggesterHelper {
 								suggester);
 
 					} else if (property.getDictionayName().equalsIgnoreCase(
-							Property.company)) {
+							Property.company)
+							|| property.getDictionayName().equalsIgnoreCase(
+									Property.companytest)) {
 
 						TRAnalyzingSuggesterExt suggester = createAnalyzingSuggesterForCompany(is);
 						suggesterList.put(property.getDictionayName(),
