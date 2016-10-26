@@ -88,6 +88,7 @@ public class ESQueryExecutor implements IESQueryExecutor {
 		URL url = new URL(urlString); 
 
 		logger.info("URL of ElasticSearch " + urlString);
+		System.out.println("URL of ElasticSearch " + urlString);
 
 		HttpURLConnection con = (HttpURLConnection) url.openConnection();
 
@@ -142,7 +143,8 @@ public class ESQueryExecutor implements IESQueryExecutor {
 
 		HttpPost gbPost = new HttpPost(urlString);
 
-		logger.debug("URL of ElasticSearch " +urlString);
+		logger.info("URL of ElasticSearch " +urlString);
+		System.out.println("URL of ElasticSearch " + urlString);
 
 		HttpContext gbPostContext = new BasicHttpContext();
 
