@@ -117,6 +117,7 @@ public abstract class IQueryGenerator {
 
 		
 		logger.info("ES Query " + esQuery);
+		System.out.println("ES Query " + esQuery);
 		
 		return esQuery;
 
