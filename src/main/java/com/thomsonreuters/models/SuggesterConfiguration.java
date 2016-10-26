@@ -138,10 +138,7 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 	}
 
 	private void prepareESEntities() {
-		// String[] esPaths = (String[]) .toArray();//
-		// ConfigurationManager.getConfigInstance().getStringArray("elastic.entities");
-
-		// for (int index = 0; index < esPaths.length; index++) {
+	 
 		Iterator it = Property.ES_SEARCH_PATH.keySet().iterator();
 		while (it.hasNext()) {
 			String type = "";
@@ -151,6 +148,9 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 			HashMap<String, String> sortFields = null;
 			String analyzer = "";
 			Integer[] maxExpansion = new Integer[] {};
+			String slop="3";
+			String host="";
+			String port="";
 
 			String path = it.next().toString();
 			ElasticEntityProperties eep = new ElasticEntityProperties();
@@ -185,6 +185,18 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 						.of(ConfigurationManager.getConfigInstance().getStringArray("entity." + path + ".maxExpansion"))
 						.map(Integer::parseInt).toArray(Integer[]::new);
 			}
+			
+			if (ConfigurationManager.getConfigInstance().containsKey("entity." + path + ".port")) {
+				port = ConfigurationManager.getConfigInstance().getString("entity." + path + ".port");
+			}
+			
+			if (ConfigurationManager.getConfigInstance().containsKey("entity." + path + ".host")) {
+				host = ConfigurationManager.getConfigInstance().getString("entity." + path + ".host");
+			}
+			
+			if (ConfigurationManager.getConfigInstance().containsKey("entity." + path + ".slop")) {
+				slop = ConfigurationManager.getConfigInstance().getString("entity." + path + ".slop");
+			}
 
 			eep.setType(type);
 			eep.setSearchField(searchField);
@@ -193,6 +205,9 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 			eep.setSortFields(sortFields);
 			eep.setAnalyzer(analyzer);
 			eep.setMaxExpansion(maxExpansion);
+			eep.setSlop(slop);
+			eep.setHost(host);
+			eep.setPort(port);
 			elasticEntityProperties.put("entity." + path, eep);
 		}
 

@@ -55,9 +55,12 @@ public abstract class IQueryGenerator {
 	public abstract String getSource();
 
 	public abstract String getQuery();
+	
+	public abstract String getESURL();
+	 
 
 	protected String generatESQuery(String searchField, int from, int size,
-			String query, String[] returnFields) {
+			String query, String[] returnFields,int slop) {
 
 		String coatedQuery = org.codehaus.jettison.json.JSONObject.quote(query);
 
@@ -108,8 +111,8 @@ public abstract class IQueryGenerator {
 					+ org.codehaus.jettison.json.JSONObject.quote(analyzer)
 					+ ",";
 		}
-
-		esQuery += "\"slop\":3,\"max_expansions\":" + max_expansion
+		 
+		esQuery += "\"slop\":"+slop+",\"max_expansions\":" + max_expansion
 				+ "}}}}},\"fields\":[" + sb.toString() + "]}";
 
 		return esQuery;
