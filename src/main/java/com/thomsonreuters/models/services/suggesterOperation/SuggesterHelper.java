@@ -29,6 +29,8 @@ import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSugg
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggesterExt;
 import com.thomsonreuters.models.services.suggesterOperation.models.CategoryEntry;
+import com.thomsonreuters.models.services.suggesterOperation.models.CompanyEntry;
+import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
 import com.thomsonreuters.models.services.suggesterOperation.models.EntryIterator;
 import com.thomsonreuters.models.services.suggesterOperation.models.KeywordEntry;
 import com.thomsonreuters.models.services.suggesterOperation.models.OrganizationEntry;
@@ -218,10 +220,17 @@ public abstract class SuggesterHelper {
 								suggester);
 
 					} else if (property.getDictionayName().equalsIgnoreCase(
+							Property.company)) {
+
+						TRAnalyzingSuggesterExt suggester = createAnalyzingSuggesterForCompany(is);
+						suggesterList.put(property.getDictionayName(),
+								suggester);
+
+					} else if (property.getDictionayName().equalsIgnoreCase(
 							Property.wos)) {
 
 						TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
-								is, KeywordEntry.class);
+								is, new KeywordEntry());
 
 						suggesterList.put(property.getDictionayName(),
 								suggester);
@@ -229,14 +238,14 @@ public abstract class SuggesterHelper {
 							Property.topic)) {
 
 						TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
-								is, TopicEntry.class);
+								is, new TopicEntry());
 
 						suggesterList.put(property.getDictionayName(),
 								suggester);
 					} else if (property.getDictionayName().equalsIgnoreCase(
 							Property.category)) {
 						TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
-								is, CategoryEntry.class);
+								is, new CategoryEntry());
 						suggesterList.put(property.getDictionayName(),
 								suggester);
 
@@ -307,15 +316,21 @@ public abstract class SuggesterHelper {
 			TRAnalyzingSuggesterExt suggester = createAnalyzingSuggesterForOrganization(is);
 			suggesterList.put(property.getDictionayName(), suggester);
 
+		} else if (property.getDictionayName().equalsIgnoreCase(
+				Property.company)) {
+
+			TRAnalyzingSuggesterExt suggester = createAnalyzingSuggesterForCompany(is);
+			suggesterList.put(property.getDictionayName(), suggester);
+
 		} else if (property.getDictionayName().equalsIgnoreCase(Property.wos)) {
 
 			com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
-					is, KeywordEntry.class);
+					is, new KeywordEntry());
 			suggesterList.put(property.getDictionayName(), suggester);
 		} else if (property.getDictionayName().equalsIgnoreCase(
 				Property.category)) {
 			TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
-					is, CategoryEntry.class);
+					is, new CategoryEntry());
 			suggesterList.put(property.getDictionayName(), suggester);
 
 		}
@@ -323,7 +338,7 @@ public abstract class SuggesterHelper {
 		else if (property.getDictionayName().equalsIgnoreCase(Property.topic)) {
 
 			TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
-					is, TopicEntry.class);
+					is, new TopicEntry());
 
 			suggesterList.put(property.getDictionayName(), suggester);
 		}
@@ -366,7 +381,7 @@ public abstract class SuggesterHelper {
 		try {
 
 			PrepareDictionary dictionary = new PrepareDictionary(is,
-					OrganizationEntry.class);
+					new OrganizationEntry());
 
 			suggester = new TRFuzzySuggesterExt(indexAnalyzer, queryAnalyzer);
 
@@ -386,19 +401,44 @@ public abstract class SuggesterHelper {
 	}
 
 	public TRAnalyzingSuggester createAnalyzingSuggesterForOthers(
-			InputStream is, Class enteryClass) {
+			InputStream is, Entry enteryClass) {
 		TRAnalyzingSuggester suggester = null;
 		try {
 
 			PrepareDictionary dictionary = new PrepareDictionary(is,
 					enteryClass);
 
-			if (enteryClass == KeywordEntry.class) {
+			if (enteryClass instanceof KeywordEntry) {
 				suggester = new TRFuzzySuggester(indexAnalyzer, queryAnalyzer,
 						0);
 			} else {
 				suggester = new TRFuzzySuggester(indexAnalyzer, queryAnalyzer);
 			}
+
+			suggester.build(new EntryIterator(dictionary));
+
+			dictionary.close();
+			is.close();
+
+			System.gc();
+			System.gc();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return suggester;
+	}
+
+	public TRAnalyzingSuggesterExt createAnalyzingSuggesterForCompany(
+			InputStream is) {
+		TRAnalyzingSuggesterExt suggester = null;
+		try {
+
+			PrepareDictionary dictionary = new PrepareDictionary(is,
+					new CompanyEntry());
+
+			suggester = new TRFuzzySuggesterExt(indexAnalyzer, queryAnalyzer);
 
 			suggester.build(new EntryIterator(dictionary));
 

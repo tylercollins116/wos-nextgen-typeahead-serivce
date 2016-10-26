@@ -70,15 +70,25 @@ public class ESQueryExecutor implements IESQueryExecutor {
 			IQueryGenerator queryGenerator) throws Exception {
 		StringBuilder jsonBuffer = new StringBuilder();
 
-		URL url = new URL("http://"+PropertyValue.ELASTIC_SEARCH_URL
-				+ PropertyValue.getProperty(queryGenerator.getSource())
-				+ "/_search");
-		
-		logger.debug("URL of ElasticSearch " +"http://"+PropertyValue.ELASTIC_SEARCH_URL
-				+ Property.ES_SEARCH_PATH.get(queryGenerator.getSource())
-				+ "/_search");
-		
-		 
+		/***************************************/
+
+		String urlString = null;
+		if (queryGenerator.getESURL() != null
+				&& queryGenerator.getESURL().length() > 4) {
+			urlString = queryGenerator.getESURL();
+		} else {
+
+			urlString = "http://" + PropertyValue.ELASTIC_SEARCH_URL
+					+ PropertyValue.getProperty(queryGenerator.getSource())
+					+ "/_search";
+		}
+
+		/***************************************/
+
+		URL url = new URL(urlString);
+
+		logger.debug("URL of ElasticSearch " + urlString);
+
 		HttpURLConnection con = (HttpURLConnection) url.openConnection();
 
 		con.setRequestMethod("POST");
@@ -107,8 +117,6 @@ public class ESQueryExecutor implements IESQueryExecutor {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
-		 
 
 		return jsonBuffer.toString();
 	}
@@ -118,16 +126,23 @@ public class ESQueryExecutor implements IESQueryExecutor {
 			throws Exception {
 
 		StringBuilder jsonBuffer = new StringBuilder();
-		
-		 
-		HttpPost gbPost = new HttpPost("http://"+PropertyValue.ELASTIC_SEARCH_URL
-				+ Property.ES_SEARCH_PATH.get(queryGenerator.getSource())
-				+ "/_search");
-		
-		
-		logger.debug("URL of ElasticSearch " +"http://"+PropertyValue.ELASTIC_SEARCH_URL
-				+ Property.ES_SEARCH_PATH.get(queryGenerator.getSource())
-				+ "/_search");
+
+		String urlString = null;
+		if (queryGenerator.getESURL() != null
+				&& queryGenerator.getESURL().length() > 4) {
+			urlString = queryGenerator.getESURL();
+		} else {
+
+			urlString = "http://" + PropertyValue.ELASTIC_SEARCH_URL
+					+ PropertyValue.ES_SEARCH_PATH.get(queryGenerator.getSource())
+					+ "/_search";
+		}
+
+		/***************************************/
+
+		HttpPost gbPost = new HttpPost(urlString);
+
+		logger.debug("URL of ElasticSearch " +urlString);
 
 		HttpContext gbPostContext = new BasicHttpContext();
 
@@ -150,10 +165,10 @@ public class ESQueryExecutor implements IESQueryExecutor {
 
 		String line;
 
-		while ((line = htmlReader.readLine()) != null) {			 
+		while ((line = htmlReader.readLine()) != null) {
 			jsonBuffer.append(line);
 		}
-		htmlReader.close(); 
+		htmlReader.close();
 
 		return jsonBuffer.toString();
 	}
@@ -163,11 +178,8 @@ public class ESQueryExecutor implements IESQueryExecutor {
 
 		this.execute(responseFormatter);
 
-	 
 		SuggestData data = responseFormatter.formatResponse();
 
-	 
-		 
 		return data;
 	}
 

@@ -32,6 +32,10 @@ buildscript {
         maven {
             url "http://repo.oneplatform.build/nexus/content/groups/private/"
         }
+        
+        maven {
+     url "http://repo.oneplatform.build/nexus/content/repositories/thirdparty-snapshots/"
+   }
     }
 
     dependencies {
@@ -198,3 +202,12 @@ ospackage {
 }
 
 buildRpm.dependsOn installDist
+
+task svcVersion() << {
+    def file = new File("$projectDir/build/svcVersion.txt")
+    file.createNewFile()
+    file.text = """version=$version
+applicationName=.name
+"""
+}
+

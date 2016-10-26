@@ -27,13 +27,9 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.thomsonreuters.models.SuggestData.Info;
 import com.thomsonreuters.models.SuggestData.Suggestions;
-import com.thomsonreuters.models.services.ESoperation.ArticleESEntry;
 import com.thomsonreuters.models.services.ESoperation.ESEntry;
 import com.thomsonreuters.models.services.ESoperation.IESQueryExecutor;
 import com.thomsonreuters.models.services.ESoperation.IQueryGenerator;
-import com.thomsonreuters.models.services.ESoperation.PatentESEntry;
-import com.thomsonreuters.models.services.ESoperation.PeopleESEntry;
-import com.thomsonreuters.models.services.ESoperation.PostESEntry;
 import com.thomsonreuters.models.services.suggesterOperation.IProcessPreSearchTerm;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggester;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt;
@@ -95,181 +91,16 @@ public class Suggester implements SuggesterHandler {
 		/*************************************************************************************/
 		/** These code are execute against ElasticSearch **/
 		/*************************************************************************************/
+		if (eep != null) {
+			IQueryGenerator entry = new ESEntry(eep, query, 0, n, path);
 
-		if (path.equals(Property.article) || path.equals(Property.people)
-				|| path.equals(Property.patent) || path.equals(Property.post)) {
-
-			if (path.equals(Property.article)) {
-
-				try {
-
-					if (Property.ES_SEARCH_PATH.containsKey(Property.article)) {
-
-						long start = System.currentTimeMillis();
-
-						String returnVaule[] = new String[] {
-								"fullrecord.summary.title", "cuid", "fuid" };
-						/**
-						 * didn't find cuid in patent fullrecord.summary. and
-						 * fuid I find it fullrecord.summary.uid but ignored
-						 **/
-
-						HashMap<String, String> aliasField = new HashMap<String, String>(
-								1);
-						aliasField.put("fullrecord.summary.title", "title");
-
-						IQueryGenerator entry = new ArticleESEntry(returnVaule,
-								query, 0, n, Property.article, aliasField);
-
-						SuggestData data = new SuggestData();
-						for (int count = 0; count <= 3; count++) {
-
-							if (data.suggestions.size() <= 0) {
-								if (count == 1) {
-									entry.setMax_expansion(50);
-								} else if (count == 1) {
-									entry.setMax_expansion(500);
-								} else if (count == 2) {
-									entry.setMax_expansion(1500);
-								} else if (count == 3) {
-									entry.setMax_expansion(4000);
-								}
-
-								data = this.ESQueryExecutor.formatResult(entry);
-
-							} else {
-								break;
-							}
-
-						}
-
-						data.took = (System.currentTimeMillis() - start) + "";
-						results.add(data);
-					}
-
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-			} else if (path.equals(Property.people)) {
-
-				try {
-					if (Property.ES_SEARCH_PATH.containsKey(Property.people)) {
-
-						long start = System.currentTimeMillis();
-
-						String returnVaule[] = new String[] {
-								"fullrecord.summary.country", "institution",
-								"role", "fullrecord.summary.authors",
-								"fullrecord.summary.uid" };
-
-						HashMap<String, String> aliasField = new HashMap<String, String>(
-								3);
-						aliasField.put("fullrecord.summary.country", "country");
-						aliasField.put("fullrecord.summary.authors", "name");
-						aliasField.put("fullrecord.summary.uid", "id");
-
-						IQueryGenerator entry = new PeopleESEntry(returnVaule,
-								query, 0, n, Property.people, aliasField);
-						SuggestData data = null;
-						try {
-							data = this.ESQueryExecutor.formatResult(entry);
-						} catch (Exception e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-
-						data.took = (System.currentTimeMillis() - start) + "";
-
-						results.add(data);
-					}
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-			} else if (path.equals(Property.patent)) {
-
-				try {
-					if (Property.ES_SEARCH_PATH.containsKey(Property.patent)) {
-
-						long start = System.currentTimeMillis();
-
-						String returnVaule[] = new String[] {
-								"fullrecord.summary.uid",
-								"fullrecord.summary.title",
-								"fullrecord.summary.citingsrcscount" };
-
-						HashMap<String, String> aliasField = new HashMap<String, String>(
-								3);
-						aliasField.put("fullrecord.summary.title", "title");
-						aliasField.put("fullrecord.summary.uid", "patentno");
-						aliasField.put("fullrecord.summary.citingsrcscount",
-								"timeCited");
-
-						IQueryGenerator entry = new PatentESEntry(returnVaule,
-								query, 0, n, Property.patent, aliasField);
-						SuggestData data = null;
-						try {
-							data = this.ESQueryExecutor.formatResult(entry);
-						} catch (Exception e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-
-						data.took = (System.currentTimeMillis() - start) + "";
-
-						results.add(data);
-					}
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-			} else if (path.equals(Property.post)) {
-
-				try {
-					if (Property.ES_SEARCH_PATH.containsKey(Property.post)) {
-
-						long start = System.currentTimeMillis();
-
-						String returnVaule[] = new String[] {
-								"fullrecord.summary.uid",
-								"fullrecord.summary.title",
-								"fullrecord.summary.truid",
-								"fullrecord.summary.pubdate" };
-
-						HashMap<String, String> aliasField = new HashMap<String, String>(
-								4);
-						aliasField.put("fullrecord.summary.title", "title");
-						aliasField.put("fullrecord.summary.uid", "uid");
-						aliasField.put("fullrecord.summary.truid", "truid");
-						aliasField.put("fullrecord.summary.pubdate",
-								"publishdate");
-
-						IQueryGenerator entry = new PostESEntry(returnVaule,
-								query, 0, n, Property.post, aliasField);
-						SuggestData data = null;
-						try {
-							data = this.ESQueryExecutor.formatResult(entry);
-						} catch (Exception e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-
-						data.took = (System.currentTimeMillis() - start) + "";
-
-						results.add(data);
-					}
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
+			try {
+				results.add(getSuggestionsData(entry, eep.getMaxExpansion()));
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-
 		}
+
 		/*************************************************************************************/
 		/** End of codes that execute against ElasticSearch **/
 		/*************************************************************************************/
@@ -277,18 +108,7 @@ public class Suggester implements SuggesterHandler {
 		/*************************************************************************************/
 		/** The below codes are execute against Dictionary in S3 bucket **/
 		/*************************************************************************************/
-		else if (eep != null) {
-			IQueryGenerator entry = new ESEntry(eep.getType(),
-					eep.getReturnFields(), query, 0, n, path,
-					eep.getAliasFields(), eep.getAnalyzer(),
-					eep.getSearchField(), eep.getSortFields());
-
-			try {
-				results.add(getSuggestionsData(entry, eep.getMaxExpansion()));
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		} else {
+		else {
 
 			Lookup suggester = suggesterConfigurationHandler
 					.getDictionaryAnalyzer().getSuggesterList().get(path);
@@ -524,43 +344,47 @@ public class Suggester implements SuggesterHandler {
 
 	/**
 	 * lookup suggest list from elastic
-	 * @param query	user input word
-	 * @param source elastic index
-	 * @param offset elastic offset 
-	 * @param size  total size of suggest list
-	 * @param uid user id
+	 * 
+	 * @param query
+	 *            user input word
+	 * @param source
+	 *            elastic index
+	 * @param offset
+	 *            elastic offset
+	 * @param size
+	 *            total size of suggest list
+	 * @param uid
+	 *            user id
 	 * @return suggest data
 	 */
 	@Override
-	public List<SuggestData> lookup(String query, String source, int offset, 
+	public List<SuggestData> lookup(String query, String source, int offset,
 			int size, String uid) {
-		
+
 		List<SuggestData> results = new ArrayList<SuggestData>();
-		
+
 		// get avail search index
 		Set<String> keysForES = PropertyValue.ES_SEARCH_PATH.keySet();
 		// validate source index
-		if (source != null && source.length() > 0 
+		if (source != null && source.length() > 0
 				&& keysForES.contains(source.toLowerCase())) {
 			String path = source.toLowerCase();
-			
+
 			ElasticEntityProperties eep = suggesterConfigurationHandler
 					.getElasticEntityProperties("entity." + path);
-			
-			IQueryGenerator entry = new ESEntry(eep.getType(),
-					eep.getReturnFields(), query, offset, size, path,
-					eep.getAliasFields(), eep.getAnalyzer(),
-					eep.getSearchField(), eep.getSortFields());
-			
+
+			IQueryGenerator entry = new ESEntry(eep, query, 0, size, path);
+
 			try {
-				results.add(getSuggestionsDataWithCount(entry, eep.getMaxExpansion()));
+				results.add(getSuggestionsDataWithCount(entry,
+						eep.getMaxExpansion()));
 			} catch (Exception e) {
 				log.error("elastic search error", e);
 			}
 		}
 		return results;
 	}
-	
+
 	/** added **/
 	@Override
 	public List<SuggestData> lookup(String query, List<String> sources,
@@ -845,40 +669,50 @@ public class Suggester implements SuggesterHandler {
 
 	}
 
+	private SuggestData getSuggestionsDataCaller(IQueryGenerator entry,
+			int count, Integer[] expansion) throws Exception {
 
-private SuggestData getSuggestionsDataCaller(IQueryGenerator entry, int count, Integer[] expansion) throws Exception {
-        SuggestData data = this.ESQueryExecutor.formatResult(entry);
-         
-        if (data.suggestions.size() <= 0 && count < expansion.length) {
-            entry.setMax_expansion(expansion[count]);
-            data = getSuggestionsDataCaller(entry, ++count, expansion);
-        }
-        return data;
-    }
+		SuggestData data = this.ESQueryExecutor.formatResult(entry);
 
-    private SuggestData getSuggestionsData(IQueryGenerator entry, Integer[] expansion) throws Exception {
-        
-        long start = System.currentTimeMillis();
-        SuggestData data = getSuggestionsDataCaller(entry, 0, expansion);
-        data.took = (System.currentTimeMillis() - start) + "";        
-        return data;
+		if (data.suggestions.size() <= 0 && count < expansion.length) {
+			entry.setMax_expansion(expansion[count]);
+			data = getSuggestionsDataCaller(entry, ++count, expansion);
+		}
+		return data;
+	}
 
-    }
-    
-    /**
-     * provide suggest list and took is total count of hits
-     * @param entry 
-     * @param expansion
-     * @return suggest data list
-     * @throws Exception
-     */
-    private SuggestData getSuggestionsDataWithCount(IQueryGenerator entry, Integer[] expansion) throws Exception {
-    	SuggestData suggestData = getSuggestionsData(entry, expansion);
-    	// a temp fix to return total count of hits
-    	if (suggestData != null) {
-    		suggestData.took = suggestData.took + ":" + String.valueOf(entry.getTotalCount());
-    	}
-    	return suggestData;
-    }
+	private SuggestData getSuggestionsData(IQueryGenerator entry,
+			Integer[] expansion) throws Exception {
+
+		long start = System.currentTimeMillis();
+
+		if (expansion != null && expansion.length > 0) {
+			entry.setMax_expansion(expansion[0]);
+		}
+
+		SuggestData data = getSuggestionsDataCaller(entry, 0, expansion);
+		data.took = (System.currentTimeMillis() - start) + "";
+		return data;
+
+	}
+
+	/**
+	 * provide suggest list and took is total count of hits
+	 * 
+	 * @param entry
+	 * @param expansion
+	 * @return suggest data list
+	 * @throws Exception
+	 */
+	private SuggestData getSuggestionsDataWithCount(IQueryGenerator entry,
+			Integer[] expansion) throws Exception {
+		SuggestData suggestData = getSuggestionsData(entry, expansion);
+		// a temp fix to return total count of hits
+		if (suggestData != null) {
+			suggestData.took = suggestData.took + ":"
+					+ String.valueOf(entry.getTotalCount());
+		}
+		return suggestData;
+	}
 
 }
