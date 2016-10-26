@@ -85,9 +85,9 @@ public class ESQueryExecutor implements IESQueryExecutor {
 
 		/***************************************/
 
-		URL url = new URL(urlString);
+		URL url = new URL(urlString); 
 
-		logger.debug("URL of ElasticSearch " + urlString);
+		logger.info("URL of ElasticSearch " + urlString);
 
 		HttpURLConnection con = (HttpURLConnection) url.openConnection();
 

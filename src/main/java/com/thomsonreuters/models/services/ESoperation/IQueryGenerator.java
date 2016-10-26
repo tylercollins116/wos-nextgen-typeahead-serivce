@@ -115,6 +115,9 @@ public abstract class IQueryGenerator {
 		esQuery += "\"slop\":"+slop+",\"max_expansions\":" + max_expansion
 				+ "}}}}},\"fields\":[" + sb.toString() + "]}";
 
+		
+		logger.info("ES Query " + esQuery);
+		
 		return esQuery;
 
 	}
