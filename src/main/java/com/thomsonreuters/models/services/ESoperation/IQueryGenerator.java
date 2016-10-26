@@ -116,8 +116,8 @@ public abstract class IQueryGenerator {
 				+ "}}}}},\"fields\":[" + sb.toString() + "]}";
 
 		
-		logger.info("ES Query " + esQuery);
-		System.out.println("ES Query " + esQuery);
+//		logger.info("ES Query " + esQuery);
+//		System.out.println("ES Query " + esQuery);
 		
 		return esQuery;
 
