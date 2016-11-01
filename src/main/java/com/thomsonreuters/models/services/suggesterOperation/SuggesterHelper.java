@@ -214,7 +214,7 @@ public abstract class SuggesterHelper {
 
 					if (property.getDictionayName().equalsIgnoreCase(
 							Property.organization) ||property.getDictionayName().equalsIgnoreCase(
-									Property.companytest)) {
+									Property.company)) {
 
 						TRAnalyzingSuggesterExt suggester = createAnalyzingSuggesterForOrganization(is);
 						suggesterList.put(property.getDictionayName(),
