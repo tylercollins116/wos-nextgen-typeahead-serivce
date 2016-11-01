@@ -37,6 +37,5 @@ public interface Property {
 	public static final String organization = "organizations";
 	public static final String topic = "topics";
 	public static final String company = "company";
-	public static final String companytest = "companytest";
-
+	
 }
