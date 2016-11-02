@@ -213,15 +213,14 @@ public abstract class SuggesterHelper {
 					/********** Important code to work on ************************/
 
 					if (property.getDictionayName().equalsIgnoreCase(
-							Property.organization) ||property.getDictionayName().equalsIgnoreCase(
-									Property.company)) {
+							Property.organization)) {
 
 						TRAnalyzingSuggesterExt suggester = createAnalyzingSuggesterForOrganization(is);
 						suggesterList.put(property.getDictionayName(),
 								suggester);
 
 					} else if (property.getDictionayName().equalsIgnoreCase(
-							Property.company)) {
+							Property.companyterms)) {
 
 						TRAnalyzingSuggesterExt suggester = createAnalyzingSuggesterForCompany(is);
 						suggesterList.put(property.getDictionayName(),
@@ -312,14 +311,13 @@ public abstract class SuggesterHelper {
 
 		/********** Important code to work on ************************/
 
-		if (property.getDictionayName().equalsIgnoreCase(Property.organization)||property.getDictionayName().equalsIgnoreCase(
-				Property.company)) {
+		if (property.getDictionayName().equalsIgnoreCase(Property.organization)) {
 
 			TRAnalyzingSuggesterExt suggester = createAnalyzingSuggesterForOrganization(is);
 			suggesterList.put(property.getDictionayName(), suggester);
 
 		} else if (property.getDictionayName().equalsIgnoreCase(
-				Property.company)) {
+				Property.companyterms)) {
 
 			TRAnalyzingSuggesterExt suggester = createAnalyzingSuggesterForCompany(is);
 			suggesterList.put(property.getDictionayName(), suggester);
