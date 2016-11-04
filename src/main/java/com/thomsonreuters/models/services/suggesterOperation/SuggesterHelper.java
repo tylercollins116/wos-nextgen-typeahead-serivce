@@ -157,10 +157,12 @@ public abstract class SuggesterHelper {
 				if(s3bucket == null){
 					s3bucket=bucketName; 
 				}
+ 
 				  
 				StartLoadingProcess(info,bucketName,false);
 				 
 			} 
+ 
 	}
 
 	public void reloadDictionary(String propertyName) throws IOException {
@@ -265,12 +267,14 @@ public abstract class SuggesterHelper {
 
 			/********** Important code to work on ************************/
 
+ 
 			/***/
+ 
 
 			if (suggesterType
-					.equalsIgnoreCase(Property.SUGGESTER_TYPE.complexfuzzysuggester
-
+					.equalsIgnoreCase(Property.SUGGESTER_TYPE.complexfuzzysuggester 
 					.toString())) {
+ 
 
 				TRAnalyzingSuggesterExt suggester = createComplexFuzzysuggester(is);
 				suggesterList.put(info.getDictionaryName(),

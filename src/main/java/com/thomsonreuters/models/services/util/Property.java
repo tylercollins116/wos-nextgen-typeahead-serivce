@@ -52,6 +52,7 @@ public interface Property {
 	
 	public  void groupTermsBasedOnDictionary(List<String> alldictionaryInfo,Map<String, DictionaryInfo> allProperty);
 
+ 
 //	public static final String article = "articles";
 //	public static final String people = "people";
 //	public static final String post = "posts";
@@ -62,6 +63,5 @@ public interface Property {
 //	public static final String topic = "topics";
 //	public static final String company = "company";
 //	public static final String companytest = "companytest";
-	
-
+ 
 }
