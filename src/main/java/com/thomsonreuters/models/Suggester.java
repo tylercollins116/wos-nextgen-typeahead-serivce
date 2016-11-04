@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.netflix.config.ConfigurationManager;
 import com.thomsonreuters.models.SuggestData.Info;
 import com.thomsonreuters.models.SuggestData.Suggestions;
 import com.thomsonreuters.models.services.ESoperation.ESEntry;
@@ -40,7 +41,7 @@ import com.thomsonreuters.models.services.suggesters.ProcessPreSearchTerm;
 import com.thomsonreuters.models.services.util.ElasticEntityProperties;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
 import com.thomsonreuters.models.services.util.Property;
-import com.thomsonreuters.models.services.util.PropertyValue;
+ 
 
 @Singleton
 public class Suggester implements SuggesterHandler {
@@ -114,15 +115,26 @@ public class Suggester implements SuggesterHandler {
 					.getDictionaryAnalyzer().getSuggesterList().get(path);
 
 			if (suggester instanceof TRAnalyzingSuggester) {
-
-				if (query.trim().length() < PropertyValue.FUZZTNESS_THRESHOLD) {
+				String fuzzyness=ConfigurationManager.getConfigInstance().getString(Property.FUZZTNESS_THRESHOLD);
+				
+				fuzzyness=fuzzyness==null ?Property.DEFAULT_FUZZTNESS_THRESHOLD+"":fuzzyness;
+				
+				int fuzzynessLength=10;
+				try{
+				fuzzynessLength=Integer.parseInt(fuzzyness);
+				}catch(Exception e){
+					fuzzynessLength=Property.DEFAULT_FUZZTNESS_THRESHOLD;
+				}
+	 
+				if (query.trim().length() < fuzzynessLength) {
 
 					suggester = ((TRFuzzySuggester) suggester).setMaxEdits(0);
 				} else {
 					suggester = ((TRFuzzySuggester) suggester).setMaxEdits(1);
 				}
-
-				if (path.equalsIgnoreCase(Property.category)) {
+				
+				 
+ 
 
 					startTime = System.currentTimeMillis();
 					SuggestData suggestData = new SuggestData();
@@ -136,7 +148,7 @@ public class Suggester implements SuggesterHandler {
 
 					if (preSearchedTermsInfo != null
 							&& (preSearchTerms = preSearchedTermsInfo
-									.get(Property.category)) != null
+									.get(path)) != null
 							&& preSearchTerms.size() > 0) {
 						suggestData.suggestions.addAll(preSearchTerms);
 					} else {
@@ -185,112 +197,7 @@ public class Suggester implements SuggesterHandler {
 							+ "";
 					results.add(suggestData);
 
-				} else if (path.equalsIgnoreCase(Property.wos)) {
-
-					startTime = System.currentTimeMillis();
-
-					SuggestData suggestData = new SuggestData();
-					suggestData.source = path;
-
-					/****************************/
-					/**** For pre searched Terms **/
-					/****************************/
-
-					List<SuggestData.Suggestions> preSearchTerms = null;
-					if (preSearchedTermsInfo != null
-							&& (preSearchTerms = preSearchedTermsInfo
-									.get(Property.wos)) != null
-
-							&& preSearchTerms.size() > 0) {
-						suggestData.suggestions.addAll(preSearchTerms);
-					} else {
-						preSearchTerms = new ArrayList<SuggestData.Suggestions>();
-					}
-
-					/************************************/
-					/** End of for pre searched Terms **/
-					/************************************/
-
-					try {
-
-						for (LookupResult result : ((com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester) suggester)
-								.lookup(query, false, n)) {
-
-							Suggestions suggestions = suggestData.new Suggestions();
-							suggestions.keyword = result.key.toString();
-
-							if (preSearchTerms.contains(suggestions)) {
-								continue;
-							}
-
-							Map<String, String> map = PrepareDictionary
-									.processJson(new String(
-											result.payload.bytes));
-
-							Set<String> keys = map.keySet();
-
-							for (String key : keys) {
-
-								Info info = suggestData.new Info();
-								info.key = key;
-								info.value = map.get(key);
-								suggestions.info.add(info);
-							}
-
-							suggestData.suggestions.add(suggestions);
-
-						}
-
-					} catch (Exception e) {
-						log.info("cannot find the suggester ");
-					}
-
-					suggestData.took = (System.currentTimeMillis() - startTime)
-							+ "";
-
-					results.add(suggestData);
-				} else if (path.equalsIgnoreCase(Property.topic)) {
-
-					startTime = System.currentTimeMillis();
-
-					SuggestData suggestData = new SuggestData();
-					suggestData.source = path;
-
-					try {
-
-						for (LookupResult result : ((com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester) suggester)
-								.lookup(query, false, n)) {
-
-							Suggestions suggestions = suggestData.new Suggestions();
-							suggestions.keyword = result.key.toString();
-
-							Map<String, String> map = PrepareDictionary
-									.processJson(new String(
-											result.payload.bytes));
-
-							Set<String> keys = map.keySet();
-
-							for (String key : keys) {
-
-								Info info = suggestData.new Info();
-								info.key = key;
-								info.value = map.get(key);
-								suggestions.info.add(info);
-							}
-
-							suggestData.suggestions.add(suggestions);
-
-						}
-
-					} catch (Exception e) {
-						log.info("cannot find the suggester ");
-					}
-
-					suggestData.took = (System.currentTimeMillis() - startTime)
-							+ "";
-
-					results.add(suggestData);
-				}
+				 
 			} else if (suggester instanceof TRAnalyzingSuggesterExt) {
 
 				startTime = System.currentTimeMillis();
@@ -364,7 +271,7 @@ public class Suggester implements SuggesterHandler {
 		List<SuggestData> results = new ArrayList<SuggestData>();
 
 		// get avail search index
-		Set<String> keysForES = PropertyValue.ES_SEARCH_PATH.keySet();
+		Set<String> keysForES = Property.ES_SEARCH_PATH.keySet();
 		// validate source index
 		if (source != null && source.length() > 0
 				&& keysForES.contains(source.toLowerCase())) {
@@ -421,7 +328,7 @@ public class Suggester implements SuggesterHandler {
 			 * This is for ES query property in eiddo starts with "search.path."
 			 **/
 
-			Set<String> keysForES = PropertyValue.ES_SEARCH_PATH.keySet();
+			Set<String> keysForES = Property.ES_SEARCH_PATH.keySet();
 
 			/**
 			 * -----------------------------------------------------------------
@@ -439,12 +346,7 @@ public class Suggester implements SuggesterHandler {
 
 			Set<String> includeType = new HashSet<String>();
 
-			if (PropertyValue.SELECTED_DEFAULT_TYPEAHEADS != null
-					&& PropertyValue.SELECTED_DEFAULT_TYPEAHEADS.length > 0) {
-				for (String type : PropertyValue.SELECTED_DEFAULT_TYPEAHEADS) {
-					includeType.add(type.toLowerCase().trim());
-				}
-			}
+			 
 
 			boolean defaulTypeExists = (includeType != null && includeType
 					.size() > 0);
@@ -557,7 +459,7 @@ public class Suggester implements SuggesterHandler {
 						.processAndNormalizeToken(suggestion);
 
 				List<SuggestData> allSuggestdataForCategories = lookup(
-						Property.category, suggestion, 50);
+						"category", suggestion, 50);
 
 				for (SuggestData suggestdata : allSuggestdataForCategories) {
 					boolean include = false;
@@ -585,7 +487,7 @@ public class Suggester implements SuggesterHandler {
 				}
 
 				List<SuggestData> allSuggestdataForKeywords = lookup(
-						Property.wos, suggestion, 50);
+						"wos", suggestion, 50);
 
 				for (SuggestData suggestdata : allSuggestdataForKeywords) {
 
@@ -627,11 +529,11 @@ public class Suggester implements SuggesterHandler {
 			/********************* Sorting Ends *****************************/
 
 			SuggestData perSearchedTermsCategories = new SuggestData();
-			perSearchedTermsCategories.source = Property.category;
+			perSearchedTermsCategories.source = "category";
 			perSearchedTermsCategories.suggestions = allCategoriesSuggestions;
 
 			SuggestData perSearchedTerms = new SuggestData();
-			perSearchedTerms.source = Property.wos;
+			perSearchedTerms.source = "wos";
 			perSearchedTerms.suggestions = allKeywordSuggestions;
 
 			allsuggestions.add(perSearchedTerms);

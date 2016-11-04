@@ -30,8 +30,9 @@ import com.thomsonreuters.eiddo.client.EiddoClient;
 import com.thomsonreuters.eiddo.client.EiddoListener;
 import com.thomsonreuters.models.SuggesterConfigurationHandler;
 import com.thomsonreuters.models.services.util.BlockingHashTable;
+import com.thomsonreuters.models.services.util.GroupTerms;
 import com.thomsonreuters.models.services.util.Property;
-import com.thomsonreuters.models.services.util.PropertyValue;
+ 
 
 @Singleton
 public class HealthCheck implements HealthCheckHandler {
@@ -99,6 +100,8 @@ public class HealthCheck implements HealthCheckHandler {
 	}
 
 	private int checkLoadedDictionaries() {
+		
+		Property property=new GroupTerms();
 
 		/** check for all the dictionaries successfully loaded or not **/
 
@@ -111,13 +114,12 @@ public class HealthCheck implements HealthCheckHandler {
 		while (keys.hasNext()) {
 			String key = keys.next();
 
-			Property property = PropertyValue.getProperty(key);
-
-			if (property.isBucketName()) {
+		 
+			if (property.isBucketName(key)) {
 				bucketName = ConfigurationManager.getConfigInstance()
 						.getString(key);
-			} else if (property.isDictionaryPathRelated()) {
-				dictionaryProperties.add(property.getDictionayName());
+			} else if (property.isDictionaryRelated(key)) {
+				dictionaryProperties.add(property.getDictionayName(key));
 			}
 		}
 

@@ -5,7 +5,7 @@ import java.util.HashMap;
 public class ElasticEntityProperties {
 
 	private String type = "";
-	private String searchField = "";
+	private String[] searchField = null;
 	private String[] returnFields = null;
 	private HashMap<String, String> aliasFields = null;
 	private HashMap<String, String> sortFields = null;
@@ -23,11 +23,11 @@ public class ElasticEntityProperties {
 		this.type = type;
 	}
 
-	public String getSearchField() {
+	public String[] getSearchField() {
 		return searchField;
 	}
 
-	public void setSearchField(String searchField) {
+	public void setSearchField(String[] searchField) {
 		this.searchField = searchField;
 	}
 
@@ -93,7 +93,7 @@ public class ElasticEntityProperties {
 
 		if (this.host != null && this.host.length() > 5 && this.port!=null && this.port.length()>0) {
 
-			String url = "http://" + host+":"+this.port + PropertyValue.ES_SEARCH_PATH.get(source) + "/_search";
+			String url = "http://" + host+":"+this.port + Property.ES_SEARCH_PATH.get(source) + "/_search";
 			return url;
 		}
 

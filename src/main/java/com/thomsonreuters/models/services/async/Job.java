@@ -5,8 +5,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
 import com.thomsonreuters.models.services.suggesterOperation.DictionaryLoader;
+import com.thomsonreuters.models.services.util.GroupTerms;
 import com.thomsonreuters.models.services.util.Property;
-import com.thomsonreuters.models.services.util.PropertyValue;
+ 
 
 
 
@@ -14,6 +15,8 @@ public class Job<K> {
 
 	private final DictionaryLoader<K> suggesterList;
 	private final String propertyName;
+	private final Property property=new GroupTerms();
+	
 
 	public FutureTask<K> inputTask;
 
@@ -39,9 +42,9 @@ public class Job<K> {
 		}
 
 		public void recall() {
-			Property property = PropertyValue.getProperty(propertyName);
+			 
 
-			if (property.isBucketName()) {
+			if (property.isBucketName(propertyName)) {
 				try {
 					job.suggesterList.initializeSuggesterList();
 				} catch (IOException e) {
@@ -49,7 +52,7 @@ public class Job<K> {
 					e.printStackTrace();
 				}
 
-			} else if (property.isDictionaryPathRelated()) {
+			} else if (property.isDictionaryRelated(propertyName)) {
 				try {
 					job.suggesterList.reloadDictionary(job.propertyName);
 				} catch (IOException e) {
