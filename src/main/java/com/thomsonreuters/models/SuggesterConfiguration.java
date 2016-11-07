@@ -23,8 +23,8 @@ import com.thomsonreuters.models.services.suggesterOperation.SuggesterFactory;
 import com.thomsonreuters.models.services.suggesterOperation.SuggesterHelper;
 import com.thomsonreuters.models.services.suggesters.BlankSuggester;
 import com.thomsonreuters.models.services.util.ElasticEntityProperties;
+import com.thomsonreuters.models.services.util.GroupTerms;
 import com.thomsonreuters.models.services.util.Property;
-import com.thomsonreuters.models.services.util.PropertyValue;
 
 @Singleton
 public class SuggesterConfiguration implements SuggesterConfigurationHandler {
@@ -56,6 +56,8 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 		// build ES URL
 		prepareESURL();
 		prepareESEntities();
+		
+		final Property property=new GroupTerms();
 
 		ConfigurationManager.getConfigInstance().addConfigurationListener(new ConfigurationListener() {
 
@@ -64,22 +66,13 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 
 				String triggredProperty = event.getPropertyName();
 
-				if (PropertyValue.getProperty(triggredProperty).isDictionaryPathRelated()
-						|| PropertyValue.getProperty(triggredProperty).isBucketName()) {
+				if (property.isDictionaryRelated(triggredProperty)
+						|| property.isBucketName(triggredProperty)) {
 
 					log.info("reloding  dictionary " + event.getPropertyName());
 
 					Job<Lookup> job = new Job<Lookup>(dictionaryReader, event.getPropertyName());
 					reloadExecutor.execute(job.inputTask);
-				} else if (triggredProperty.trim().equalsIgnoreCase(Property.DEFAULT_TYPEAHEAD_TYPES)) {
-
-					String[] typeaheadvalues = ConfigurationManager.getConfigInstance()
-							.getStringArray(triggredProperty);
-
-					if (typeaheadvalues != null && typeaheadvalues.length > 0) {
-						PropertyValue.SELECTED_DEFAULT_TYPEAHEADS = typeaheadvalues;
-					}
-
 				} else if (triggredProperty.trim().equalsIgnoreCase(Property.SEARCH_HOST)
 						|| triggredProperty.trim().equalsIgnoreCase(Property.SEARCH_PORT)
 						|| triggredProperty.trim().startsWith(Property.SEARCH_PATH_PREFIX)) {
@@ -89,14 +82,12 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 
 					prepareESEntities();
 
-				} else {
-					SuggesterHelper.loadFuzzynessThreshold(triggredProperty);
-				}
+				} 
 
 			}
 		});
 	}
-
+              
 	@Override
 	public DictionaryLoader<Lookup> getDictionaryAnalyzer() {
 		return this.dictionaryReader;
@@ -104,8 +95,8 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 
 	private void prepareESURL() {
 
-		PropertyValue.ELASTIC_SEARCH_URL = ConfigurationManager.getConfigInstance().getString(Property.SEARCH_HOST)
-				+ ":" + ConfigurationManager.getConfigInstance().getString(Property.SEARCH_PORT);
+//		String ELASTIC_SEARCH_URL = ConfigurationManager.getConfigInstance().getString(Property.SEARCH_HOST)
+//				+ ":" + ConfigurationManager.getConfigInstance().getString(Property.SEARCH_PORT);
 
 		Iterator<String> keys = ConfigurationManager.getConfigInstance().getKeys();
 
@@ -142,7 +133,7 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 		Iterator it = Property.ES_SEARCH_PATH.keySet().iterator();
 		while (it.hasNext()) {
 			String type = "";
-			String searchField = "";
+			String[] searchField = null;
 			String[] returnFields = null;
 			HashMap<String, String> aliasFields = null;
 			HashMap<String, String> sortFields = null;
@@ -158,7 +149,7 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 				type = ConfigurationManager.getConfigInstance().getString("entity." + path + ".type");
 			}
 			if (ConfigurationManager.getConfigInstance().containsKey("entity." + path + ".searchField")) {
-				searchField = ConfigurationManager.getConfigInstance().getString("entity." + path + ".searchField");
+				searchField = ConfigurationManager.getConfigInstance().getStringArray("entity." + path + ".searchField");
 			}
 
 			if (ConfigurationManager.getConfigInstance().containsKey("entity." + path + ".returnFields")) {

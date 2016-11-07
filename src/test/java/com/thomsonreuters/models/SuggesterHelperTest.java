@@ -44,7 +44,7 @@ public class SuggesterHelperTest {
 		};
 
 		TRAnalyzingSuggesterExt organizationSuggester = helper
-				.createAnalyzingSuggesterForOrganization(is);
+				.createSimpleFuzzysuggester(is);
 
 		List<Lookup.LookupResult> allResults = null;
 		try {

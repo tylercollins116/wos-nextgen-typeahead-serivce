@@ -8,6 +8,15 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -23,9 +32,11 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.netflix.config.ConfigurationManager;
 import com.thomsonreuters.models.SuggestData;
+import com.thomsonreuters.models.SuggestData.Info;
+import com.thomsonreuters.models.SuggestData.Suggestions;
 import com.thomsonreuters.models.services.util.Property;
-import com.thomsonreuters.models.services.util.PropertyValue;
 
 @Singleton
 public class ESQueryExecutor implements IESQueryExecutor {
@@ -47,27 +58,68 @@ public class ESQueryExecutor implements IESQueryExecutor {
 
 	}
 
-	private void execute(IQueryGenerator queryGenerator) {
-
-		String result = "{}";
+	private void executeQuery(IQueryGenerator queryGenerator,
+			List<String> results) {
 
 		try {
 
 			long timeStart = System.currentTimeMillis();
-			result = executeESQueryViaAppache(queryGenerator);
+			collectResultsFromES(queryGenerator, results);
 
 		} catch (Exception e) {
 			e.printStackTrace();
-			result = "{}";
-		}
 
-		queryGenerator.setResponse(result);
+		}
 
 	}
 
+	// =================================================================
+	private void collectResultsFromES(IQueryGenerator queryGenerator,
+			final List<String> results) throws Exception {
+
+		String[] queries = queryGenerator.createQuery();
+		ExecutorService executor = Executors.newFixedThreadPool(queries.length);
+
+		FutureTask<String>[] workers = new FutureTask[queries.length];
+
+		for (int i = 0; i < queries.length; i++) {
+
+			workers[i] = new FutureTask<String>(new collectorCallable(
+					queryGenerator, queries[i]));
+
+			executor.execute(workers[i]);
+		}
+
+		for (int i = 0; i < workers.length; i++) {
+			results.add(workers[i].get(400, TimeUnit.MILLISECONDS));
+		}
+		executor.shutdown();
+
+	}
+
+	public class collectorCallable implements Callable<String> {
+
+		private final IQueryGenerator queryGenerator;
+		private final String query;
+
+		public collectorCallable(IQueryGenerator queryGenerator, String query) {
+			this.queryGenerator = queryGenerator;
+			this.query = query;
+		}
+
+		@Override
+		public String call() throws Exception {
+			return executeESQueryViaAppacheURLConnection(queryGenerator,
+					this.query);
+		}
+
+	}
+
+	// =================================================================
+
 	@Deprecated
 	private String executeESQueryViaAppacheURLConnection(
-			IQueryGenerator queryGenerator) throws Exception {
+			IQueryGenerator queryGenerator, String query) throws Exception {
 		StringBuilder jsonBuffer = new StringBuilder();
 
 		/***************************************/
@@ -78,17 +130,22 @@ public class ESQueryExecutor implements IESQueryExecutor {
 			urlString = queryGenerator.getESURL();
 		} else {
 
-			urlString = "http://" + PropertyValue.ELASTIC_SEARCH_URL
-					+ PropertyValue.getProperty(queryGenerator.getSource())
+			String esurl = ConfigurationManager.getConfigInstance().getString(
+					Property.SEARCH_HOST);
+			String port = ConfigurationManager.getConfigInstance().getString(
+					Property.SEARCH_PORT);
+
+			urlString = "http://" + esurl + ":" + port + "/"
+					+ Property.ES_SEARCH_PATH.get(queryGenerator.getSource())
 					+ "/_search";
 		}
 
 		/***************************************/
 
-		URL url = new URL(urlString); 
+		URL url = new URL(urlString);
 
-//		logger.info("URL of ElasticSearch " + urlString);
-//		System.out.println("URL of ElasticSearch " + urlString);
+		// logger.info("URL of ElasticSearch " + urlString);
+		// System.out.println("URL of ElasticSearch " + urlString);
 
 		HttpURLConnection con = (HttpURLConnection) url.openConnection();
 
@@ -101,8 +158,7 @@ public class ESQueryExecutor implements IESQueryExecutor {
 		DataOutputStream wr = new DataOutputStream(con.getOutputStream());
 		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(wr,
 				"UTF-8"));
-		wr.write((Charset.forName("UTF-8").encode(queryGenerator.createQuery()))
-				.array());
+		wr.write((Charset.forName("UTF-8").encode(query)).array());
 		wr.flush();
 		wr.close();
 
@@ -123,8 +179,8 @@ public class ESQueryExecutor implements IESQueryExecutor {
 	}
 
 	@Deprecated
-	private String executeESQueryViaAppache(IQueryGenerator queryGenerator)
-			throws Exception {
+	private String executeESQueryViaAppache(IQueryGenerator queryGenerator,
+			String query) throws Exception {
 
 		StringBuilder jsonBuffer = new StringBuilder();
 
@@ -134,8 +190,13 @@ public class ESQueryExecutor implements IESQueryExecutor {
 			urlString = queryGenerator.getESURL();
 		} else {
 
-			urlString = "http://" + PropertyValue.ELASTIC_SEARCH_URL
-					+ PropertyValue.ES_SEARCH_PATH.get(queryGenerator.getSource())
+			String esurl = ConfigurationManager.getConfigInstance().getString(
+					Property.SEARCH_HOST);
+			String port = ConfigurationManager.getConfigInstance().getString(
+					Property.SEARCH_PORT);
+
+			urlString = "http://" + esurl + ":" + port
+					+ Property.ES_SEARCH_PATH.get(queryGenerator.getSource())
 					+ "/_search";
 		}
 
@@ -143,13 +204,13 @@ public class ESQueryExecutor implements IESQueryExecutor {
 
 		HttpPost gbPost = new HttpPost(urlString);
 
-//		logger.info("URL of ElasticSearch " +urlString);
-//		System.out.println("URL of ElasticSearch " + urlString);
+		// logger.info("URL of ElasticSearch " +urlString);
+		// System.out.println("URL of ElasticSearch " + urlString);
 
 		HttpContext gbPostContext = new BasicHttpContext();
 
-		ByteArrayEntity gbPostEntity = new ByteArrayEntity(queryGenerator
-				.createQuery().getBytes("UTF-8"));
+		ByteArrayEntity gbPostEntity = new ByteArrayEntity(
+				query.getBytes("UTF-8"));
 
 		gbPost.setEntity(gbPostEntity);
 
@@ -177,12 +238,81 @@ public class ESQueryExecutor implements IESQueryExecutor {
 
 	public SuggestData formatResult(IQueryGenerator responseFormatter)
 			throws Exception {
+		List<String> results = new ArrayList<String>();
+		this.executeQuery(responseFormatter, results);
+		SuggestData[] data = new SuggestData[results.size()];
 
-		this.execute(responseFormatter);
-
-		SuggestData data = responseFormatter.formatResponse();
-
-		return data;
+		for (int i = 0; i < results.size(); i++) {
+			responseFormatter.setResponse(results.get(i));
+			data[i] = responseFormatter.formatResponse();
+		}
+		return mergeFinalResult(data);
 	}
 
+	private SuggestData mergeFinalResult(SuggestData[] data) {
+		if (data == null || data.length == 0) {
+			return new SuggestData();
+		} else if (data.length == 1) {
+			return data[0];
+		} else {
+
+			Set<String> uniqueTerms = new HashSet<String>();
+			SuggestData first = null;
+
+			int firstIndex = -1;
+			;
+			for (; firstIndex < data.length;) {
+				++firstIndex;
+				if (first == null) {
+					first = data[firstIndex];
+				}
+				if (first != null) {
+					break;
+				}
+			}
+
+			if (first != null) {
+				for (Suggestions suggestion : first.suggestions) {
+					List<Info> infos = suggestion.info;
+					for (Info term : infos) {
+						/**
+						 * term_string is important in here its necessary to do
+						 * hardcoding in here
+						 **/
+						if (term.key.equalsIgnoreCase("term_string")) {
+							uniqueTerms.add(term.value);
+						}
+					}
+				}
+
+				for (int i = firstIndex + 1; i < data.length; i++) {
+
+					for (Suggestions suggestion : data[i].suggestions) {
+
+						List<Info> infos = suggestion.info;
+						for (Info term : infos) {
+							/**
+							 * term_string is important in here its necessary to
+							 * do hardcoding in here
+							 **/
+							if (term.key.equalsIgnoreCase("term_string")) {
+								if (!uniqueTerms.contains(term.value)) {
+									first.suggestions.add(suggestion);
+									uniqueTerms.add(term.value);
+								}
+
+							}
+						}
+
+					}
+
+				}
+
+			} else {
+				first = new SuggestData();
+			}
+
+			return first;
+		}
+	}
 }

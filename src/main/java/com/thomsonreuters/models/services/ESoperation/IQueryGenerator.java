@@ -50,7 +50,7 @@ public abstract class IQueryGenerator {
 		this.max_expansion = max_expansion;
 	}
 
-	public abstract String createQuery();
+	public abstract String[] createQuery();
 
 	public abstract String getSource();
 

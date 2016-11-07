@@ -3,21 +3,25 @@ package com.thomsonreuters.models.services.suggesterOperation.models;
 import java.util.Map;
 import java.util.Set;
 
-import com.thomsonreuters.models.services.util.PrepareDictionary;
+public class DictionaryEntry extends Entry { 
 
-public class PatentEntry extends Entry {
+	public static final String TERM = "keyword";
 
 	private Map<String, String> JsonToMap = null;
+	
+	public DictionaryEntry(){}
 
-	public PatentEntry(Map<String, String> JsonToMap) {
-		setTerm(JsonToMap.remove(Entry.TERM));
-		setWeight(1);
+	public DictionaryEntry(Map<String, String> JsonToMap) {
+		setTerm(JsonToMap.remove(TERM));
+		setWeight(Integer.parseInt((JsonToMap.get(Entry.WEIGHT)).trim()));
 
 		this.JsonToMap = JsonToMap;
+
 	}
 
 	@Override
 	public String getJson() {
+
 		StringBuilder sb = new StringBuilder("{");
 		boolean keyWordExist = false;
 
@@ -39,10 +43,13 @@ public class PatentEntry extends Entry {
 
 		return sb.toString();
 	}
+
 	
 	@Override
 	public Entry clone(Map<String, String> JsonToMap) {
-		 return new PatentEntry(JsonToMap);
+		 return new DictionaryEntry(JsonToMap);
 	}
+	
+
 
 }
