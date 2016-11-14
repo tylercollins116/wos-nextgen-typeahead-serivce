@@ -1,5 +1,4 @@
-package com.thomsonreuters.models.services.util;
-
+package com.thomsonreuters.models.services.suggesterOperation.models.company;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,7 +8,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+ 
+
+ 
+
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,23 +21,22 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
+import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
 
-public class PrepareDictionary
+public class TRCompanyPrepareDictionary
 		implements
-		Iterator<com.thomsonreuters.models.services.suggesterOperation.models.Entry> {
+		Iterator<Entry> {
 
 	private static final Logger log = LoggerFactory
-			.getLogger(PrepareDictionary.class);
+			.getLogger(TRCompanyPrepareDictionary.class);
 
-	private static final List<com.thomsonreuters.models.services.suggesterOperation.models.Entry> entries = new ArrayList<com.thomsonreuters.models.services.suggesterOperation.models.Entry>();
+	private static final List<Entry> entries = new ArrayList<Entry>();
 
 	private String jsonAsLine = "";
 	private final BufferedReader br;
-	private final com.thomsonreuters.models.services.suggesterOperation.models.Entry entryClass;
+	private final Entry entryClass;
 
-	public PrepareDictionary(
-			InputStream is,
-			com.thomsonreuters.models.services.suggesterOperation.models.Entry entryClass) {
+	public TRCompanyPrepareDictionary(InputStream is, Entry entryClass) {
 		this.entryClass = entryClass;
 		br = new BufferedReader(new InputStreamReader(is));
 
@@ -50,7 +51,7 @@ public class PrepareDictionary
 
 			JsonObject root = (JsonObject) parser.parse(Json);
 
-			for (Entry<String, JsonElement> property : root.entrySet()) {
+			for (java.util.Map.Entry<String, JsonElement>   property : root.entrySet()) {
 
 				Object jsonpart = property.getValue();
 
@@ -60,14 +61,8 @@ public class PrepareDictionary
 
 					if (value.isString()) {
 						map.put(property.getKey(), value.getAsString());
-					} else if (value.isNumber()) {	
-						
-						try{
-						Integer.parseInt(value.getAsString());
+					} else if (value.isNumber()) {
 						map.put(property.getKey(), value.getAsInt() + "");
-						}catch(Exception e){
-							map.put(property.getKey(), value.getAsDouble() + "");							
-						} 
 					}
 
 				} else if (jsonpart instanceof JsonArray) {
@@ -120,13 +115,12 @@ public class PrepareDictionary
 
 		Map<String, String> jsonToMap = processJson(jsonAsLine);
 
-		com.thomsonreuters.models.services.suggesterOperation.models.Entry entry = null;
+		Entry entry = null;
 		try {
 
 			if (entryClass instanceof Iterator) {
-				com.thomsonreuters.models.services.suggesterOperation.models.Entry entrys = entryClass
-						.clone(jsonToMap);
-				Iterator<com.thomsonreuters.models.services.suggesterOperation.models.Entry> allEntries = (Iterator<com.thomsonreuters.models.services.suggesterOperation.models.Entry>) entrys;
+				Entry entrys = entryClass.clone(jsonToMap);
+				Iterator<Entry> allEntries = (Iterator<Entry>) entrys;
 
 				while (allEntries.hasNext()) {
 					entries.add(allEntries.next());
@@ -143,7 +137,7 @@ public class PrepareDictionary
 	}
 
 	@Override
-	public com.thomsonreuters.models.services.suggesterOperation.models.Entry next() {
+	public Entry next() {
 
 		return entries.remove(0);
 	}

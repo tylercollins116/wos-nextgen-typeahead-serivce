@@ -41,7 +41,7 @@ public interface Property {
 	}
 
 	public enum SUGGESTER_TYPE {
-		fuzzysuggester,complexfuzzysuggester, analyzingsuggester
+		fuzzysuggester,complexfuzzysuggester, analyzingsuggester,companytypeaheadsuggester
 	}
 
 	public String getDictionayName(String property);

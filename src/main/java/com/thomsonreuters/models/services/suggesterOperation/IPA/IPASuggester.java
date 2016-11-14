@@ -19,6 +19,7 @@ import com.thomsonreuters.models.SuggesterConfigurationHandler;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt.Process;
 import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
+import com.thomsonreuters.models.services.suggesterOperation.models.company.CompanyTypeaheadSuggester;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
 
 @Singleton
@@ -44,6 +45,17 @@ public class IPASuggester implements IPASuggesterHandler {
 
 		Lookup suggester = suggesterConfigurationHandler
 				.getDictionaryAnalyzer().getSuggesterList().get(path);
+
+		if (suggester instanceof CompanyTypeaheadSuggester) {
+			try {
+				JsonString = ((CompanyTypeaheadSuggester) suggester).lookup(
+						query, n, 2);
+			} catch (Exception e) {
+				e.printStackTrace();
+				JsonString = "{}";
+			}
+
+		} else
 
 		if (suggester instanceof TRAnalyzingSuggesterExt) {
 

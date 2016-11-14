@@ -7,7 +7,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -36,14 +35,13 @@ import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
 import com.thomsonreuters.models.services.suggesterOperation.models.EntryIterator;
 import com.thomsonreuters.models.services.suggesterOperation.models.KeywordEntry;
 import com.thomsonreuters.models.services.suggesterOperation.models.OrganizationEntry;
+import com.thomsonreuters.models.services.suggesterOperation.models.company.CompanyTypeaheadSuggester;
 import com.thomsonreuters.models.services.util.Blockable;
 import com.thomsonreuters.models.services.util.BlockingHashTable;
 import com.thomsonreuters.models.services.util.DictionaryInfo;
 import com.thomsonreuters.models.services.util.GroupTerms;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
 import com.thomsonreuters.models.services.util.Property;
- 
- 
 
 public abstract class SuggesterHelper {
 
@@ -80,7 +78,6 @@ public abstract class SuggesterHelper {
 	private Analyzer queryAnalyzer = new StandardAnalyzer(
 			CharArraySet.EMPTY_SET);
 
-	 
 	public synchronized final void getStoredPathInfo() {
 
 		log.info("***************************************************************************");
@@ -95,8 +92,6 @@ public abstract class SuggesterHelper {
 
 	}
 
-	
-
 	public void initializeSuggesterList() throws IOException {
 
 		if (s3Client == null) {
@@ -108,177 +103,165 @@ public abstract class SuggesterHelper {
 				.getKeys();
 
 		String bucketName = null;
-	 
+
 		Property property = new GroupTerms();
-		
-		List<String> allDictionaryRelatedInfos = new ArrayList<String>(); 
-		
+
+		List<String> allDictionaryRelatedInfos = new ArrayList<String>();
+
 		while (keys.hasNext()) {
 			String key = keys.next();
-			
+
 			if (property.isDictionaryRelated(key)) {
-				allDictionaryRelatedInfos.add(key); 
-			} 
+				allDictionaryRelatedInfos.add(key);
+			}
 		}
-		
-		property.groupTermsBasedOnDictionary(allDictionaryRelatedInfos,dictionaryInfos);
-		
+
+		property.groupTermsBasedOnDictionary(allDictionaryRelatedInfos,
+				dictionaryInfos);
+
 		loadAllDictionaryProperyValues(dictionaryInfos);
-		
-		 keys = ConfigurationManager.getConfigInstance()
-					.getKeys();
-		 
+
+		keys = ConfigurationManager.getConfigInstance().getKeys();
+
 		while (keys.hasNext()) {
-			String key = keys.next(); 
+			String key = keys.next();
 			if (property.isBucketName(key)) {
 				bucketName = ConfigurationManager.getConfigInstance()
 						.getString(key);
 				log.info("path to bucket : " + bucketName);
 
-			}  
+			}
 		}
-		
-		
-		Set<String> dictionaries = dictionaryInfos.keySet();
-		
-		for(String key:dictionaries) { 
-			
-			DictionaryInfo info = dictionaryInfos.get(key);
-		 
-		 
-				getStoredPathInfo();
 
-				String	s3bucket = info.getInfos().get(property.S3_BUCKET_SUFFIX);
-				
-				s3bucket = s3bucket == null ?bucketName : s3bucket;
-				
-				String	s3Path = info.getDictionaryPath();
-				
-				if(s3bucket == null){
-					s3bucket=bucketName; 
-				}
- 
-				  
-				StartLoadingProcess(info,bucketName,false);
-				 
-			} 
- 
+		Set<String> dictionaries = dictionaryInfos.keySet();
+
+		for (String key : dictionaries) {
+
+			DictionaryInfo info = dictionaryInfos.get(key);
+
+			getStoredPathInfo();
+
+			String s3bucket = info.getInfos().get(property.S3_BUCKET_SUFFIX);
+
+			s3bucket = s3bucket == null ? bucketName : s3bucket;
+
+			String s3Path = info.getDictionaryPath();
+
+			if (s3bucket == null) {
+				s3bucket = bucketName;
+			}
+
+			StartLoadingProcess(info, bucketName, false);
+
+		}
+
 	}
 
 	public void reloadDictionary(String propertyName) throws IOException {
-		
-		
 
 		if (s3Client == null) {
 			throw new IOException(
 					" S3Client found null pls initilize s3Client first");
 		}
-		
-		Property property=new GroupTerms();
-		
-		if(!property.isDictionaryRelated(propertyName)){
+
+		Property property = new GroupTerms();
+
+		if (!property.isDictionaryRelated(propertyName)) {
 			return;
 		}
-		
-		
-		if(property.isBucketName(propertyName)){
+
+		if (property.isBucketName(propertyName)) {
 			initializeSuggesterList();
 		}
-		
 
 		log.info("**************************************************************");
 		log.info("reloading dictionary of " + propertyName + " starting");
 		log.info("**************************************************************");
-		
-		String dictionaryName=property.getDictionayName(propertyName);
-		
+
+		String dictionaryName = property.getDictionayName(propertyName);
+
 		Iterator<String> keys = ConfigurationManager.getConfigInstance()
-				.getKeys(); 
-		
-		
-		
-		
-		List<String> allkeyReferenctToChange=new ArrayList<String>();
-		while(keys.hasNext()){
-			String key=keys.next();
-			if(property.isDictionaryRelated(key)){
-				if(property.getDictionayName(key).trim().equalsIgnoreCase(dictionaryName)){
-					
+				.getKeys();
+
+		List<String> allkeyReferenctToChange = new ArrayList<String>();
+		while (keys.hasNext()) {
+			String key = keys.next();
+			if (property.isDictionaryRelated(key)) {
+				if (property.getDictionayName(key).trim()
+						.equalsIgnoreCase(dictionaryName)) {
+
 					allkeyReferenctToChange.add(key);
 				}
-				
+
 			}
 		}
-		
-		
-		
+
 		Map<String, DictionaryInfo> changeDictionaryInfos = new HashMap<String, DictionaryInfo>();
-		
-		property.groupTermsBasedOnDictionary(allkeyReferenctToChange, changeDictionaryInfos);
-		
+
+		property.groupTermsBasedOnDictionary(allkeyReferenctToChange,
+				changeDictionaryInfos);
+
 		loadAllDictionaryProperyValues(changeDictionaryInfos);
-		
-		DictionaryInfo changedDictionaryInfo=changeDictionaryInfos.get(dictionaryName);
-		
-		DictionaryInfo realDictionaryInfo=dictionaryInfos.get(dictionaryName);
-		
-		  
-		
-		if(realDictionaryInfo==null || (! realDictionaryInfo.compare(changedDictionaryInfo)) ){
-			
-			String	s3bucket = changedDictionaryInfo.getInfos().get(property.S3_BUCKET_SUFFIX);
-			
-			s3bucket = s3bucket == null ?ConfigurationManager.getConfigInstance().getString(Property.S3_BUCKET) : s3bucket;
-			
-			String	s3Path = changedDictionaryInfo.getDictionaryPath();
-			  
-			StartLoadingProcess(changedDictionaryInfo, s3bucket,true);			 
-		}
-		}
- 
-	
-	public void StartLoadingProcess(DictionaryInfo info,String s3bucket,boolean isReload){
 
-		
-		String	suggesterType = info.getInfos().get(Property.SUGGESTER); 
-		String bucketName="";
-		if((bucketName=info.getInfos().get(Property.S3_BUCKET_SUFFIX))!=null && bucketName.trim().length()>0 ){
-			s3bucket=bucketName;
-		}
+		DictionaryInfo changedDictionaryInfo = changeDictionaryInfos
+				.get(dictionaryName);
 
-	 
+		DictionaryInfo realDictionaryInfo = dictionaryInfos.get(dictionaryName);
+
+		if (realDictionaryInfo == null
+				|| (!realDictionaryInfo.compare(changedDictionaryInfo))) {
+
+			String s3bucket = changedDictionaryInfo.getInfos().get(
+					property.S3_BUCKET_SUFFIX);
+
+			s3bucket = s3bucket == null ? ConfigurationManager
+					.getConfigInstance().getString(Property.S3_BUCKET)
+					: s3bucket;
+
+			String s3Path = changedDictionaryInfo.getDictionaryPath();
+
+			StartLoadingProcess(changedDictionaryInfo, s3bucket, true);
+		}
+	}
+
+	public void StartLoadingProcess(DictionaryInfo info, String s3bucket,
+			boolean isReload) {
+
+		String suggesterType = info.getInfos().get(Property.SUGGESTER);
+		String bucketName = "";
+		if ((bucketName = info.getInfos().get(Property.S3_BUCKET_SUFFIX)) != null
+				&& bucketName.trim().length() > 0) {
+			s3bucket = bucketName;
+		}
 
 		suggesterType = suggesterType == null ? Property.SUGGESTER_TYPE.analyzingsuggester
-				.toString() : suggesterType; 
+				.toString() : suggesterType;
 
 		log.info("**************************************************************");
-		log.info(" Loading dictionary for " +info.getDictionaryName() +"  bucketName "+ s3bucket + "  ,Path : "
+		log.info(" Loading dictionary for " + info.getDictionaryName()
+				+ "  bucketName " + s3bucket + "  ,Path : "
 				+ info.getDictionaryPath());
 		log.info("**************************************************************");
 		try {
 
-			S3Object s3file = s3Client.getObject(s3bucket, info.getDictionaryPath());
+			S3Object s3file = s3Client.getObject(s3bucket,
+					info.getDictionaryPath());
 			log.info("**************************************************************");
-			log.info("Successfully got access to S3 bucket : "
-					+ s3bucket);
+			log.info("Successfully got access to S3 bucket : " + s3bucket);
 			log.info("**************************************************************");
 
 			InputStream is = s3file.getObjectContent();
 
 			/********** Important code to work on ************************/
 
- 
 			/***/
- 
 
 			if (suggesterType
-					.equalsIgnoreCase(Property.SUGGESTER_TYPE.complexfuzzysuggester 
-					.toString())) {
- 
+					.equalsIgnoreCase(Property.SUGGESTER_TYPE.complexfuzzysuggester
+							.toString())) {
 
 				TRAnalyzingSuggesterExt suggester = createComplexFuzzysuggester(is);
-				suggesterList.put(info.getDictionaryName(),
-						suggester);
+				suggesterList.put(info.getDictionaryName(), suggester);
 
 			} else if (suggesterType
 					.equalsIgnoreCase(Property.SUGGESTER_TYPE.analyzingsuggester
@@ -286,47 +269,48 @@ public abstract class SuggesterHelper {
 				TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
 						is, new DictionaryEntry());
 
-				suggesterList.put(info.getDictionaryName(),
-						suggester);
+				suggesterList.put(info.getDictionaryName(), suggester);
 			} else if (suggesterType
 					.equalsIgnoreCase(Property.SUGGESTER_TYPE.fuzzysuggester
 							.toString())) {
 
 				TRAnalyzingSuggesterExt suggester = createSimpleFuzzysuggester(is);
-				suggesterList.put(info.getDictionaryName(),
-						suggester);
+				suggesterList.put(info.getDictionaryName(), suggester);
+
+			} else if (suggesterType
+					.equalsIgnoreCase(Property.SUGGESTER_TYPE.companytypeaheadsuggester
+							.toString())) {
+
+				CompanyTypeaheadSuggester suggester = createCompanySuggester(is);
+				suggesterList.put(info.getDictionaryName(), suggester);
 
 			}
-
-			 
 
 			/***************************** End **********************************/
 
 			log.info("**************************************************************");
-			if(!isReload){ 
-			log.info("  Loading dictionary for "
-					+ info.getDictionaryName()
-					+ " completed successfully.");		
-			}else{
-				
-				log.info("  Reloading dictionary for "
-						+ info.getDictionaryName()
+			if (!isReload) {
+				log.info("  Loading dictionary for " + info.getDictionaryName()
 						+ " completed successfully.");
+			} else {
+
+				log.info("  Reloading dictionary for "
+						+ info.getDictionaryName() + " completed successfully.");
 			}
 			log.info("**************************************************************");
 
 		} catch (Exception e) {
-			if(!isReload){ 
-			log.info(" fail loading dictionary for "
-					+ info.getDictionaryName());
-			}else{
+			if (!isReload) {
+				log.info(" fail loading dictionary for "
+						+ info.getDictionaryName());
+			} else {
 				log.info(" fail reloading dictionary for "
 						+ info.getDictionaryName());
 			}
 
 			e.printStackTrace();
 		}
-		
+
 	}
 
 	/****************************************************************************************/
@@ -429,37 +413,52 @@ public abstract class SuggesterHelper {
 
 		return suggester;
 	}
-	
-	
-	public void loadAllDictionaryProperyValues(Map<String, DictionaryInfo> dictionaryInfos){
-		
+
+	public CompanyTypeaheadSuggester createCompanySuggester(InputStream is) {
+		CompanyTypeaheadSuggester suggester = null;
+		try {
+
+			suggester = new CompanyTypeaheadSuggester(is);
+
+			is.close();
+
+			System.gc();
+			System.gc();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return suggester;
+	}
+
+	public void loadAllDictionaryProperyValues(
+			Map<String, DictionaryInfo> dictionaryInfos) {
+
 		Set<String> paths = dictionaryInfos.keySet();
 
-		for (String key:paths) {
-			
-			String path=Property.DICTIONARY_PATH+key;
-			String DictionaryS3PAth=ConfigurationManager.getConfigInstance().getString(path);
-		 
+		for (String key : paths) {
+
+			String path = Property.DICTIONARY_PATH + key;
+			String DictionaryS3PAth = ConfigurationManager.getConfigInstance()
+					.getString(path);
+
 			DictionaryInfo info = dictionaryInfos.get(key);
-			
+
 			info.setDictionaryPath(DictionaryS3PAth);
 			Enumeration<String> innerpaths = info.getInfos().keys();
 			while (innerpaths.hasMoreElements()) {
-				String realProperty=innerpaths.nextElement();
-				String extraProperty=path+"."+ realProperty;
-				
-				String extraValue=ConfigurationManager.getConfigInstance().getString(extraProperty);
+				String realProperty = innerpaths.nextElement();
+				String extraProperty = path + "." + realProperty;
+
+				String extraValue = ConfigurationManager.getConfigInstance()
+						.getString(extraProperty);
 				info.getInfos().put(realProperty, extraValue);
 			}
-			
+
 			dictionaryInfos.put(key, info);
 		}
-		
-	} 
 
-		
-		
-		
 	}
 
- 
+}
