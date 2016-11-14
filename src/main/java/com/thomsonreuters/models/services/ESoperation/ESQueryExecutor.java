@@ -91,7 +91,9 @@ public class ESQueryExecutor implements IESQueryExecutor {
 		}
 
 		for (int i = 0; i < workers.length; i++) {
-			results.add(workers[i].get(400, TimeUnit.MILLISECONDS));
+			try{
+			results.add(workers[i].get(1000, TimeUnit.MILLISECONDS));
+			}catch(Exception e){}
 		}
 		executor.shutdown();
 
@@ -172,7 +174,8 @@ public class ESQueryExecutor implements IESQueryExecutor {
 				jsonBuffer.append(responseData);
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			//e.printStackTrace();
+			jsonBuffer.append("{\"took\":2,\"timed_out\":false,\"_shards\":{\"total\":5,\"successful\":5,\"failed\":0},\"hits\":{\"total\":0,\"max_score\":null,\"hits\":[]}}");
 		}
 
 		return jsonBuffer.toString();

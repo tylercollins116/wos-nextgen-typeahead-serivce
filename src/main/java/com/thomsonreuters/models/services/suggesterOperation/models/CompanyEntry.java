@@ -56,7 +56,8 @@ public class CompanyEntry extends Entry implements Iterator<Entry> {
 			map.put(WEIGHT, "1");
 			map.put(CHILDREN, children);
 			map.put(PARENTS, parent);
-			map.put("NAME", name);
+			map.put("NAME", term);
+			//map.put("NAME", name);
 			map.put(ALIAS, name);
 
 			allInfos.add(map);
