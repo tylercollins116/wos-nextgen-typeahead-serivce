@@ -1,4 +1,5 @@
 package com.thomsonreuters.models.services.suggesterOperation.models.company;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -90,6 +91,8 @@ import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.RamUsageEstimator;
 import org.apache.lucene.util.Version;
 
+import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
+
 // TODO:
 //   - a PostingsFormat that stores super-high-freq terms as
 //     a bitset should be a win for the prefix terms?
@@ -123,6 +126,7 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 	 * Field name used for the indexed text, as a StringField, for exact lookup.
 	 */
 	protected final static String EXACT_TEXT_FIELD_NAME = "exacttext";
+	protected final static String PARENT_TEXT_FIELD_NAME = "parent";
 
 	/**
 	 * Field name used for the indexed context, as a StringField and a
@@ -455,6 +459,8 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 			long weight, BytesRef payload) throws IOException {
 		String textString = text.utf8ToString();
 
+	 
+
 		String processedTextString = processeTextForExactMatch(textString);
 		Document doc = new Document();
 		FieldType ft = getTextFieldType();
@@ -463,10 +469,21 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 		doc.add(new Field("textgrams", textString, ft));
 		doc.add(new StringField(EXACT_TEXT_FIELD_NAME, processedTextString,
 				Field.Store.NO));
+
 		doc.add(new BinaryDocValuesField(TEXT_FIELD_NAME, text));
 		doc.add(new NumericDocValuesField("weight", weight));
 		if (payload != null) {
+			
 			doc.add(new BinaryDocValuesField("payloads", payload));
+
+			 
+			String key = new String(payload.bytes).split(Entry.DELIMETER)[0];
+			if (key != null
+					&& key.toLowerCase().equals(textString.toLowerCase())) {
+				doc.add(new StringField(PARENT_TEXT_FIELD_NAME,
+						processeTextForExactMatch(key), Field.Store.NO));
+			} 
+			
 		}
 		if (contexts != null) {
 			for (BytesRef context : contexts) {
@@ -655,15 +672,54 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 		return null;
 
 	}
-	
- 
+
+	public List<LookupResult> lookForParent(String queryString)
+			throws IOException {
+
+		String prefixToken = null;
+		Set<String> matchedTokens = new HashSet<String>();
+		int num = 1;
+
+		TopFieldCollector c = TopFieldCollector.create(SORT, num, true, false,
+				false);
+
+		// We sorted postings by weight during indexing, so we
+		// only retrieve the first num hits now:
+		final MergePolicy mergePolicy = writer.getConfig().getMergePolicy();
+		Collector c2 = new EarlyTerminatingSortingCollector(c, SORT, num,
+				(SortingMergePolicy) mergePolicy);
+		IndexSearcher searcher = searcherMgr.acquire();
+
+		List<LookupResult> results = null;
+
+		Term term = new Term(PARENT_TEXT_FIELD_NAME,
+				processeTextForExactMatch(queryString));
+		Query query = new TermQuery(term);
+
+		try {
+			// System.out.println("got searcher=" + searcher);
+			searcher.search(query, c2);
+
+			TopFieldDocs hits = c.topDocs();
+
+			// Slower way if postings are not pre-sorted by weight:
+			// hits = searcher.search(query, null, num, SORT);
+			results = createResults(searcher, hits, num + 100, queryString,
+					false, matchedTokens, prefixToken);
+		} catch (Exception e) {
+
+		}
+
+		return results;
+
+	}
 
 	public List<LookupResult> lookup(CharSequence key,
 			BooleanQuery contextQuery, int num, int condition,
 			boolean allTermsRequired, boolean doHighlight) throws IOException {
-		
-		int realNum=num;
-		num=num+1000;
+
+		int realNum = num;
+		num = num + 1000;
 
 		/**
 		 * condition
@@ -795,28 +851,24 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 					spanQueryList.toArray(new SpanQuery[] {}), 0, true);
 			query.add(finalSpanQuery, Occur.MUST);
 		}
-		
-		
 
-		
-			BooleanQuery pregixMatchedQuery = new BooleanQuery();
-			pregixMatchedQuery.add(new PrefixQuery(new Term(EXACT_TEXT_FIELD_NAME,
-					processeTextForExactMatch(key.toString()))), Occur.MUST);
-		 
+		BooleanQuery pregixMatchedQuery = new BooleanQuery();
+		pregixMatchedQuery.add(new PrefixQuery(new Term(EXACT_TEXT_FIELD_NAME,
+				processeTextForExactMatch(key.toString()))), Occur.MUST);
 
-		Query finalQuery =null;
-		Query finalQuerysec =null;
-		
-		if(condition==1){
-			finalQuery=finishQuery(pregixMatchedQuery, allTermsRequired);
+		Query finalQuery = null;
+		Query finalQuerysec = null;
+
+		if (condition == 1) {
+			finalQuery = finishQuery(pregixMatchedQuery, allTermsRequired);
 		}
-		if(condition==2){
-			finalQuery=finishQuery(query, allTermsRequired);
+		if (condition == 2) {
+			finalQuery = finishQuery(query, allTermsRequired);
 		}
-		
-		if(condition==3){
-			finalQuery=finishQuery(pregixMatchedQuery, allTermsRequired);
-			finalQuerysec=finishQuery(query, allTermsRequired);
+
+		if (condition == 3) {
+			finalQuery = finishQuery(pregixMatchedQuery, allTermsRequired);
+			finalQuerysec = finishQuery(query, allTermsRequired);
 		}
 
 		// System.out.println("finalQuery=" + query);
@@ -831,9 +883,9 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 		Collector c2 = new EarlyTerminatingSortingCollector(c, SORT, num,
 				(SortingMergePolicy) mergePolicy);
 		IndexSearcher searcher = searcherMgr.acquire();
-		
-		List<LookupResult> results=null;
-		
+
+		List<LookupResult> results = null;
+
 		List<LookupResult> results1 = null;
 		List<LookupResult> results2 = null;
 		try {
@@ -844,23 +896,22 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 
 			// Slower way if postings are not pre-sorted by weight:
 			// hits = searcher.search(query, null, num, SORT);
-			results1 = createResults(searcher, hits, num+100, key, doHighlight,
-					matchedTokens, prefixToken);
-			
-			if(finalQuerysec!=null){
+			results1 = createResults(searcher, hits, num + 100, key,
+					doHighlight, matchedTokens, prefixToken);
+
+			if (finalQuerysec != null) {
 				searcher.search(finalQuerysec, c2);
 
 				TopFieldDocs hits_sec = c.topDocs();
 
 				// Slower way if postings are not pre-sorted by weight:
 				// hits = searcher.search(query, null, num, SORT);
-				results2 = createResults(searcher, hits_sec, num+100, key, doHighlight,
-						matchedTokens, prefixToken);
+				results2 = createResults(searcher, hits_sec, num + 100, key,
+						doHighlight, matchedTokens, prefixToken);
 			}
-			
-			results=mergeResultSet(results1,results2,realNum);
-			
-			
+
+			results = mergeResultSet(results1, results2, realNum*10);
+
 		} finally {
 			searcherMgr.release(searcher);
 		}

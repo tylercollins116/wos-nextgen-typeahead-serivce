@@ -3,7 +3,8 @@ package com.thomsonreuters.models.services.suggesterOperation.models.company;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,6 +18,7 @@ import org.apache.lucene.store.DataInput;
 import org.apache.lucene.store.DataOutput;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.BytesRef;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
@@ -60,6 +62,10 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		 * contextQuery, int num, int condition, boolean allTermsRequired,
 		 * boolean doHighlight) throws IOException {
 		 */
+		
+		if(condition<1 || condition>3){
+			condition=2;
+		}
 
 		if (query == null) {
 			return "{}";
@@ -70,74 +76,117 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		List<LookupResult> results = suggester.lookup(query, null, num,
 				condition, true, false);
 
-		Set<Company> companyList = new HashSet<Company>();
+		List<Company> companyList = new ArrayList<Company>();
 		for (LookupResult r : results) {
 			processToModel(r, suggester, companyList);
 		}
 
+		List<Company> ultimateParentList = new ArrayList<Company>();
 		for (Company company : companyList) {
-			add(company, companyList);
+			maintainNode(company, ultimateParentList);
+		}
+
+		List<JSONObject> finalOnj = new ArrayList<JSONObject>();
+		
+		 
+		for (Company company : ultimateParentList) {
+			JSONObject json = null;
+			 
+			if ((json = company.createJson(query)) != null) {
+				finalOnj.add(json); 
+				
+				if(finalOnj.size()==num){
+					break;
+				}
+			}
 		}
 
 		JSONObject suggestion = new JSONObject();
 
-		List<JSONObject> finalOnj = new ArrayList<JSONObject>();
-
-		for (Company company : companyList) {
-			if (company.isRemoved) {
-				continue;
-			}
-
-			if (company.hasParent) {
-				if (company.getName().toLowerCase().startsWith("inventec")) {
-					System.out.println("java");
-				}
-				Company parent = company.getPatent();
-				parent.add(company);
-				finalOnj.add(parent.createJson(query));
-			} else {
-				finalOnj.add(company.createJson(query));
-			}
-		}
-
 		suggestion.put("suggestion", finalOnj);
+		
+//		ObjectMapper mapper = new ObjectMapper();
+//		Object json = mapper.readValue(suggestion.toString(), Object.class); 
+//		String indented = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(json);
+//		System.out.println(indented);
 
 		return (suggestion.toString());
 	}
 
-	private void add(Company company, Set<Company> orginalList) {
+	private void maintainNode(Company company, List<Company> finalList)
+			throws Exception {
 		if (!company.hasParent) {
+			/**
+			 * this will test whether the top level company is alread added or
+			 * not.. if added just ignore it
+			 **/
+			for (Company company_1 : finalList) {
+				if (company_1.getName().equalsIgnoreCase(company.getName())) {
+					return;
+				}
+			}
+			finalList.add(company);
+			return;
+		} 
+
+		Company ultimateParent = ultimateParent = getUltimateParent(company);
+
+		Company companyToExplore = null;
+		for (Company company_1 : finalList) {
+			if (ultimateParent.getName().equalsIgnoreCase(company_1.getName())) {
+				companyToExplore = company_1;
+				break;
+			}
+		}
+
+		if (companyToExplore != null) {
+			addChildOnCorrespondingPosition(ultimateParent, companyToExplore);
+		} else {
+			finalList.add(ultimateParent);
+		}
+
+	}
+
+	private void addChildOnCorrespondingPosition(Company ultimateparent,
+			Company parentCompany) {
+		if (ultimateparent == null || ultimateparent.getChildren().size() == 0) {
+			/**
+			 * ultimateparent.getChildren().size()==0 means its a last node
+			 * which is already included so no more need to add
+			 **/
 			return;
 		}
 
-		for (Company company_1 : orginalList) {
-			if (company.getName().equalsIgnoreCase(company_1.getName())) {
-				continue;
-			}
+		Company child = new ArrayList<Company>(ultimateparent.getChildren()
+				.values()).get(0);
 
-			if (company.getPatent().getName()
-					.equalsIgnoreCase(company_1.getName())) {
-
-				company_1.add(company);
-				company.setRemoved(true);
-				return;
-			}
-
-			add(company, company_1.getChildren());
+		Company parent = null;
+		if ((parentCompany.getChildren().size() > 0)
+				&& (parent = parentCompany.getChildren().get(child.getName())) != null) {
+			addChildOnCorrespondingPosition(child, parent);
+		} else {
+			parentCompany.add(child);
+			return;
 		}
 
 	}
 
-	public JSONObject createJsonOfChildren(Company company,
-			JSONObject suggestion) throws JSONException {
+	public Company getUltimateParent(Company company) throws Exception {
+		Company parent = getParent(company.getPatent().getName());
+		if (parent != null) {
+			parent.add(company);
 
-		suggestion.put("name", company.getName());
-
-		return suggestion;
+			if (parent.hasParent) {
+				return getUltimateParent(parent);
+			} else {
+				return parent;
+			}
+		}
+		return null;
 	}
 
 	private void processToModel(LookupResult r, TRInfixSuggester suggester,
-			Set<Company> companyList) throws JSONException {
+			List<Company> companyList) throws JSONException {
 
 		String json = new String(suggester.getReturn(
 				new String(r.payload.bytes), Process.json));
@@ -202,9 +251,9 @@ public class CompanyTypeaheadSuggester extends Lookup {
 				if (value != null && value.length() > 0) {
 					company.setName(value);
 				}
-			} else if (key.equalsIgnoreCase("name")) {
+			}else if (key.equalsIgnoreCase("name")) {
 				if (value != null && value.length() > 0) {
-					company.setRealName(value);
+					company.setVariation(value);
 				}
 			}
 
@@ -216,31 +265,24 @@ public class CompanyTypeaheadSuggester extends Lookup {
 	class Company {
 		private boolean hasParent = false;
 		private String name;
-		private Set<Company> children = new HashSet<Company>();
+		private HashMap<String, Company> children = new HashMap<String, Company>();
 		private Company patent = null;
 		private int count;
-		private boolean isRemoved = false;
-		private String realName = null;
-
-		public String getRealName() {
-			return realName;
-		}
-
-		public void setRealName(String realName) {
-			this.realName = realName;
-		}
-
-		public boolean isRemoved() {
-			return isRemoved;
-		}
-
-		public void setRemoved(boolean isRemoved) {
-			this.isRemoved = isRemoved;
-		}
-
+		private String variation;
+		 
 		public Company getPatent() {
 			return patent;
+		} 
+
+		public String getVariation() {
+			return variation;
+		} 
+		
+		public void setVariation(String variation) {
+			this.variation = variation;
 		}
+
+
 
 		public void setPatent(Company patent) {
 			this.patent = patent;
@@ -267,10 +309,11 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			// remove old one and add new one
 
 			Company remove = null;
-			for (Company company2 : this.children) {
+			for (Company company2 : this.children.values()) {
 				if (company.getName().equalsIgnoreCase(company2.getName())) {
 					remove = company2;
-					Set<Company> children = company2.getChildren();
+					Collection<Company> children = company2.getChildren()
+							.values();
 					for (Company child : children) {
 						company.add(child);
 
@@ -282,15 +325,19 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			if (remove != null) {
 				this.children.remove(remove);
 			}
-			this.children.add(company);
+			this.children.put(company.getName(), company);
 
 		}
 
 		public String getName() {
+			if (this.name.indexOf(Entry.DELIMETER) > -1) {
+				String pname = name.split(Entry.DELIMETER)[0];
+				return pname;
+			}
 			return name;
 		}
 
-		public Set<Company> getChildren() {
+		public HashMap<String, Company> getChildren() {
 			return children;
 		}
 
@@ -305,33 +352,41 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		}
 
 		private JSONObject createJson(String term) throws Exception {
+
 			JSONObject jsonobj = new JSONObject();
-			Set<Company> company = this.getChildren();
+			Collection<Company> company = this.getChildren().values();
 			term = term.toLowerCase();
 
+			 
+			
 			if (canInclude(this.getName(), term)) {
 				jsonobj.put("name", this.getName());
-			} else if (canInclude(this.getRealName(), term)) {
-				jsonobj.put("name", this.getRealName());
+			} else if (canInclude(this.getVariation(), term)) {
+				jsonobj.put("name", this.getVariation());
 			} else {
 				jsonobj.put("name", this.getName());
 			}
+
 			jsonobj.put("count", "0");
 
 			List<JSONObject> object = new ArrayList<JSONObject>();
 			for (Company company_1 : company) {
-				object.add(company_1.createJson(term));
+				JSONObject json = null;
+				if ((json = company_1.createJson(term)) != null) {
+					object.add(json);
+				}
 			}
 			jsonobj.put("children", object);
 			return jsonobj;
 		}
 	}
-
+	
 	public boolean canInclude(String term, String subterm) {
-		return (term != null && (term.toLowerCase().startsWith(subterm) || convertSpaceIntoUnderScore(
-				term).indexOf("_" + subterm) > -1));
+		return (term != null && (term.toLowerCase().startsWith(subterm)
+				|| (convertSpaceIntoUnderScore(term).indexOf("_" + subterm) > -1) || term
+					.equalsIgnoreCase(subterm)));
 	}
-
+	
 	private String convertSpaceIntoUnderScore(String text) {
 		StringBuilder sb = new StringBuilder();
 		char[] chars = text.toLowerCase().toCharArray();
@@ -345,6 +400,24 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		}
 		return sb.toString();
 	}
+
+
+
+	private Company getParent(String text) throws Exception {
+		List<Company> companyList = new ArrayList<CompanyTypeaheadSuggester.Company>(
+				1);
+		List<LookupResult> results = suggester.lookForParent(text);
+
+		if (results.size() > 0) {
+			processToModel(results.get(0), suggester, companyList);
+			if (companyList.size() > 0) {
+				return companyList.get(0);
+			}
+		}
+		return null;
+	}
+
+
 
 	private TRInfixSuggester createCompanyTypeaheadSuggester(InputStream is) {
 		TRInfixSuggester suggester = null;
