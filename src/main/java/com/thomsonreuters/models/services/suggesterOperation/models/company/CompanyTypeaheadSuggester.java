@@ -382,11 +382,25 @@ public class CompanyTypeaheadSuggester extends Lookup {
 	}
 	
 	public boolean canInclude(String term, String subterm) {
+
+		StringBuilder sb = new StringBuilder();
+		char[] chars = subterm.toCharArray();
+		for (char c : chars) {
+			if (c == ' ') {
+				sb.append(c);
+				continue;
+			}
+			if (Character.isAlphabetic(c) || Character.isDigit(c)) {
+				sb.append(c);
+				continue;
+			}
+		}
+		subterm = sb.toString();
 		return (term != null && (term.toLowerCase().startsWith(subterm)
 				|| (convertSpaceIntoUnderScore(term).indexOf("_" + subterm) > -1) || term
 					.equalsIgnoreCase(subterm)));
 	}
-	
+
 	private String convertSpaceIntoUnderScore(String text) {
 		StringBuilder sb = new StringBuilder();
 		char[] chars = text.toLowerCase().toCharArray();
@@ -394,8 +408,10 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			if (c == ' ') {
 				sb.append('_');
 				continue;
-			} else {
+			}
+			if (Character.isAlphabetic(c) || Character.isDigit(c)) {
 				sb.append(c);
+				continue;
 			}
 		}
 		return sb.toString();
