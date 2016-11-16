@@ -33,6 +33,9 @@ public class OrganizationEntry extends Entry {
 		if (JsonToMap != null && JsonToMap.size() > 0) {
 			Set<String> keys = JsonToMap.keySet();
 			for (String key : keys) {
+				if(key.equalsIgnoreCase("children")){
+					continue;
+				}
 				if (sb.length() > 1) {
 					sb.append(",");
 				}
