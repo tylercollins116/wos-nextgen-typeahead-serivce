@@ -47,6 +47,7 @@ public class TRCompanyPrepareDictionary
 
 		Map<String, String> map = new HashMap<String, String>();
 
+		 
 		try {
 
 			JsonObject root = (JsonObject) parser.parse(Json);
