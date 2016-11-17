@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,7 +20,6 @@ import org.apache.lucene.store.DataInput;
 import org.apache.lucene.store.DataOutput;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.BytesRef;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
@@ -62,9 +63,9 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		 * contextQuery, int num, int condition, boolean allTermsRequired,
 		 * boolean doHighlight) throws IOException {
 		 */
-		
-		if(condition<1 || condition>3){
-			condition=2;
+
+		if (condition < 1 || condition > 3) {
+			condition = 2;
 		}
 
 		if (query == null) {
@@ -85,17 +86,25 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		for (Company company : companyList) {
 			maintainNode(company, ultimateParentList);
 		}
+		
+		final String query_=query;
+		Collections.sort(ultimateParentList,new Comparator<Company>() {
+
+			@Override
+			public int compare(Company o1, Company o2) {
+				return ((Integer)o2.getCount(0, query_)).compareTo((Integer)o1.getCount(0, query_));
+			}
+		});
 
 		List<JSONObject> finalOnj = new ArrayList<JSONObject>();
-		
-		 
+
 		for (Company company : ultimateParentList) {
 			JSONObject json = null;
-			 
+
 			if ((json = company.createJson(query)) != null) {
-				finalOnj.add(json); 
-				
-				if(finalOnj.size()==num){
+				finalOnj.add(json);
+
+				if (finalOnj.size() == num) {
 					break;
 				}
 			}
@@ -104,11 +113,12 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		JSONObject suggestion = new JSONObject();
 
 		suggestion.put("suggestion", finalOnj);
-		
-//		ObjectMapper mapper = new ObjectMapper();
-//		Object json = mapper.readValue(suggestion.toString(), Object.class); 
-//		String indented = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(json);
-//		System.out.println(indented);
+
+		// ObjectMapper mapper = new ObjectMapper();
+		// Object json = mapper.readValue(suggestion.toString(), Object.class);
+		// String indented =
+		// mapper.writerWithDefaultPrettyPrinter().writeValueAsString(json);
+		// System.out.println(indented);
 
 		return (suggestion.toString());
 	}
@@ -127,7 +137,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			}
 			finalList.add(company);
 			return;
-		} 
+		}
 
 		Company ultimateParent = ultimateParent = getUltimateParent(company);
 
@@ -244,14 +254,19 @@ public class CompanyTypeaheadSuggester extends Lookup {
 
 			} else if (key.equalsIgnoreCase("count")) {
 				if (value != null && value.length() > 0) {
-					company.setCount(0);
+					try{
+						company.setCount(Integer.parseInt(value));
+					}catch(Exception e){
+						company.setCount(0);
+					}
+					
 				}
 
 			} else if (key.equalsIgnoreCase("keyword")) {
 				if (value != null && value.length() > 0) {
 					company.setName(value);
 				}
-			}else if (key.equalsIgnoreCase("name")) {
+			} else if (key.equalsIgnoreCase("name")) {
 				if (value != null && value.length() > 0) {
 					company.setVariation(value);
 				}
@@ -269,20 +284,18 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		private Company patent = null;
 		private int count;
 		private String variation;
-		 
+
 		public Company getPatent() {
 			return patent;
-		} 
+		}
 
 		public String getVariation() {
 			return variation;
-		} 
-		
+		}
+
 		public void setVariation(String variation) {
 			this.variation = variation;
 		}
-
-
 
 		public void setPatent(Company patent) {
 			this.patent = patent;
@@ -357,8 +370,6 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			Collection<Company> company = this.getChildren().values();
 			term = term.toLowerCase();
 
-			 
-			
 			if (canInclude(this.getName(), term)) {
 				jsonobj.put("name", this.getName());
 			} else if (canInclude(this.getVariation(), term)) {
@@ -367,7 +378,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 				jsonobj.put("name", this.getName());
 			}
 
-			jsonobj.put("count", "0");
+			jsonobj.put("count", this.getCount());
 
 			List<JSONObject> object = new ArrayList<JSONObject>();
 			for (Company company_1 : company) {
@@ -379,8 +390,28 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			jsonobj.put("children", object);
 			return jsonobj;
 		}
+
+		public int getCount(int count, String subterm) {
+
+			if (canInclude(this.name, subterm)
+					|| canInclude(this.variation, subterm)) {
+				if (this.count > count) {
+					count = this.count;
+				}
+			}
+
+			if (this.children != null && this.children.size() <= 0) {
+				return count;
+			}
+
+			for (Company company : this.children.values()) {
+				count = company.getCount(count, subterm);
+			}
+
+			return count;
+		}
 	}
-	
+
 	public boolean canInclude(String term, String subterm) {
 
 		StringBuilder sb = new StringBuilder();
@@ -417,8 +448,6 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		return sb.toString();
 	}
 
-
-
 	private Company getParent(String text) throws Exception {
 		List<Company> companyList = new ArrayList<CompanyTypeaheadSuggester.Company>(
 				1);
@@ -432,8 +461,6 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		}
 		return null;
 	}
-
-
 
 	private TRInfixSuggester createCompanyTypeaheadSuggester(InputStream is) {
 		TRInfixSuggester suggester = null;

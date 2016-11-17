@@ -47,6 +47,7 @@ public class TRCompanyPrepareDictionary
 
 		Map<String, String> map = new HashMap<String, String>();
 
+		 
 		try {
 
 			JsonObject root = (JsonObject) parser.parse(Json);
@@ -114,6 +115,9 @@ public class TRCompanyPrepareDictionary
 	private void process() {
 
 		Map<String, String> jsonToMap = processJson(jsonAsLine);
+		if(jsonToMap.get("count")==null){
+			jsonToMap.put("count","0");
+		}
 
 		Entry entry = null;
 		try {
