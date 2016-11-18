@@ -284,6 +284,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		private Company patent = null;
 		private int count;
 		private String variation;
+		private List<Company> sortedCompany=null;
 
 		public Company getPatent() {
 			return patent;
@@ -367,7 +368,13 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		private JSONObject createJson(String term) throws Exception {
 
 			JSONObject jsonobj = new JSONObject();
-			Collection<Company> company = this.getChildren().values();
+			
+			
+			if(this.sortedCompany==null){
+					
+				this.sortedCompany=new ArrayList<CompanyTypeaheadSuggester.Company>(this.children.values());
+			}
+			
 			term = term.toLowerCase();
 
 			if (canInclude(this.getName(), term)) {
@@ -381,7 +388,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			jsonobj.put("count", this.getCount());
 
 			List<JSONObject> object = new ArrayList<JSONObject>();
-			for (Company company_1 : company) {
+			for (Company company_1 : this.sortedCompany) {
 				JSONObject json = null;
 				if ((json = company_1.createJson(term)) != null) {
 					object.add(json);
@@ -403,8 +410,17 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			if (this.children != null && this.children.size() <= 0) {
 				return count;
 			}
+			
+			this.sortedCompany= new ArrayList<CompanyTypeaheadSuggester.Company>(this.children.values());
+			Collections.sort(this.sortedCompany,new Comparator<Company>() {
 
-			for (Company company : this.children.values()) {
+				@Override
+				public int compare(Company o1, Company o2) {
+					return ((Integer)o2.getCount(0, subterm)).compareTo((Integer)o1.getCount(0, subterm));
+				}
+			});
+
+			for (Company company : this.sortedCompany) {
 				count = company.getCount(count, subterm);
 			}
 
