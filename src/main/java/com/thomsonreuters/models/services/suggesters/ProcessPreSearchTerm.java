@@ -34,18 +34,23 @@ public class ProcessPreSearchTerm implements IProcessPreSearchTerm {
 
 		ByteBuf dataBytes = null;
 		try {
+
+			long start = System.currentTimeMillis();
 			dataBytes = statisticsServiceClient
 					.getStatisticsTerms("user", truid.trim(), "queries",
-							startDate, endDate, 1000).observe().toBlocking()
+							startDate, endDate, 200).observe().toBlocking()
 					.lastOrDefault(Unpooled.copiedBuffer("".getBytes()));
 
 			String statisticsResponse = dataBytes.toString(Charset
 					.forName("UTF-8"));
+			long end = System.currentTimeMillis();
+			
+			System.out.println("Time taken to execute statistics "+(end-start));
 
 			return formatResponse(truid, statisticsResponse);
 
 		} catch (Exception e) {
-
+			e.printStackTrace();
 		}
 
 		return new String[] {};
@@ -96,11 +101,11 @@ public class ProcessPreSearchTerm implements IProcessPreSearchTerm {
 
 		for (String searchedTerm : allSearchedTokens) {
 			String processed = processAndNormalizeToken(searchedTerm);
-			
-			/**Removing Duplicates**/
+
+			/** Removing Duplicates **/
 			/**
-			 * what if Searched Terms are "Blood Pressure" and "blood pressure " we have to remove the duplicate
-				
+			 * what if Searched Terms are "Blood Pressure" and "blood pressure "
+			 * we have to remove the duplicate
 			 */
 			/**********************/
 

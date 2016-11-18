@@ -1,4 +1,5 @@
 package com.thomsonreuters.models.services.suggesterOperation.models.company;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,10 +9,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
- 
-
- 
-
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,9 +20,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
 
-public class TRCompanyPrepareDictionary
-		implements
-		Iterator<Entry> {
+public class TRCompanyPrepareDictionary implements Iterator<Entry> {
 
 	private static final Logger log = LoggerFactory
 			.getLogger(TRCompanyPrepareDictionary.class);
@@ -47,12 +42,11 @@ public class TRCompanyPrepareDictionary
 
 		Map<String, String> map = new HashMap<String, String>();
 
-		 
 		try {
 
 			JsonObject root = (JsonObject) parser.parse(Json);
 
-			for (java.util.Map.Entry<String, JsonElement>   property : root.entrySet()) {
+			for (java.util.Map.Entry<String, JsonElement> property : root.entrySet()) {
 
 				Object jsonpart = property.getValue();
 
@@ -82,8 +76,7 @@ public class TRCompanyPrepareDictionary
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
-
+			e.printStackTrace(); 
 		}
 
 		return map;
@@ -115,8 +108,8 @@ public class TRCompanyPrepareDictionary
 	private void process() {
 
 		Map<String, String> jsonToMap = processJson(jsonAsLine);
-		if(jsonToMap.get("count")==null){
-			jsonToMap.put("count","0");
+		if (jsonToMap.get("count") == null) {
+			jsonToMap.put("count", "0");
 		}
 
 		Entry entry = null;
