@@ -2,6 +2,8 @@ package com.thomsonreuters.models.services.suggesterOperation.models.company;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -18,6 +20,8 @@ import org.apache.lucene.search.suggest.InputIterator;
 import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.store.DataInput;
 import org.apache.lucene.store.DataOutput;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.BytesRef;
 import org.codehaus.jettison.json.JSONException;
@@ -86,13 +90,14 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		for (Company company : companyList) {
 			maintainNode(company, ultimateParentList);
 		}
-		
-		final String query_=query;
-		Collections.sort(ultimateParentList,new Comparator<Company>() {
+
+		final String query_ = query;
+		Collections.sort(ultimateParentList, new Comparator<Company>() {
 
 			@Override
 			public int compare(Company o1, Company o2) {
-				return ((Integer)o2.getCount(0, query_)).compareTo((Integer)o1.getCount(0, query_));
+				return ((Integer) o2.getCount(0, query_))
+						.compareTo((Integer) o1.getCount(0, query_));
 			}
 		});
 
@@ -139,21 +144,25 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			return;
 		}
 
-		Company ultimateParent = ultimateParent = getUltimateParent(company);
+		Company ultimateParent = getUltimateParent(company);
 
 		Company companyToExplore = null;
-		for (Company company_1 : finalList) {
-			if (ultimateParent.getName().equalsIgnoreCase(company_1.getName())) {
-				companyToExplore = company_1;
-				break;
+	 
+			for (Company company_1 : finalList) {
+				if (ultimateParent.getName().equalsIgnoreCase(
+						company_1.getName())) {
+					companyToExplore = company_1;
+					break;
+				}
 			}
-		}
 
-		if (companyToExplore != null) {
-			addChildOnCorrespondingPosition(ultimateParent, companyToExplore);
-		} else {
-			finalList.add(ultimateParent);
-		}
+			if (companyToExplore != null) {
+				addChildOnCorrespondingPosition(ultimateParent,
+						companyToExplore);
+			} else {
+				finalList.add(ultimateParent);
+			}
+		  
 
 	}
 
@@ -192,7 +201,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 				return parent;
 			}
 		}
-		return null;
+		return company;
 	}
 
 	private void processToModel(LookupResult r, TRInfixSuggester suggester,
@@ -254,12 +263,12 @@ public class CompanyTypeaheadSuggester extends Lookup {
 
 			} else if (key.equalsIgnoreCase("count")) {
 				if (value != null && value.length() > 0) {
-					try{
+					try {
 						company.setCount(Integer.parseInt(value));
-					}catch(Exception e){
+					} catch (Exception e) {
 						company.setCount(0);
 					}
-					
+
 				}
 
 			} else if (key.equalsIgnoreCase("keyword")) {
@@ -269,6 +278,10 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			} else if (key.equalsIgnoreCase("name")) {
 				if (value != null && value.length() > 0) {
 					company.setVariation(value);
+				}
+			} else if (key.equalsIgnoreCase("id")) {
+				if (value != null && value.length() > 0) {
+					company.setId(value);
 				}
 			}
 
@@ -283,8 +296,17 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		private HashMap<String, Company> children = new HashMap<String, Company>();
 		private Company patent = null;
 		private int count;
+		private String id="-";
 		private String variation;
-		private List<Company> sortedCompany=null;
+		private List<Company> sortedCompany = null; 
+
+		public String getId() {
+			return id;
+		}
+
+		public void setId(String id) {
+			this.id = id;
+		}
 
 		public Company getPatent() {
 			return patent;
@@ -368,13 +390,13 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		private JSONObject createJson(String term) throws Exception {
 
 			JSONObject jsonobj = new JSONObject();
-			
-			
-			if(this.sortedCompany==null){
-					
-				this.sortedCompany=new ArrayList<CompanyTypeaheadSuggester.Company>(this.children.values());
+
+			if (this.sortedCompany == null) {
+
+				this.sortedCompany = new ArrayList<CompanyTypeaheadSuggester.Company>(
+						this.children.values());
 			}
-			
+
 			term = term.toLowerCase();
 
 			if (canInclude(this.getName(), term)) {
@@ -386,6 +408,8 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			}
 
 			jsonobj.put("count", this.getCount());
+			
+			jsonobj.put("clusterId", this.getId());
 
 			List<JSONObject> object = new ArrayList<JSONObject>();
 			for (Company company_1 : this.sortedCompany) {
@@ -410,13 +434,15 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			if (this.children != null && this.children.size() <= 0) {
 				return count;
 			}
-			
-			this.sortedCompany= new ArrayList<CompanyTypeaheadSuggester.Company>(this.children.values());
-			Collections.sort(this.sortedCompany,new Comparator<Company>() {
+
+			this.sortedCompany = new ArrayList<CompanyTypeaheadSuggester.Company>(
+					this.children.values());
+			Collections.sort(this.sortedCompany, new Comparator<Company>() {
 
 				@Override
 				public int compare(Company o1, Company o2) {
-					return ((Integer)o2.getCount(0, subterm)).compareTo((Integer)o1.getCount(0, subterm));
+					return ((Integer) o2.getCount(0, subterm))
+							.compareTo((Integer) o1.getCount(0, subterm));
 				}
 			});
 
@@ -484,7 +510,15 @@ public class CompanyTypeaheadSuggester extends Lookup {
 
 			TRCompanyPrepareDictionary dictionary = new TRCompanyPrepareDictionary(
 					is, new CompanyEntry());
+			
+			Path p1 = Paths.get("D:\\TRTEST");
 
+			 
+			Directory indexDirectory = 
+				      FSDirectory.open(p1);
+			
+			//suggester = new TRInfixSuggester(indexDirectory, indexAnalyzer);
+			
 			suggester = new TRInfixSuggester(new RAMDirectory(), indexAnalyzer);
 
 			suggester.build(new TRCompanyEntryIterator(dictionary));
