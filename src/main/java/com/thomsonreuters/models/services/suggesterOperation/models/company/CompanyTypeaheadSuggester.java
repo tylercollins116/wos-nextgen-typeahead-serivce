@@ -509,15 +509,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		try {
 
 			TRCompanyPrepareDictionary dictionary = new TRCompanyPrepareDictionary(
-					is, new CompanyEntry());
-			
-			Path p1 = Paths.get("D:\\TRTEST");
-
-			 
-			Directory indexDirectory = 
-				      FSDirectory.open(p1);
-			
-			//suggester = new TRInfixSuggester(indexDirectory, indexAnalyzer);
+					is, new CompanyEntry()); 
 			
 			suggester = new TRInfixSuggester(new RAMDirectory(), indexAnalyzer);
 
