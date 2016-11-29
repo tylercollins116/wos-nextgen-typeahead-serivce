@@ -459,7 +459,7 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 			long weight, BytesRef payload) throws IOException {
 		String textString = text.utf8ToString();
 
-	 
+	 String payloads=new String(payload.bytes);
 
 		String processedTextString = processeTextForExactMatch(textString);
 		Document doc = new Document();
@@ -478,8 +478,7 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 
 			 
 			String key = new String(payload.bytes).split(Entry.DELIMETER)[0];
-			if (key != null
-					&& key.toLowerCase().equals(textString.toLowerCase())) {
+			if (key != null) {
 				doc.add(new StringField(PARENT_TEXT_FIELD_NAME,
 						processeTextForExactMatch(key), Field.Store.NO));
 			} 
