@@ -400,11 +400,11 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			term = term.toLowerCase();
 
 			if (canInclude(this.getName(), term)) {
-				jsonobj.put("name", this.getName());
+				jsonobj.put("name", this.getName().toUpperCase());
 			} else if (canInclude(this.getVariation(), term)) {
-				jsonobj.put("name", this.getVariation());
+				jsonobj.put("name", this.getVariation().toUpperCase());
 			} else {
-				jsonobj.put("name", this.getName());
+				jsonobj.put("name", this.getName().toUpperCase());
 			}
 
 			jsonobj.put("count", this.getCount());
