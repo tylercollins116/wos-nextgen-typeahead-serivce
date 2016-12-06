@@ -14,7 +14,7 @@ public class CompanyTypeaheadTest {
 		Long totalMemory = Runtime.getRuntime().totalMemory();
 
 		CompanyTypeaheadSuggester suggester = new CompanyTypeaheadSuggester(
-				this.getClass().getResourceAsStream("company.dict"));
+				ClassLoader.class.getResourceAsStream("/sampledict/company.dict"));
 
 		long start = System.currentTimeMillis();
 
