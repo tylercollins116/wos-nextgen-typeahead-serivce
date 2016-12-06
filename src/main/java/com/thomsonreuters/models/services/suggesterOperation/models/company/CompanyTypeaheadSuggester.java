@@ -59,7 +59,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 	 * @throws Exception
 	 */
 
-	public String lookup(String query, int num, int condition) throws Exception {
+	public String lookup(String query, int num, int condition,boolean includeChild) throws Exception {
 
 		/**
 		 * 
@@ -102,12 +102,18 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		});
 
 		List<JSONObject> finalOnj = new ArrayList<JSONObject>();
+		
+		WrapInt countInt=new WrapInt(num,includeChild); 
 
 		for (Company company : ultimateParentList) {
 			JSONObject json = null;
 
-			if ((json = company.createJson(query)) != null) {
+			if ((json = company.createJson(query,countInt)) != null) {
 				finalOnj.add(json);
+				
+				if(countInt.isSufficient()){
+					break;
+				}
 
 				if (finalOnj.size() == num) {
 					break;
@@ -387,7 +393,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			return this.name;
 		}
 
-		private JSONObject createJson(String term) throws Exception {
+		private JSONObject createJson(String term,WrapInt counts) throws Exception {
 
 			JSONObject jsonobj = new JSONObject();
 
@@ -400,11 +406,13 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			term = term.toLowerCase();
 
 			if (canInclude(this.getName(), term)) {
-				jsonobj.put("name", this.getName());
+				jsonobj.put("name", this.getName().toUpperCase());
+				counts.current++;
 			} else if (canInclude(this.getVariation(), term)) {
-				jsonobj.put("name", this.getVariation());
+				jsonobj.put("name", this.getVariation().toUpperCase());
+				counts.current++;
 			} else {
-				jsonobj.put("name", this.getName());
+				jsonobj.put("name", this.getName().toUpperCase()); 
 			}
 
 			jsonobj.put("count", this.getCount());
@@ -413,8 +421,12 @@ public class CompanyTypeaheadSuggester extends Lookup {
 
 			List<JSONObject> object = new ArrayList<JSONObject>();
 			for (Company company_1 : this.sortedCompany) {
+				if(counts.isSufficient()){
+					break;
+				}
+				
 				JSONObject json = null;
-				if ((json = company_1.createJson(term)) != null) {
+				if ((json = company_1.createJson(term,counts)) != null) {
 					object.add(json);
 				}
 			}
@@ -526,6 +538,29 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		}
 
 		return suggester;
+	}
+	
+	class WrapInt{
+	    int current;
+	    private int size;
+	    private boolean countChildForSize;
+	    
+	    /**
+		 * If size should be based on  matching child also then countChildForSize must be true.
+		 * 
+		 * 
+		 * if countChildForSize is false then , the size is consider only with ultimate parents.No consideration will be take for matching child and list will be too long
+		 */
+	    
+	    
+	    public WrapInt(int size_,boolean countChildForSize){
+	    	this.size=size_;
+	    	this.countChildForSize=countChildForSize;
+	    }
+	    
+	    public boolean isSufficient(){
+	    	 return countChildForSize&& current>=size; 
+	    }
 	}
 
 	/*********************** This is nothing only to make it Lookup subclass ************/
