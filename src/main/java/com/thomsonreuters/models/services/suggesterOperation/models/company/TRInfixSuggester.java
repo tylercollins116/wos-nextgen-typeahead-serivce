@@ -718,7 +718,8 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 			boolean allTermsRequired, boolean doHighlight) throws IOException {
 
 		int realNum = num;
-		num = num + 1000;
+		//num = num + 1000;//When varients  is included then we have to increase th bucket size
+		num = num + 500;
 
 		/**
 		 * condition
@@ -847,7 +848,7 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 
 		if (spanQueryList.size() > 1) {
 			SpanQuery finalSpanQuery = new SpanNearQuery(
-					spanQueryList.toArray(new SpanQuery[] {}), 0, true);
+					spanQueryList.toArray(new SpanQuery[] {}), 1, true);
 			query.add(finalSpanQuery, Occur.MUST);
 		}
 

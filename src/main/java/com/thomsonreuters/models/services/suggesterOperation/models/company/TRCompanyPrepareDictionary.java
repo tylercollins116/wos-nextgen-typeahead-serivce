@@ -1,5 +1,4 @@
 package com.thomsonreuters.models.services.suggesterOperation.models.company;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,12 +19,14 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
 
-public class TRCompanyPrepareDictionary implements Iterator<Entry> {
+public class TRCompanyPrepareDictionary
+		implements
+		Iterator<Entry> {
 
 	private static final Logger log = LoggerFactory
 			.getLogger(TRCompanyPrepareDictionary.class);
 
-	private static final List<Entry> entries = new ArrayList<Entry>();
+	private  final List<Entry> entries = new ArrayList<Entry>();
 
 	private String jsonAsLine = "";
 	private final BufferedReader br;
@@ -46,7 +47,8 @@ public class TRCompanyPrepareDictionary implements Iterator<Entry> {
 
 			JsonObject root = (JsonObject) parser.parse(Json);
 
-			for (java.util.Map.Entry<String, JsonElement> property : root.entrySet()) {
+			for (java.util.Map.Entry<String, JsonElement> property : root
+					.entrySet()) {
 
 				Object jsonpart = property.getValue();
 
@@ -76,7 +78,8 @@ public class TRCompanyPrepareDictionary implements Iterator<Entry> {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace(); 
+			e.printStackTrace();
+			System.out.println(Json);
 		}
 
 		return map;
@@ -144,7 +147,7 @@ public class TRCompanyPrepareDictionary implements Iterator<Entry> {
 		if (br != null) {
 			try {
 				br.close();
-
+				entries.clear();
 			} catch (Exception e) {
 				// TODO: handle exception
 			}
