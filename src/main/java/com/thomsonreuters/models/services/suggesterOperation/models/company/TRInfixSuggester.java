@@ -719,6 +719,8 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 
 		int realNum = num;
 		//num = num + 1000;//When varients  is included then we have to increase th bucket size
+		//num = num + 500;
+		
 		num = num + 500;
 
 		/**

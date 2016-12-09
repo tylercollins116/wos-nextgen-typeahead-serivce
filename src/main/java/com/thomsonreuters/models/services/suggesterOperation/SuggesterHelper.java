@@ -36,6 +36,7 @@ import com.thomsonreuters.models.services.suggesterOperation.models.EntryIterato
 import com.thomsonreuters.models.services.suggesterOperation.models.KeywordEntry;
 import com.thomsonreuters.models.services.suggesterOperation.models.OrganizationEntry;
 import com.thomsonreuters.models.services.suggesterOperation.models.company.CompanyTypeaheadSuggester;
+import com.thomsonreuters.models.services.suggesterOperation.models.company.TechnicalTypeaheadSuggester;
 import com.thomsonreuters.models.services.util.Blockable;
 import com.thomsonreuters.models.services.util.BlockingHashTable;
 import com.thomsonreuters.models.services.util.DictionaryInfo;
@@ -284,6 +285,13 @@ public abstract class SuggesterHelper {
 				CompanyTypeaheadSuggester suggester = createCompanySuggester(is);
 				suggesterList.put(info.getDictionaryName(), suggester);
 
+			} else if (suggesterType
+					.equalsIgnoreCase(Property.SUGGESTER_TYPE.defaultcomplextypeaheadsuggester
+							.toString())) {
+
+				TechnicalTypeaheadSuggester suggester = createTechnicalSuggester(is);
+				suggesterList.put(info.getDictionaryName(), suggester);
+
 			}
 
 			/***************************** End **********************************/
@@ -419,6 +427,24 @@ public abstract class SuggesterHelper {
 		try {
 
 			suggester = new CompanyTypeaheadSuggester(is);
+
+			is.close();
+
+			System.gc();
+			System.gc();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return suggester;
+	}
+
+	public TechnicalTypeaheadSuggester createTechnicalSuggester(InputStream is) {
+		TechnicalTypeaheadSuggester suggester = null;
+		try {
+
+			suggester = new TechnicalTypeaheadSuggester(is);
 
 			is.close();
 
