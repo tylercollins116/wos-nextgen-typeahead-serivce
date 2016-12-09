@@ -719,6 +719,8 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 
 		int realNum = num;
 		//num = num + 1000;//When varients  is included then we have to increase th bucket size
+		//num = num + 500;
+		
 		num = num + 500;
 
 		/**
@@ -882,6 +884,14 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 		final MergePolicy mergePolicy = writer.getConfig().getMergePolicy();
 		Collector c2 = new EarlyTerminatingSortingCollector(c, SORT, num,
 				(SortingMergePolicy) mergePolicy);
+		
+		/******This is for second query********/
+		TopFieldCollector c13 = TopFieldCollector.create(SORT, num, true, false,
+				false);		
+		Collector c3 = new EarlyTerminatingSortingCollector(c13, SORT, num,
+				(SortingMergePolicy) mergePolicy);
+		/***************************************/
+		
 		IndexSearcher searcher = searcherMgr.acquire();
 
 		List<LookupResult> results = null;
@@ -900,9 +910,9 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 					doHighlight, matchedTokens, prefixToken);
 
 			if (finalQuerysec != null) {
-				searcher.search(finalQuerysec, c2);
+				searcher.search(finalQuerysec, c3);
 
-				TopFieldDocs hits_sec = c.topDocs();
+				TopFieldDocs hits_sec = c13.topDocs();
 
 				// Slower way if postings are not pre-sorted by weight:
 				// hits = searcher.search(query, null, num, SORT);

@@ -13,6 +13,8 @@ public class DictionaryEntry extends Entry {
 
 	public DictionaryEntry(Map<String, String> JsonToMap) {
 		setTerm(JsonToMap.remove(TERM));
+		
+		//Dont put remove for weight because there is no way to get count on result if we remove that
 		setWeight(Integer.parseInt((JsonToMap.get(Entry.WEIGHT)).trim()));
 
 		this.JsonToMap = JsonToMap;
@@ -48,8 +50,5 @@ public class DictionaryEntry extends Entry {
 	@Override
 	public Entry clone(Map<String, String> JsonToMap) {
 		 return new DictionaryEntry(JsonToMap);
-	}
-	
-
-
+	} 
 }

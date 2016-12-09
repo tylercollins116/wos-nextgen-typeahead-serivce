@@ -37,6 +37,7 @@ import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSugg
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt.Process;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester;
 import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
+import com.thomsonreuters.models.services.suggesterOperation.models.company.TechnicalTypeaheadSuggester;
 import com.thomsonreuters.models.services.suggesters.ProcessPreSearchTerm;
 import com.thomsonreuters.models.services.util.ElasticEntityProperties;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
@@ -240,6 +241,19 @@ public class Suggester implements SuggesterHandler {
 				suggestData.took = (System.currentTimeMillis() - startTime)
 						+ "";
 				results.add(suggestData);
+
+			}else if (suggester instanceof TechnicalTypeaheadSuggester) {
+ 
+				try {
+					results.add(((TechnicalTypeaheadSuggester)suggester).lookup(query, n, 3, false));
+				} catch (Exception e) {
+					SuggestData suggestData = new SuggestData();					
+					suggestData.source="technology";
+					suggestData.took=0+"";
+					results.add(suggestData);
+					log.error("Exception thrown while executing technical typeahead");
+					log.info("Exception thrown while executing technical typeahead");
+				}
 
 			}
 		}
