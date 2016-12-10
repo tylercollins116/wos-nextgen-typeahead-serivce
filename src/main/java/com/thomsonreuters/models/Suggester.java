@@ -283,6 +283,8 @@ public class Suggester implements SuggesterHandler {
 			int size, String uid) {
 
 		List<SuggestData> results = new ArrayList<SuggestData>();
+		
+		//ES query is duplicate have to check and delete it if its unnecessary
 
 		// get avail search index
 		Set<String> keysForES = Property.ES_SEARCH_PATH.keySet();
@@ -301,6 +303,14 @@ public class Suggester implements SuggesterHandler {
 						eep.getMaxExpansion()));
 			} catch (Exception e) {
 				log.error("elastic search error", e);
+			}
+			
+			//ES query is duplicate have to check and delete it if its unnecessary ends
+		}else{
+			try{
+			return (lookup(source,query,size,null));
+			}catch(Exception e){
+				 log.error("Fail to execute message because of underline error on dictionary based ");
 			}
 		}
 		return results;
