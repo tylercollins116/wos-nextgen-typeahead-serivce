@@ -97,7 +97,6 @@ public class TechnicalTypeaheadSuggester extends Lookup {
 
 			Map<String, String> map = PrepareDictionary.processJson(new String(
 					result.payload.bytes));
-			Set<String> keys = map.keySet();
 
 			// Term key
 			Info info_key = suggestData.new Info();
@@ -105,24 +104,24 @@ public class TechnicalTypeaheadSuggester extends Lookup {
 			info_key.value = result.key.toString();
 			suggestions.info.add(info_key);
 
-			for (String key : keys) {
+			String termCount = map.get("count") != null ? map.get("count")
+					: map.get("c");
 
+			if (termCount != null) {
 				Info info$ = suggestData.new Info();
-				info$.value = map.get(key);
-				if (key.trim().equalsIgnoreCase("count")
-						|| key.trim().equalsIgnoreCase("c")) {
-					key = "term_count";
-				}
-
-				if (key.trim().equalsIgnoreCase("inf")
-						|| key.trim().equalsIgnoreCase("i")) {
-					key = "inf";
-				}
-				info$.key = key;
-
+				info$.value = termCount;
+				info$.key = "term_count";
 				suggestions.info.add(info$);
 			}
 
+			String inf = map.get("inf") != null ? map.get("inf") : map.get("i");
+
+			if (inf != null) {
+				Info info$ = suggestData.new Info();
+				info$.value = inf;
+				info$.key = "inf";
+				suggestions.info.add(info$);
+			}
 			suggestData.suggestions.add(suggestions);
 		}
 
@@ -230,7 +229,7 @@ public class TechnicalTypeaheadSuggester extends Lookup {
 
 					if (key.equalsIgnoreCase("count")) {
 						sb.append("\"c\":");
-					}else if (key.equalsIgnoreCase("inf")) {
+					} else if (key.equalsIgnoreCase("inf")) {
 						sb.append("\"i\":");
 					} else {
 						sb.append("\"" + key + "\":");
