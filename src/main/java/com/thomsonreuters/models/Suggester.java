@@ -89,7 +89,7 @@ public class Suggester implements SuggesterHandler {
 
 		List<SuggestData> results = new ArrayList<SuggestData>();
 		ElasticEntityProperties eep = suggesterConfigurationHandler
-				.getElasticEntityProperties("entity." + path);
+				.getElasticEntityProperties(Property.ENTITY_PREFIX + path);
 		/*************************************************************************************/
 		/** These code are execute against ElasticSearch **/
 		/*************************************************************************************/
@@ -294,7 +294,7 @@ public class Suggester implements SuggesterHandler {
 			String path = source.toLowerCase();
 
 			ElasticEntityProperties eep = suggesterConfigurationHandler
-					.getElasticEntityProperties("entity." + path);
+					.getElasticEntityProperties(Property.ENTITY_PREFIX + path);
 
 			IQueryGenerator entry = new ESEntry(eep, query, 0, size, path);
 

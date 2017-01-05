@@ -35,8 +35,8 @@ public class IPASuggester implements IPASuggesterHandler {
 			SuggesterConfigurationHandler suggesterConfigurationHandler) {
 		this.suggesterConfigurationHandler = suggesterConfigurationHandler;
 	}
-
-	public String lookup(String path, String query, int n,boolean countchild) {
+ 
+	public String lookup(String path, String query, int n, boolean countchild) {
 
 		long startTime = -1L;
 
@@ -49,7 +49,7 @@ public class IPASuggester implements IPASuggesterHandler {
 		if (suggester instanceof CompanyTypeaheadSuggester) {
 			try {
 				JsonString = ((CompanyTypeaheadSuggester) suggester).lookup(
-						query, n, 2,countchild);
+						query, n, 2, countchild);
 			} catch (Exception e) {
 				e.printStackTrace();
 				JsonString = "{}";

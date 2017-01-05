@@ -173,6 +173,7 @@ public abstract class SuggesterHelper {
 
 		if (property.isBucketName(propertyName)) {
 			initializeSuggesterList();
+			return;
 		}
 
 		log.info("**************************************************************");
@@ -222,6 +223,12 @@ public abstract class SuggesterHelper {
 			String s3Path = changedDictionaryInfo.getDictionaryPath();
 
 			StartLoadingProcess(changedDictionaryInfo, s3bucket, true);
+			
+			
+			/**
+			 * new changes must replace the old one 
+			 */
+			dictionaryInfos.put(dictionaryName, changedDictionaryInfo);
 		}
 	}
 

@@ -17,6 +17,8 @@ import javax.annotation.PostConstruct;
 import netflix.karyon.health.HealthCheckHandler;
 
 import org.apache.lucene.search.suggest.Lookup;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,11 +30,15 @@ import com.netflix.config.ConfigurationManager;
 import com.netflix.governator.annotations.Configuration;
 import com.thomsonreuters.eiddo.client.EiddoClient;
 import com.thomsonreuters.eiddo.client.EiddoListener;
+import com.thomsonreuters.models.SuggestData;
 import com.thomsonreuters.models.SuggesterConfigurationHandler;
+import com.thomsonreuters.models.SuggesterHandler;
+import com.thomsonreuters.models.services.suggesterOperation.IPA.IPASuggesterHandler;
+import com.thomsonreuters.models.services.suggesterOperation.models.company.CompanyTypeaheadSuggester;
 import com.thomsonreuters.models.services.util.BlockingHashTable;
+import com.thomsonreuters.models.services.util.ElasticEntityProperties;
 import com.thomsonreuters.models.services.util.GroupTerms;
 import com.thomsonreuters.models.services.util.Property;
- 
 
 @Singleton
 public class HealthCheck implements HealthCheckHandler {
@@ -43,22 +49,28 @@ public class HealthCheck implements HealthCheckHandler {
 	private boolean eiddoCorrupted = false;
 
 	private final SuggesterConfigurationHandler suggesterConfigurationHandler;
+	private final SuggesterHandler suggesterHandler;
+	private final IPASuggesterHandler ipaSuggesterHandler;
 
 	@Configuration(value = "search.host", documentation = "search host")
 	private Supplier<String> host = Suppliers.ofInstance("localhost");
 
 	@Configuration(value = "search.port", documentation = "search port")
-	private Supplier<String> port = Suppliers.ofInstance("9200");
+	private Supplier<String> port = Suppliers.ofInstance("0");
 
 	@Configuration(value = "search.path", documentation = "search path")
 	private Supplier<String> path = Suppliers.ofInstance("/");
 
 	@Inject
 	public HealthCheck(EiddoClient eiddo,
-			SuggesterConfigurationHandler suggesterConfigurationHandler) {
+			SuggesterConfigurationHandler suggesterConfigurationHandler,
+			SuggesterHandler suggesterHandler,
+			IPASuggesterHandler ipaSuggesterHandler) {
 
 		this.eiddo = eiddo;
 		this.suggesterConfigurationHandler = suggesterConfigurationHandler;
+		this.suggesterHandler = suggesterHandler;
+		this.ipaSuggesterHandler = ipaSuggesterHandler;
 
 		eiddo.addListener(new EiddoListener() {
 
@@ -91,7 +103,8 @@ public class HealthCheck implements HealthCheckHandler {
 			return 500;
 		}
 
-		if (checkLoadedDictionaries() == 200 && checkESConnection() == 200) {
+		if (checkLoadedDictionaryAndResults() == 200
+				&& checkConnectionaAndResultsFromES() == 200) {
 			return 200;
 		} else {
 			return 500;
@@ -100,8 +113,8 @@ public class HealthCheck implements HealthCheckHandler {
 	}
 
 	private int checkLoadedDictionaries() {
-		
-		Property property=new GroupTerms();
+
+		Property property = new GroupTerms();
 
 		/** check for all the dictionaries successfully loaded or not **/
 
@@ -114,7 +127,6 @@ public class HealthCheck implements HealthCheckHandler {
 		while (keys.hasNext()) {
 			String key = keys.next();
 
-		 
 			if (property.isBucketName(key)) {
 				bucketName = ConfigurationManager.getConfigInstance()
 						.getString(key);
@@ -129,11 +141,7 @@ public class HealthCheck implements HealthCheckHandler {
 		 * return dictionaryReader; }
 		 **/
 
-		if (bucketName == null) {
-			log.error("Bucket Name Empty, returning error code : 500");
-
-			return 500;
-		}
+		/** No more bucket check **/
 
 		BlockingHashTable<String, Lookup> suggesters = (BlockingHashTable<String, Lookup>) suggesterConfigurationHandler
 				.getDictionaryAnalyzer().getSuggesterList();
@@ -146,24 +154,23 @@ public class HealthCheck implements HealthCheckHandler {
 
 		for (String dictionaryName : dictionaryProperties) {
 
-			dictionariesNames.append(dictionaryProperties + "  ,   ");
+			dictionariesNames.append(dictionaryName + "  ,   ");
 
 			if ((!dictionaryNames.contains(dictionaryName))
 					|| (suggesters.get(dictionaryName) == null)) {
 				allSet = false;
-				break;
 			}
-
 		}
 
 		if (!allSet) {
-
-			log.error("========= Available dictionary in eiddo===========\t:"+dictionaryProperties.size());
+			log.error("========= Available dictionary in eiddo===========\t:"
+					+ dictionaryProperties.size());
 			for (String name : dictionaryProperties) {
 				log.error("\t\t" + name + "\t\t");
 			}
 
-			log.error("========= Available dictionary in applications===========\t:"+dictionaryNames.size());
+			log.error("========= Available dictionary in applications===========\t:"
+					+ dictionaryNames.size());
 			Iterator<String> enums = dictionaryNames.iterator();
 			while (enums.hasNext()) {
 				log.error("\t\t" + enums.next() + "\t\t");
@@ -171,14 +178,13 @@ public class HealthCheck implements HealthCheckHandler {
 			log.error("===========================================================");
 
 			log.error("Total number of Dictionary Names mismatch with Eiddo Dictionary Name , returning error code :500");
-			
-			 
 
 			return 500;
-		} else {
-			log.info("Dictionary Names : " + dictionariesNames.toString());
-			log.info("No problem found in loaded Dictionaries");
 		}
+
+		/** every thing seems good **/
+		log.info("Dictionary Names : " + dictionariesNames.toString());
+		log.info("No problem found in loaded Dictionaries");
 
 		/**************************************************************/
 
@@ -186,7 +192,93 @@ public class HealthCheck implements HealthCheckHandler {
 
 	}
 
+	private int checkLoadedDictionaryAndResults() {
+
+		if (checkLoadedDictionaries() != 200) {
+			return 500;
+		}
+
+		BlockingHashTable<String, Lookup> suggesters = (BlockingHashTable<String, Lookup>) suggesterConfigurationHandler
+				.getDictionaryAnalyzer().getSuggesterList();
+		Set<String> dictionaryNames = suggesters.keySet();
+
+		boolean allSet = true;
+
+		for (String dictionaryName : dictionaryNames) {
+			if (suggesters.get(dictionaryName) instanceof CompanyTypeaheadSuggester) {
+
+				String result = ipaSuggesterHandler.lookup(dictionaryName, "c",
+						2, false);
+
+				JSONObject Json = null;
+				JSONArray array = null;
+				try {
+					Json = new JSONObject(result);
+
+					array = Json.getJSONArray("suggestion");
+
+				} catch (Exception e) {
+					//no need to log anything here .. result will be evaluated on later code
+				}
+
+				if (array == null || array.length() < 2) {
+					allSet = false;
+
+					log.error("Doesn't seems like typeahead service  "
+							+ dictionaryName
+							+ " is working properly .. Need attention !!! .Output doesnt match the desired result ");
+				} else {
+					log.info(" typeahead service  " + dictionaryName
+							+ " working fine ");
+				}
+
+			} else {
+				List<SuggestData> results = suggesterHandler.lookup(
+						dictionaryName, "a", 2);
+				if (results.size() < 2) {
+
+					allSet = false;
+
+					log.error("Doesn't seems like typeahead service  "
+							+ dictionaryName
+							+ " is working properly .. Need attention !!! .Output doesnt match the desired result ");
+
+				} else {
+					log.info(" typeahead service  " + dictionaryName
+							+ " which execute against dictionary is working fine ");
+				}
+			}
+
+		}
+
+		if (!allSet) {
+			return 500;
+		} 
+		
+		return 200;
+	}
+
 	private int checkESConnection() {
+
+		/**
+		 * check if it require to test ES connection or not. In some case
+		 * micro-services doesn't use ES and only use dictionary so it no mean
+		 * to check connection with ES for this condition.
+		 */
+
+		if ((host.get() == null || host.get().equalsIgnoreCase("localhost"))
+				&& (port.get() == null || port.get().equalsIgnoreCase("0"))) {
+
+			// doesn't use ES time to
+
+			log.info("Doesn't find information about ES ..  So this service doesn't need to test  ES connection ");
+			return 200;
+
+		}
+
+		/**
+		 * End
+		 */
 
 		boolean success = false;
 
@@ -260,5 +352,46 @@ public class HealthCheck implements HealthCheckHandler {
 			return 200;
 		}
 	}
+	
+	public int checkConnectionaAndResultsFromES(){
+		
+		if (checkESConnection() != 200) {
+			return 500;
+		}
+		
+		
+		Set<String> registerKeys=suggesterConfigurationHandler.getRegisteredElasticEntityNames();
+		
+		boolean allSet = true;
+		for(String key:registerKeys){
+			
+			if(key.startsWith(Property.ENTITY_PREFIX)){
+				key=key.replace(Property.ENTITY_PREFIX, "").trim();				 
+			}
 
+			List<SuggestData> results = suggesterHandler.lookup(
+					key, "c", 2);
+			
+			
+			if ((results==null || results.size() < 1) || (results.get(0) ==null || results.get(0).suggestions.size()<2)) {
+
+				allSet = false;
+
+				log.error("Doesn't seems like typeahead service  "
+						+ key
+						+ " is working properly .. Need attention !!! .Output doesnt match the desired result ");
+
+			} else {
+				log.info(" typeahead service  " + key + " which execute query againse ES is  working fine ");
+			}
+		
+		}
+		
+		
+		if(!allSet){
+			return 500;
+		}
+		
+		return 200;
+	}
 }

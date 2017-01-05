@@ -3,6 +3,7 @@ package com.thomsonreuters.models.services.util;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.List;
 
  
 
@@ -56,21 +57,41 @@ public class DictionaryInfo {
 		return this.infos.get(key);
 	}
 
-	public boolean compare(DictionaryInfo info) {
-		Enumeration<String> keystmp = info.getInfos().keys();
+	public boolean compare(DictionaryInfo info_) {
+		
+		if(this.dictionaryName!=null && info_.dictionaryName!=null){
+			if(!this.dictionaryName.trim().equalsIgnoreCase(info_.dictionaryName.trim())){
+				return false;
+			}
+		}else if((this.dictionaryName!=null && info_.dictionaryName==null) ||(this.dictionaryName==null && info_.dictionaryName!=null)){
+			return false;
+		} 
+		
+		if(this.dictionaryPath!=null && info_.dictionaryPath!=null){
+			if(!this.dictionaryPath.trim().equalsIgnoreCase(info_.dictionaryPath.trim())){
+				return false;
+			}
+		}else if((this.dictionaryPath!=null && info_.dictionaryPath==null) ||(this.dictionaryPath==null && info_.dictionaryPath!=null)){
+			return false;
+		} 
+		
+		
+		Enumeration<String> keystmp = info_.getInfos().keys();
 		Enumeration<String> originalkeys = this.infos.keys();
-		if (Collections.list(keystmp).size() != Collections.list(originalkeys).size()) {
+		
+		List<String> tempkeyslist=Collections.list(keystmp);
+		List<String> originalkeyslist=Collections.list(originalkeys);
+		if (tempkeyslist.size() != originalkeyslist.size()) {
 			return false;
 		}
 
-		while (originalkeys.hasMoreElements()) {
-			String key = originalkeys.nextElement();
+		for(String key:originalkeyslist) { 
 			String orginalValues = this.infos.get(key);
-			String tempValues = info.getInfos().get(key);
+			String tempValues = info_.getInfos().get(key);
 			if (tempValues == null) {
 				return false;
 			}
-			if (orginalValues.toLowerCase().trim().equals(tempValues.toLowerCase().trim())) {
+			if (!orginalValues.toLowerCase().trim().equals(tempValues.toLowerCase().trim())) {
 				return false;
 			}
 

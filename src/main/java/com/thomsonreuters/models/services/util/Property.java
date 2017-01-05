@@ -43,6 +43,8 @@ public interface Property {
 	public enum SUGGESTER_TYPE {
 		fuzzysuggester,complexfuzzysuggester, analyzingsuggester,companytypeaheadsuggester,defaultcomplextypeaheadsuggester
 	}
+	
+	public static final String ENTITY_PREFIX="entity.";
 
 	public String getDictionayName(String property);
 	
