@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.lucene.search.suggest.Lookup;
 import org.junit.Before;
@@ -68,6 +69,12 @@ public class SuggesterMainTest {
 
 			@Override
 			public ElasticEntityProperties getElasticEntityProperties(String esPath) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public Set<String> getRegisteredElasticEntityNames() {
 				// TODO Auto-generated method stub
 				return null;
 			}

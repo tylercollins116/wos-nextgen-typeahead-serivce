@@ -2,6 +2,7 @@ package com.thomsonreuters.models;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -78,7 +79,7 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 						|| triggredProperty.trim().startsWith(Property.SEARCH_PATH_PREFIX)) {
 
 					prepareESURL();
-				} else if (triggredProperty.trim().startsWith("entity.")) {
+				} else if (triggredProperty.trim().startsWith(Property.ENTITY_PREFIX)) {
 
 					prepareESEntities();
 
@@ -86,6 +87,24 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 
 			}
 		});
+		
+		/** for eiddo change testing **/
+		/**
+		new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				try {
+					Thread.currentThread().sleep(1000*60*1);
+					Job<Lookup> job = new Job<Lookup>(dictionaryReader, "dictionary.path.companyterms");
+					reloadExecutor.execute(job.inputTask);
+				} catch (InterruptedException e) {
+				 e.printStackTrace();
+				}
+				
+			}
+		}).start();		
+		**/
 	}
               
 	@Override
@@ -145,48 +164,48 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 
 			String path = it.next().toString();
 			ElasticEntityProperties eep = new ElasticEntityProperties();
-			if (ConfigurationManager.getConfigInstance().containsKey("entity." + path + ".type")) {
-				type = ConfigurationManager.getConfigInstance().getString("entity." + path + ".type");
+			if (ConfigurationManager.getConfigInstance().containsKey(Property.ENTITY_PREFIX + path + ".type")) {
+				type = ConfigurationManager.getConfigInstance().getString(Property.ENTITY_PREFIX + path + ".type");
 			}
-			if (ConfigurationManager.getConfigInstance().containsKey("entity." + path + ".searchField")) {
-				searchField = ConfigurationManager.getConfigInstance().getStringArray("entity." + path + ".searchField");
+			if (ConfigurationManager.getConfigInstance().containsKey(Property.ENTITY_PREFIX + path + ".searchField")) {
+				searchField = ConfigurationManager.getConfigInstance().getStringArray(Property.ENTITY_PREFIX + path + ".searchField");
 			}
 
-			if (ConfigurationManager.getConfigInstance().containsKey("entity." + path + ".returnFields")) {
+			if (ConfigurationManager.getConfigInstance().containsKey(Property.ENTITY_PREFIX + path + ".returnFields")) {
 				returnFields = ConfigurationManager.getConfigInstance()
-						.getStringArray("entity." + path + ".returnFields");
+						.getStringArray(Property.ENTITY_PREFIX + path + ".returnFields");
 			}
 
-			if (ConfigurationManager.getConfigInstance().containsKey("entity." + path + ".aliasFields")) {
+			if (ConfigurationManager.getConfigInstance().containsKey(Property.ENTITY_PREFIX + path + ".aliasFields")) {
 				aliasFields = getKeyValueFields(
-						ConfigurationManager.getConfigInstance().getStringArray("entity." + path + ".aliasFields"));
+						ConfigurationManager.getConfigInstance().getStringArray(Property.ENTITY_PREFIX + path + ".aliasFields"));
 			}
 
-			if (ConfigurationManager.getConfigInstance().containsKey("entity." + path + ".sortFields")) {
+			if (ConfigurationManager.getConfigInstance().containsKey(Property.ENTITY_PREFIX + path + ".sortFields")) {
 				sortFields = getKeyValueFields(
-						ConfigurationManager.getConfigInstance().getStringArray("entity." + path + ".sortFields"));
+						ConfigurationManager.getConfigInstance().getStringArray(Property.ENTITY_PREFIX + path + ".sortFields"));
 			}
 
-			if (ConfigurationManager.getConfigInstance().containsKey("entity." + path + ".analyzer")) {
-				analyzer = ConfigurationManager.getConfigInstance().getString("entity." + path + ".analyzer");
+			if (ConfigurationManager.getConfigInstance().containsKey(Property.ENTITY_PREFIX + path + ".analyzer")) {
+				analyzer = ConfigurationManager.getConfigInstance().getString(Property.ENTITY_PREFIX + path + ".analyzer");
 			}
 
-			if (ConfigurationManager.getConfigInstance().containsKey("entity." + path + ".maxExpansion")) {
+			if (ConfigurationManager.getConfigInstance().containsKey(Property.ENTITY_PREFIX + path + ".maxExpansion")) {
 				maxExpansion = Stream
-						.of(ConfigurationManager.getConfigInstance().getStringArray("entity." + path + ".maxExpansion"))
+						.of(ConfigurationManager.getConfigInstance().getStringArray(Property.ENTITY_PREFIX + path + ".maxExpansion"))
 						.map(Integer::parseInt).toArray(Integer[]::new);
 			}
 			
-			if (ConfigurationManager.getConfigInstance().containsKey("entity." + path + ".port")) {
-				port = ConfigurationManager.getConfigInstance().getString("entity." + path + ".port");
+			if (ConfigurationManager.getConfigInstance().containsKey(Property.ENTITY_PREFIX + path + ".port")) {
+				port = ConfigurationManager.getConfigInstance().getString(Property.ENTITY_PREFIX + path + ".port");
 			}
 			
-			if (ConfigurationManager.getConfigInstance().containsKey("entity." + path + ".host")) {
-				host = ConfigurationManager.getConfigInstance().getString("entity." + path + ".host");
+			if (ConfigurationManager.getConfigInstance().containsKey(Property.ENTITY_PREFIX + path + ".host")) {
+				host = ConfigurationManager.getConfigInstance().getString(Property.ENTITY_PREFIX + path + ".host");
 			}
 			
-			if (ConfigurationManager.getConfigInstance().containsKey("entity." + path + ".slop")) {
-				slop = ConfigurationManager.getConfigInstance().getString("entity." + path + ".slop");
+			if (ConfigurationManager.getConfigInstance().containsKey(Property.ENTITY_PREFIX + path + ".slop")) {
+				slop = ConfigurationManager.getConfigInstance().getString(Property.ENTITY_PREFIX + path + ".slop");
 			}
 
 			eep.setType(type);
@@ -199,7 +218,7 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 			eep.setSlop(slop);
 			eep.setHost(host);
 			eep.setPort(port);
-			elasticEntityProperties.put("entity." + path, eep);
+			elasticEntityProperties.put(Property.ENTITY_PREFIX + path, eep);
 		}
 
 	}
@@ -207,6 +226,12 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 	@Override
 	public ElasticEntityProperties getElasticEntityProperties(String esPath) {
 		return this.elasticEntityProperties.get(esPath);
+	}
+	
+	
+	@Override
+	public Set<String> getRegisteredElasticEntityNames() {
+		return this.elasticEntityProperties.keySet();
 	}
 
 }
