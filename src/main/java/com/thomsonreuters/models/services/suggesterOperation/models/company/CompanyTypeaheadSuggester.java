@@ -135,7 +135,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			throws Exception {
 		if (!company.hasParent) {
 			/**
-			 * this will test whether the top level company is alread added or
+			 * this will test whether the top level company is already added or
 			 * not.. if added just ignore it
 			 **/
 			for (Company company_1 : finalList) {
@@ -184,7 +184,10 @@ public class CompanyTypeaheadSuggester extends Lookup {
 				&& (parent = parentCompany.getChildren().get(child.getName())) != null) {
 			addChildOnCorrespondingPosition(child, parent);
 		} else {
-			parentCompany.add(child);
+			if(!(parentCompany.getName().trim().equalsIgnoreCase(child.getName().trim()) && parentCompany.getCount()==child.getCount())){
+				parentCompany.add(child);
+			}
+			
 			return;
 		}
 

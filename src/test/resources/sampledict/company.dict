@@ -14,4 +14,6 @@
 {"id":"CHILD_4_1","name":"GRAND GRAND CHILD1","parents":"CHILD_3","count":"10"}
 {"id":"CHILD_4_2","name":"GRAND GRAND CHILD2","parents":"CHILD_3","count":"50"} 
 {"id":"HEWLETT-PACKARD","name":"HEWLETT-PACKARD","parents":"","count":"50"}
-{"id":"CHILDREN_4_2","name":"CHILDREN","parents":"","count":"50"} 
+{"id":"CHILDREN_4_2","name":"CHILDREN","parents":"","count":"50"}
+{"id":"10001","name":"SAMSUNG LED CO LTD","parents":"","count":"18"}
+{"id":"10002","name":"SAMSUNG LED CO LTD","parents":"10001","count":"18"}
