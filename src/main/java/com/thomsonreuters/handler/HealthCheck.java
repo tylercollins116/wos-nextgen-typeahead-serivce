@@ -235,7 +235,7 @@ public class HealthCheck implements HealthCheckHandler {
 			} else {
 				List<SuggestData> results = suggesterHandler.lookup(
 						dictionaryName, "a", 2);
-				if (results.size() < 2) {
+				if (results.size()<=0 || results.get(0).suggestions.size() < 2) {
 
 					allSet = false;
 
