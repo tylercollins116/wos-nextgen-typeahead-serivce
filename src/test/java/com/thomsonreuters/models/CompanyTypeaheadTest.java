@@ -54,7 +54,12 @@ public class CompanyTypeaheadTest {
 		expectiondResult = "{\"suggestion\":[{\"name\":\"HEWLETT-PACKARD\",\"count\":50,\"clusterId\":\"HEWLETT-PACKARD\",\"children\":[]}]}";
 		assertEquals(expectiondResult, result);
 
-		/** Test for HEWLETT-PACK Test ***/
-
+		/** End Test for HEWLETT-PACK Test ***/
+		
+		/** testing collapse that 2 SAMSUNG LED CO LTD into one , only collapse when parent and child has same name and has same count **/
+		
+		result = (suggester.lookup("SAMSU", 10, 2, true));
+		expectiondResult ="{\"suggestion\":[{\"name\":\"SAMSUNG LED CO LTD\",\"count\":18,\"clusterId\":\"10001\",\"children\":[]}]}";
+		assertEquals(expectiondResult, result);
 	}
 }

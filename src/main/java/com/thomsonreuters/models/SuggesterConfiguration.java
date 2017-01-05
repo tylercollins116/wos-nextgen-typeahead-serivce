@@ -48,7 +48,7 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 
 			//dictionaryReader = SuggesterFactory.createSuggesters("S3");
 
-			 dictionaryReader = SuggesterFactory.createSuggesters("S3IAM");
+			dictionaryReader = SuggesterFactory.createSuggesters("S3IAM");
 
 		} catch (Exception e) {
 			e.printStackTrace();

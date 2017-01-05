@@ -8,6 +8,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -149,14 +150,9 @@ public class HealthCheck implements HealthCheckHandler {
 
 		Set<String> dictionaryNames = suggesters.keySet();
 
-		boolean allSet = true;
+		boolean allSet = true; 
 
-		StringBuilder dictionariesNames = new StringBuilder();
-
-		for (String dictionaryName : dictionaryProperties) {
-
-			dictionariesNames.append(dictionaryName + "  ,   ");
-
+		for (String dictionaryName : dictionaryProperties) { 
 			if ((!dictionaryNames.contains(dictionaryName))
 					|| (suggesters.get(dictionaryName) == null)) {
 				allSet = false;
@@ -184,8 +180,15 @@ public class HealthCheck implements HealthCheckHandler {
 		}
 
 		/** every thing seems good **/
-		log.info("Dictionary Names : " + dictionariesNames.toString());
-		log.info("No problem found in loaded Dictionaries");
+		StringBuilder loadedDictionaries=new StringBuilder();
+		for(String dictionary:dictionaryNames){
+			if(loadedDictionaries.length()>0){
+				loadedDictionaries.append(" , ");
+			}
+			loadedDictionaries.append(dictionary);
+		}
+		log.info("\tLoaded Dictionary Names : " + loadedDictionaries.toString());
+		log.info("\tNo problem found in loaded Dictionaries");
 
 		/**************************************************************/
 
@@ -229,8 +232,8 @@ public class HealthCheck implements HealthCheckHandler {
 							+ dictionaryName
 							+ " which execute against Dictionary is working properly .. Need attention !!! .Output doesnt match the desired result ");
 				} else {
-					log.info(" typeahead service  " + dictionaryName
-							+ " working fine ");
+					log.info("\ttypeahead service  " + dictionaryName
+							+ "which execute against dictionary is working fine ");
 				}
 
 			} else {
@@ -245,7 +248,7 @@ public class HealthCheck implements HealthCheckHandler {
 							+ "which execute against Dictionary is working properly .. Need attention !!! .Output doesnt match the desired result ");
 
 				} else {
-					log.info(" typeahead service  " + dictionaryName
+					log.info("\ttypeahead service  " + dictionaryName
 							+ " which execute against dictionary is working fine ");
 				}
 			}
@@ -272,7 +275,7 @@ public class HealthCheck implements HealthCheckHandler {
 
 			// doesn't use ES time to
 
-			log.info("Doesn't find information about ES ..  So this service doesn't need to test  ES connection ");
+			log.info("\tDoesn't find information about ES ..  So this service doesn't need to test  ES connection ");
 			return 200;
 
 		}
@@ -383,7 +386,7 @@ public class HealthCheck implements HealthCheckHandler {
 						+ " which execute against ES is working properly .. Need attention !!! .Output doesnt match the desired result ");
 
 			} else {
-				log.info(" typeahead service  " + key + " which execute query againse ES is  working fine ");
+				log.info("\ttypeahead service  " + key + " which execute query againse ES is  working fine ");
 			}
 		
 		}
