@@ -97,6 +97,7 @@ public class HealthCheck implements HealthCheckHandler {
 
 	@Override
 	public int getStatus() {
+		log.info("*************************************************");
 		log.info("Health check called.");
 		if (eiddoCorrupted) {
 			log.error("Eiddo appears to be corrupted. The instance has to be terminated and relaunched");
@@ -226,7 +227,7 @@ public class HealthCheck implements HealthCheckHandler {
 
 					log.error("Doesn't seems like typeahead service  "
 							+ dictionaryName
-							+ " is working properly .. Need attention !!! .Output doesnt match the desired result ");
+							+ " which execute against Dictionary is working properly .. Need attention !!! .Output doesnt match the desired result ");
 				} else {
 					log.info(" typeahead service  " + dictionaryName
 							+ " working fine ");
@@ -241,7 +242,7 @@ public class HealthCheck implements HealthCheckHandler {
 
 					log.error("Doesn't seems like typeahead service  "
 							+ dictionaryName
-							+ " is working properly .. Need attention !!! .Output doesnt match the desired result ");
+							+ "which execute against Dictionary is working properly .. Need attention !!! .Output doesnt match the desired result ");
 
 				} else {
 					log.info(" typeahead service  " + dictionaryName
@@ -379,7 +380,7 @@ public class HealthCheck implements HealthCheckHandler {
 
 				log.error("Doesn't seems like typeahead service  "
 						+ key
-						+ " is working properly .. Need attention !!! .Output doesnt match the desired result ");
+						+ " which execute against ES is working properly .. Need attention !!! .Output doesnt match the desired result ");
 
 			} else {
 				log.info(" typeahead service  " + key + " which execute query againse ES is  working fine ");
