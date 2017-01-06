@@ -174,20 +174,13 @@ public class HealthCheck implements HealthCheckHandler {
 			}
 			log.error("===========================================================");
 
-			log.error("Total number of Dictionary Names mismatch with Eiddo Dictionary Name , returning error code :500");
+			log.error("\tTotal number of loaded Dictionary Names mismatch with Eiddo Dictionary Names , this may be because the dictionary is still loading");
 
 			return 500;
 		}
 
-		/** every thing seems good **/
-		StringBuilder loadedDictionaries=new StringBuilder();
-		for(String dictionary:dictionaryNames){
-			if(loadedDictionaries.length()>0){
-				loadedDictionaries.append(" , ");
-			}
-			loadedDictionaries.append(dictionary);
-		}
-		log.info("\tLoaded Dictionary Names : " + loadedDictionaries.toString());
+		/** every thing seems good **/	 
+		log.info("\tLoaded Dictionary Names : " + dictionaryNames);
 		log.info("\tNo problem found in loaded Dictionaries");
 
 		/**************************************************************/
@@ -197,14 +190,20 @@ public class HealthCheck implements HealthCheckHandler {
 	}
 
 	private int checkLoadedDictionaryAndResults() {
+		
+		/**   check for loaded dictionaries is removed because if a new dictionary is added into eiddo properties file and if it takes long time to load ,
+		 * then healthcheck may  fail ...
+		 */
 
 		if (checkLoadedDictionaries() != 200) {
-			return 500;
+			//return 500;
 		}
 
 		BlockingHashTable<String, Lookup> suggesters = (BlockingHashTable<String, Lookup>) suggesterConfigurationHandler
 				.getDictionaryAnalyzer().getSuggesterList();
 		Set<String> dictionaryNames = suggesters.keySet();
+		
+		log.info("\tSuccessfully loaded dictionaries are   " + dictionaryNames);
 
 		boolean allSet = true;
 
