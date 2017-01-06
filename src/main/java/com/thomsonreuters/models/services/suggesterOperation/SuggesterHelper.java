@@ -212,6 +212,12 @@ public abstract class SuggesterHelper {
 
 		if (realDictionaryInfo == null
 				|| (!realDictionaryInfo.compare(changedDictionaryInfo))) {
+			
+			if(realDictionaryInfo==null){
+				log.info("Reloading new dictionary "+dictionaryName);	
+			}else{
+				log.info("updating  dictionary "+dictionaryName);	
+			}
 
 			String s3bucket = changedDictionaryInfo.getInfos().get(
 					property.S3_BUCKET_SUFFIX);

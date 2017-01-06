@@ -124,7 +124,7 @@ public class HealthCheck implements HealthCheckHandler {
 				.getKeys();
 
 		String bucketName = null;
-		List<String> dictionaryProperties = new ArrayList<String>();
+		Set<String> dictionaryProperties = new HashSet<String>();
 
 		while (keys.hasNext()) {
 			String key = keys.next();
