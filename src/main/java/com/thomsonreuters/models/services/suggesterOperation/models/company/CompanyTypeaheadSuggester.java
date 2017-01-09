@@ -181,7 +181,6 @@ public class CompanyTypeaheadSuggester extends Lookup {
 
 		Company parent = null;
 
-		System.out.println(parentCompany.getName() + "\t" + child.getName());
 
 		if ((parentCompany.getChildren().size() > 0)
 				&& (parent = parentCompany.getChildren().get(child.getName())) != null) {
