@@ -326,8 +326,13 @@ public class Suggester implements SuggesterHandler {
 		/***************************************************/
 
 		Map<String, List<SuggestData.Suggestions>> preSearchedTermsInfo = new HashMap<String, List<SuggestData.Suggestions>>();
+		
+		String isPresearchTermInclude=ConfigurationManager.getConfigInstance().getString(Property.INCLUDE_PRESEARCH_TERMS);
+		
+		
+		boolean includePreSearch=Boolean.parseBoolean(isPresearchTermInclude);
 
-		if (uid != null && uid.trim().length() > 0) {
+		if (includePreSearch && uid != null && uid.trim().length() > 0) {
 
 			List<SuggestData> preSearchedTerms = lookup(query, size, uid, false);
 

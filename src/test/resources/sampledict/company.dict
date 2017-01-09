@@ -15,5 +15,7 @@
 {"id":"CHILD_4_2","name":"GRAND GRAND CHILD2","parents":"CHILD_3","count":"50"} 
 {"id":"HEWLETT-PACKARD","name":"HEWLETT-PACKARD","parents":"","count":"50"}
 {"id":"CHILDREN_4_2","name":"CHILDREN","parents":"","count":"50"}
-{"id":"10001","name":"SAMSUNG LED CO LTD","parents":"","count":"18"}
-{"id":"10002","name":"SAMSUNG LED CO LTD","parents":"10001","count":"18"}
+{"id":"10001","name":"LG LED CO LTD","parents":"","count":"18"}
+{"id":"10002","name":"LG LED CO LTD","parents":"10001","count":"18"}
+{"id":"C1790_SAMSUNGMOBILE_2799835","name":"SAMSUNG    MOBILE DISPLAY CO LTD","parents":"C1790_SAMSUNGMOBILE","count":"36848"}
+{"id":"C1790_SAMSUNGMOBILE","name":"SAMSUNG MOBILE DISPLAY CO LTD","parents":"","count":"36848"}
