@@ -58,8 +58,14 @@ public class CompanyTypeaheadTest {
 		
 		/** testing collapse that 2 SAMSUNG LED CO LTD into one , only collapse when parent and child has same name and has same count **/
 		
-		result = (suggester.lookup("SAMSU", 10, 2, true));
-		expectiondResult ="{\"suggestion\":[{\"name\":\"SAMSUNG LED CO LTD\",\"count\":18,\"clusterId\":\"10001\",\"children\":[]}]}";
+		result = (suggester.lookup("LG", 10, 2, true));
+		expectiondResult ="{\"suggestion\":[{\"name\":\"LG LED CO LTD\",\"count\":18,\"clusterId\":\"10001\",\"children\":[]}]}";
 		assertEquals(expectiondResult, result);
+		
+		
+		result = (suggester.lookup("SAM", 10, 2, true));
+		expectiondResult ="{\"suggestion\":[{\"name\":\"SAMSUNG MOBILE DISPLAY CO LTD\",\"count\":36848,\"clusterId\":\"C1790_SAMSUNGMOBILE\",\"children\":[]}]}";
+		assertEquals(expectiondResult, result);
+		 
 	}
 }

@@ -24,6 +24,7 @@ public interface Property {
 	public String SEARCH_HOST = "search.host";
 	public String SEARCH_PORT = "search.port";
 	public String SEARCH_PATH_PREFIX = "search.path";
+	public String INCLUDE_PRESEARCH_TERMS= "include.presearchterms";
 	 
 	
 	

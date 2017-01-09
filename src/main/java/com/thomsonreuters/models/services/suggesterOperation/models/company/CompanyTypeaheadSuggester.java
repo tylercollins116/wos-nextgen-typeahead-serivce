@@ -180,14 +180,14 @@ public class CompanyTypeaheadSuggester extends Lookup {
 				.values()).get(0);
 
 		Company parent = null;
+
+		System.out.println(parentCompany.getName() + "\t" + child.getName());
+
 		if ((parentCompany.getChildren().size() > 0)
 				&& (parent = parentCompany.getChildren().get(child.getName())) != null) {
 			addChildOnCorrespondingPosition(child, parent);
 		} else {
-			if(!(parentCompany.getName().trim().equalsIgnoreCase(child.getName().trim()) && parentCompany.getCount()==child.getCount())){
-				parentCompany.add(child);
-			}
-			
+			parentCompany.add(child);
 			return;
 		}
 
@@ -422,6 +422,11 @@ public class CompanyTypeaheadSuggester extends Lookup {
 				if (counts.isSufficient()) {
 					break;
 				}
+				
+				 
+				if(this.count==company_1.count && removeSpace(this.name).equals(removeSpace(company_1.name))){
+					continue;
+				}
 
 				JSONObject json = null;
 				if ((json = company_1.createJson(term, counts)) != null) {
@@ -430,6 +435,18 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			}
 			jsonobj.put("children", object);
 			return jsonobj;
+		}
+		
+		public String removeSpace(String term){
+			char[] chars=term.toCharArray();
+			StringBuilder sb=new StringBuilder();
+			for(char c:chars){
+				if(c!=' '){
+					sb.append(c);
+				}
+			}
+			
+			return sb.toString().trim().toLowerCase();
 		}
 
 		public int getCount(int count, String subterm) {
@@ -476,7 +493,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			if (Character.isAlphabetic(c) || Character.isDigit(c)) {
 				sb.append(c);
 				continue;
-			}else{
+			} else {
 				sb.append(' ');
 			}
 		}
@@ -493,7 +510,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 				if (Character.isAlphabetic(c) || Character.isDigit(c)) {
 					sb.append(c);
 					continue;
-				}else{
+				} else {
 					sb.append(' ');
 				}
 			}
