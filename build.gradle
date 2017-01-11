@@ -19,73 +19,91 @@ def chosenEnv
 if ( System.getenv("POC_ENVIRONMENT") ) { chosenEnv = System.getenv("POC_ENVIRONMENT") } else { chosenEnv = "integration" }
 
 configurations.all {
-	resolutionStrategy.cacheDynamicVersionsFor 1, 'hours'
-	resolutionStrategy.cacheChangingModulesFor 1, 'hours'
+    resolutionStrategy.cacheDynamicVersionsFor 1, 'hours'
+    resolutionStrategy.cacheChangingModulesFor 1, 'hours'
 }
 
 buildscript {
     repositories {
         jcenter()
         maven {
+            url = "https://clojars.org/repo/"
+        }
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+        maven {
+            url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/thirdparty/"
+        }
+        maven {
+            url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/snapshots/"
+        }
+        maven {
+            url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/releases/"
+        }
+        maven {
             url "http://repo.oneplatform.build/nexus/content/groups/public/"
         }
         maven {
             url "http://repo.oneplatform.build/nexus/content/groups/private/"
         }
-        
-        maven {
-     url "http://repo.oneplatform.build/nexus/content/repositories/thirdparty-snapshots/"
-   }
     }
-
     dependencies {
-        classpath 'com.netflix.nebula:gradle-ospackage-plugin:2.2.0'
-        classpath 'net.researchgate:gradle-release:2.1.1'
+        classpath group: 'com.netflix.nebula',  name: 'gradle-ospackage-plugin', version: '2.2.0'
+        classpath group: 'org.jsonschema2pojo', name: 'jsonschema2pojo-gradle-plugin', version: '0.4.18'
+        classpath group: 'com.thomsonreuters',  name: '1p-service-api', version: "${servicelib_version}"
+        classpath group: 'net.researchgate',    name: 'gradle-release', version: '2.1.1'
+        classpath group: 'com.bmuschko',        name: 'gradle-nexus-plugin', version: '2.3'
+        classpath group: 'eu.appsatori',        name: 'gradle-fatjar-plugin', version: '0.3'
+        classpath group: 'com.thomsonreuters',  name: 'storm-deploy', version: '2.4.+'
+        classpath group: 'gradle.plugin.org.detoeuf', name: 'swagger-codegen-plugin', version:'1.3'
         classpath group: 'org.sonarsource.scanner.gradle', name: 'sonarqube-gradle-plugin', version: '1.2'
+        classpath group: 'com.fasterxml.jackson.core',   name: 'jackson-databind',     version: '2.5.+'
+        classpath group: 'com.fasterxml.jackson.core',   name: 'jackson-annotations',  version: '2.5.+'
     }
 }
 
 allprojects {
-  apply plugin: 'jacoco'
+    apply plugin: 'jacoco'
 
-  jacoco {
-      toolVersion = "0.7.6.+"
-      reportsDir = file("${project.buildDir}/jacoco/reports")
-  }
+    jacoco {
+        toolVersion = "0.7.6.+"
+        reportsDir = file("${project.buildDir}/jacoco/reports")
+    }
 
-  sonarqube {
-      properties {
-          property "sonar.projectName", "1p-type-ahead-service"
-          property "sonar.projectKey", "1p-type-ahead-service"
-          property "sonar.branch", System.getenv("GIT_BRANCH") ?: ""
-          property "sonar.jacoco.reportPath", "${project.buildDir}/jacoco/test.exec"
-          property "sonar.exclusions", [
-              'src/main/java/com/thomsonreuters/handler/**',
-              'src/main/java/com/thomsonreuters/util/**',
-              'src/main/java/com/thomsonreuters/server/**',
-              'src/main/java/com/thomsonreuters/injection/**',
-              'src/main/java/com/thomsonreuters/rest/service/HealthcheckResource.java'
-          ]
-      }
-  }
+    sonarqube {
+        properties {
+            property "sonar.projectName", "1p-type-ahead-service"
+            property "sonar.projectKey", "1p-type-ahead-service"
+            property "sonar.branch", System.getenv("GIT_BRANCH") ?: ""
+            property "sonar.jacoco.reportPath", "${project.buildDir}/jacoco/test.exec"
+            property "sonar.exclusions", [
+                    'src/main/java/com/thomsonreuters/handler/**',
+                    'src/main/java/com/thomsonreuters/util/**',
+                    'src/main/java/com/thomsonreuters/server/**',
+                    'src/main/java/com/thomsonreuters/injection/**',
+                    'src/main/java/com/thomsonreuters/rest/service/HealthcheckResource.java'
+            ]
+        }
+    }
 }
 
 subprojects {
-  buildscript {
-    repositories {
-      maven {
-        url "http://repo.oneplatform.build/nexus/content/groups/public/"
-      }
-      maven {
-        url "http://repo.oneplatform.build/nexus/content/groups/private/"
-      }
+    buildscript {
+        repositories {
+            maven {
+                url "http://repo.oneplatform.build/nexus/content/groups/public/"
+            }
+            maven {
+                url "http://repo.oneplatform.build/nexus/content/groups/private/"
+            }
+        }
     }
-  }
-  sonarqube {
-      properties {
-          property "sonar.projectName", project.name
-      }
-  }
+    sonarqube {
+        properties {
+            property "sonar.projectName", project.name
+        }
+    }
 }
 
 def permanentPackageName = rootProject.name
@@ -114,24 +132,35 @@ sourceSets {
 }
 
 test {
-  //enable to see logging during gradle build
-  //testLogging.showStandardStreams = true
-  testLogging {
+    //enable to see logging during gradle build
+    //testLogging.showStandardStreams = true
+    testLogging {
         events "passed", "skipped", "failed"
-  }
+    }
 }
 
 repositories {
-   mavenCentral()
-   jcenter()
+    jcenter()
     maven {
-      url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/thirdparty/"
+        url = "https://clojars.org/repo/"
     }
     maven {
-      url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/snapshots/"
+        url "https://plugins.gradle.org/m2/"
     }
     maven {
-      url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/releases/"
+        url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/thirdparty/"
+    }
+    maven {
+        url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/snapshots/"
+    }
+    maven {
+        url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/releases/"
+    }
+    maven {
+        url "http://repo.oneplatform.build/nexus/content/groups/public/"
+    }
+    maven {
+        url "http://repo.oneplatform.build/nexus/content/groups/private/"
     }
 }
 
@@ -149,20 +178,19 @@ idea {
 }
 
 dependencies {
-  //compile group: 'com.thomsonreuters', name: '1p-service-lib', version: '0.10.+'
-  compile group: 'com.thomsonreuters', name: '1p-service-lib', version: '0.30.+'
-  compile group: 'com.thomsonreuters', name: '1p-service-swagger', version: '0.30.+'
-  compile group: 'com.thomsonreuters', name: 'eiddo-client', version: '0.4.+'
-  compile  'com.amazonaws:aws-java-sdk:1.10.2'
+    compile group: 'com.thomsonreuters', name: '1p-service-lib', version: "${servicelib_version}"
+    compile group: 'com.thomsonreuters', name: '1p-service-swagger', version: "${servicelib_version}"
+    compile group: 'com.thomsonreuters', name: 'eiddo-client-karyon', version: "0.6.+"
+    compile  'com.amazonaws:aws-java-sdk:1.10.2'
 
-   compile group: 'com.thomsonreuters', name: '1p-statistics-client', version: '0.1.+'
+    compile group: 'com.thomsonreuters', name: '1p-statistics-client', version: '0.1.+'
 
-  compile 'org.apache.lucene:lucene-core:5.2.1'
-  compile 'org.apache.lucene:lucene-suggest:5.2.1'
-  testCompile group:  'junit', name: 'junit-dep', version: '4.11'
-  // Jersey test framework
-  testCompile 'com.sun.jersey.jersey-test-framework:jersey-test-framework-core:1.11'
-  testCompile 'com.sun.jersey.jersey-test-framework:jersey-test-framework-external:1.11'
+    compile 'org.apache.lucene:lucene-core:5.2.1'
+    compile 'org.apache.lucene:lucene-suggest:5.2.1'
+    testCompile group:  'junit', name: 'junit-dep', version: '4.11'
+    // Jersey test framework
+    testCompile 'com.sun.jersey.jersey-test-framework:jersey-test-framework-core:1.11'
+    testCompile 'com.sun.jersey.jersey-test-framework:jersey-test-framework-external:1.11'
 }
 
 //eiddo repo is the same as project name by default but you can change it
@@ -170,38 +198,70 @@ def eiddoRepo = rootProject.name
 
 import org.apache.tools.ant.filters.ReplaceTokens
 distributions {
-  main{
-		baseName = rootProject.name
+    main{
+        baseName = rootProject.name
 
-		 contents {
-      from ( 'scripts' ) {
-          fileMode = 0755
-          filter(ReplaceTokens, tokens: [ 'PROJECT_NAME': baseName, 'VERSION': version, 'EIDDO_REPO' : eiddoRepo])
-      }
+        contents {
+            from ( 'scripts' ) {
+                fileMode = 0755
+                filter(ReplaceTokens, tokens: [ 'PROJECT_NAME': baseName, 'VERSION': version, 'EIDDO_REPO' : eiddoRepo])
+            }
+        }
     }
-  }
 }
 ospackage {
-      packageName = permanentPackageName
-      release = rpmRelease
-      arch = NOARCH
-      os = LINUX
-      from(file('root/etc/reuters/karyon')) {
-          into('/etc/reuters')
-          user 'root'
-          permissionGroup 'root'
-            }
+    packageName = permanentPackageName
+    release = rpmRelease
+    arch = NOARCH
+    os = LINUX
+    from(file('root/etc/reuters/karyon')) {
+        into('/etc/reuters')
+        user 'root'
+        permissionGroup 'root'
+    }
 
 
-      from("build/install/"+ name) {
-          into('/opt/reuters/apps/karyon')
-          user 'karyon'
-          permissionGroup 'karyon'
+    from("build/install/"+ name) {
+        into('/opt/reuters/apps/karyon')
+        user 'karyon'
+        permissionGroup 'karyon'
 
-      }
+    }
 }
 
 buildRpm.dependsOn installDist
+
+task executeLocal(type: JavaExec) {
+    environment("archaius.deployment.applicationId", "1PTYPEAHEAD_LOCAL");
+    environment("archaius.deployment.environment", "snapshot");
+    environment("archaius.deployment.environment", "local");
+    environment("netflix.platform.admin.resources.port", "9077");
+    environment("server.port", "9001");
+    environment("shutdown.port", "9002");
+
+
+    main = 'com.thomsonreuters.server.ServerRunner'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+task runServer(dependsOn:[classes],type: JavaExec){
+    group = "1P Cache"
+    description = "Run 1P Cache Service"
+
+    main = "netflix.karyon.KaryonRunner"
+    classpath = sourceSets.main.runtimeClasspath
+
+    systemProperty 'java.awt.headless', 'true'
+    systemProperty 'archaius.deployment.environment', 'local'
+    systemProperty 'archaius.deployment.stack', '1p'
+    systemProperty 'archaius.deployment.subenvironment', 'snapshot'
+    systemProperty 'server.port', '7001'
+    systemProperty 'shutdown.port', '7002'
+    systemProperty 'archaius.deployment.applicationId', '1PTYPEAHEADLOCAL'
+
+    args = ["com.thomsonreuters.injection.BootstrapInjectionModule"]
+}
+
 
 task svcVersion() << {
     def file = new File("$projectDir/build/svcVersion.txt")
@@ -210,4 +270,3 @@ task svcVersion() << {
 applicationName=.name
 """
 }
-
