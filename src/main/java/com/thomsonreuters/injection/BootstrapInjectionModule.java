@@ -12,26 +12,28 @@ import com.thomsonreuters.eiddo.client.EiddoPropertiesLoader;
 import com.thomsonreuters.events.karyon.EventsModule;
 import com.thomsonreuters.handler.HealthCheck;
 import com.thomsonreuters.injection.module.MainModule;
+import com.thomsonreuters.karyon.JerseyBasicRoutingModule;
 import com.thomsonreuters.karyon.ShutdownModule;
-import com.thomsonreuters.swagger.JerseySwaggerAwareRoutingModule;
+import com.thomsonreuters.logback.LogbackEiddoModule;
 
 @ArchaiusBootstrap(loader = EiddoPropertiesLoader.class)
 @KaryonBootstrap(name = "1p-typeahead-service", healthcheck = HealthCheck.class)
 @Singleton
-@Modules(include = { ShutdownModule.class, KaryonServoModule.class,
-		KaryonWebAdminModule.class, KaryonEurekaModule.class,
-		EventsModule.class, MainModule.class,
-		 SwaggerHystrixModule.class,
-		BootstrapInjectionModule.KaryonRxRouterModuleImpl.class, })
+
+@Modules(include = {
+		ShutdownModule.class,
+		KaryonServoModule.class,
+		KaryonWebAdminModule.class,
+		EventsModule.class,
+		MainModule.class,
+		LogbackEiddoModule.class,
+		KaryonEurekaModule.class,
+		JerseyBasicRoutingModule.class
+})
 public interface BootstrapInjectionModule {
-	class KaryonRxRouterModuleImpl extends JerseySwaggerAwareRoutingModule {
-
-		public KaryonRxRouterModuleImpl() {
-		}
-
+	class KaryonRxRouterModuleImpl extends JerseyBasicRoutingModule {
 		@Override
 		protected void configureServer() {
-			// replace default behavior (port,pool size) if needed
 			super.configureServer();
 		}
 	}
