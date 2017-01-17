@@ -10,6 +10,11 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
  
 
+
+
+import com.thomsonreuters.models.services.util.GroupTerms;
+import com.thomsonreuters.models.services.util.Property;
+
 import static org.junit.Assert.*;
 
 @RunWith(Parameterized.class)
@@ -39,7 +44,8 @@ public class DictionaryPathTest {
 	
 	@Test
 	public void test(){
-		assertEquals(com.thomsonreuters.models.services.util.PropertyValue.getProperty(data).getDictionayName(), expectedOutput);		
+		Property property=new GroupTerms();
+		assertEquals(property.getDictionayName(data), expectedOutput);		
 	}
 	
 

@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.lucene.search.suggest.Lookup;
 import org.junit.Before;
@@ -48,13 +49,13 @@ public class SuggesterMainTest {
 			public void initializeSuggesterList() throws IOException {
 
 				TRAnalyzingSuggesterExt suggester = new TRAnalyzingSuggesterExtTest().suggester;
-				suggesterList.put(Property.organization, suggester);
+				suggesterList.put("organization", suggester);
 
 				TRAnalyzingSuggester suggester1 = new TRAnalyzingSuggesterTest().suggester;
 
-				suggesterList.put(Property.topic, suggester1);
-				suggesterList.put(Property.category, suggester1);
-				suggesterList.put(Property.wos, suggester1);
+				suggesterList.put("topic", suggester1);
+				suggesterList.put("category", suggester1);
+				suggesterList.put("wos", suggester1);
 
 			}
 		};
@@ -68,6 +69,12 @@ public class SuggesterMainTest {
 
 			@Override
 			public ElasticEntityProperties getElasticEntityProperties(String esPath) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public Set<String> getRegisteredElasticEntityNames() {
 				// TODO Auto-generated method stub
 				return null;
 			}
@@ -88,7 +95,7 @@ public class SuggesterMainTest {
 
 		List<SuggestData> allResults = null;
 		try {
-			allResults = suggester.lookup(Property.organization, "ALBA IU", 5);
+			allResults = suggester.lookup("organization", "ALBA IU", 5);
 		} catch (Exception e) {
 			allResults = null;
 		}
@@ -103,17 +110,17 @@ public class SuggesterMainTest {
 		allResults = null;
 		try {
 
-			allResults = suggester.lookup(Property.topic, "scr", 5);
+			allResults = suggester.lookup("topic", "scr", 5);
 			assertNotNull(allResults);
 			suggestion = allResults.get(0).suggestions.get(0).keyword;
 			assertEquals("scrapie", suggestion);
 
-			allResults = suggester.lookup(Property.category, "scr", 5);
+			allResults = suggester.lookup("category", "scr", 5);
 			assertNotNull(allResults);
 			suggestion = allResults.get(0).suggestions.get(0).keyword;
 			assertEquals("scrapie", suggestion);
 
-			allResults = suggester.lookup(Property.wos, "scr", 5);
+			allResults = suggester.lookup("wos", "scr", 5);
 			assertNotNull(allResults);
 			suggestion = allResults.get(0).suggestions.get(0).keyword;
 			assertEquals("scrapie", suggestion);
@@ -123,8 +130,8 @@ public class SuggesterMainTest {
 		}
 
 		try {
-			List<String> sources = Arrays.asList(new String[] { Property.wos,
-					Property.organization, Property.category, Property.topic });
+			List<String> sources = Arrays.asList(new String[] { "wos",
+					"organization", "category", "topic" });
 			suggester.lookup("scr", sources, new ArrayList<String>(), 4, null);
 
 			suggester.lookup("scr", 4, null, true);

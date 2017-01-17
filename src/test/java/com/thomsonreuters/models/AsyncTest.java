@@ -13,8 +13,7 @@ import com.thomsonreuters.models.services.async.WaitingBlockingQueue;
 import com.thomsonreuters.models.services.suggesterOperation.DictionaryLoader;
 import com.thomsonreuters.models.services.suggesters.BlankSuggester;
 import com.thomsonreuters.models.services.util.Blockable;
-import com.thomsonreuters.models.services.util.Property;
-import com.thomsonreuters.models.services.util.PropertyValue;
+import com.thomsonreuters.models.services.util.Property; 
 import static org.junit.Assert.assertNotNull;
 
 public class AsyncTest {

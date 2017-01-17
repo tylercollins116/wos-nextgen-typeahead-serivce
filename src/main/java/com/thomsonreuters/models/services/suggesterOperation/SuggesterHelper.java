@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -28,18 +29,20 @@ import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSugg
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggesterExt;
-import com.thomsonreuters.models.services.suggesterOperation.models.CategoryEntry;
 import com.thomsonreuters.models.services.suggesterOperation.models.CompanyEntry;
+import com.thomsonreuters.models.services.suggesterOperation.models.DictionaryEntry;
 import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
 import com.thomsonreuters.models.services.suggesterOperation.models.EntryIterator;
 import com.thomsonreuters.models.services.suggesterOperation.models.KeywordEntry;
 import com.thomsonreuters.models.services.suggesterOperation.models.OrganizationEntry;
-import com.thomsonreuters.models.services.suggesterOperation.models.TopicEntry;
+import com.thomsonreuters.models.services.suggesterOperation.models.company.CompanyTypeaheadSuggester;
+import com.thomsonreuters.models.services.suggesterOperation.models.company.TechnicalTypeaheadSuggester;
 import com.thomsonreuters.models.services.util.Blockable;
 import com.thomsonreuters.models.services.util.BlockingHashTable;
+import com.thomsonreuters.models.services.util.DictionaryInfo;
+import com.thomsonreuters.models.services.util.GroupTerms;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
 import com.thomsonreuters.models.services.util.Property;
-import com.thomsonreuters.models.services.util.PropertyValue;
 
 public abstract class SuggesterHelper {
 
@@ -54,7 +57,7 @@ public abstract class SuggesterHelper {
 	public static final CharArraySet stopSet = new CharArraySet(
 			CharArraySet.EMPTY_SET, false);
 
-	private static final Map<String, String> dictionaryPaths = new HashMap<String, String>();
+	private static final Map<String, DictionaryInfo> dictionaryInfos = new HashMap<String, DictionaryInfo>();
 
 	private static final Logger log = LoggerFactory
 			.getLogger(SuggesterHelper.class);
@@ -76,66 +79,18 @@ public abstract class SuggesterHelper {
 	private Analyzer queryAnalyzer = new StandardAnalyzer(
 			CharArraySet.EMPTY_SET);
 
-	public synchronized final boolean isDictionaryAlreadyLoaded(String path,
-			String dictionary) {
-
-		String dictionaryInfo = null;
-
-		log.info("Checking wheather dictionary with following path " + path
-				+ " " + dictionary + "  already loaded ");
-
-		if ((dictionaryInfo = dictionaryPaths.get(path.toLowerCase().trim())) != null
-				&& dictionaryInfo.trim().equalsIgnoreCase(dictionary.trim())) {
-			return true;
-		}
-
-		log.info("Checking passed .. safe to load " + path + " " + dictionary);
-
-		return false;
-	}
-
-	public synchronized final boolean storeLoadedDictoanryInfo(String path,
-			String dictionary) {
-
-		dictionaryPaths.put(path.toLowerCase().trim(), dictionary.toLowerCase()
-				.trim());
-		log.info("Stored " + path.toLowerCase().trim() + "\t\t"
-				+ dictionary.toLowerCase().trim());
-		return true;
-	}
-
 	public synchronized final void getStoredPathInfo() {
 
 		log.info("***************************************************************************");
-		Set<String> keys = dictionaryPaths.keySet();
+		Set<String> keys = dictionaryInfos.keySet();
 
 		for (String key : keys) {
 			log.info("Founds following dictionary already loaded \"" + key
-					+ "\" from path " + dictionaryPaths.get(key));
+					+ "\" from path " + dictionaryInfos.get(key));
 		}
 
 		log.info("***************************************************************************");
 
-	}
-
-	public static void loadFuzzynessThreshold(String triggredProperty) {
-
-		String fuzzynessThreshold = null;
-		if (triggredProperty != null
-				&& (fuzzynessThreshold = triggredProperty.trim())
-						.equalsIgnoreCase(PropertyValue.FUZZYNESS_THRESHOLD_PATH)) {
-
-			fuzzynessThreshold = ConfigurationManager.getConfigInstance()
-					.getString(fuzzynessThreshold);
-
-			try {
-
-				PropertyValue.FUZZTNESS_THRESHOLD = Integer
-						.parseInt(fuzzynessThreshold);
-
-			} catch (NumberFormatException nfe) {
-			}
-		}
 	}
 
 	public void initializeSuggesterList() throws IOException {
@@ -149,125 +104,56 @@ public abstract class SuggesterHelper {
 				.getKeys();
 
 		String bucketName = null;
-		List<String> dictionaryProperties = new ArrayList<String>();
+
+		Property property = new GroupTerms();
+
+		List<String> allDictionaryRelatedInfos = new ArrayList<String>();
 
 		while (keys.hasNext()) {
 			String key = keys.next();
 
-			Property property = PropertyValue.getProperty(key);
+			if (property.isDictionaryRelated(key)) {
+				allDictionaryRelatedInfos.add(key);
+			}
+		}
 
-			if (property.isBucketName()) {
+		property.groupTermsBasedOnDictionary(allDictionaryRelatedInfos,
+				dictionaryInfos);
+
+		loadAllDictionaryProperyValues(dictionaryInfos);
+
+		keys = ConfigurationManager.getConfigInstance().getKeys();
+
+		while (keys.hasNext()) {
+			String key = keys.next();
+			if (property.isBucketName(key)) {
 				bucketName = ConfigurationManager.getConfigInstance()
 						.getString(key);
 				log.info("path to bucket : " + bucketName);
 
-			} else if (property.isDictionaryPathRelated()) {
-				log.info("**************************************************************");
-				log.info("path to dictionary : " + property.toString());
-				log.info("**************************************************************");
-				dictionaryProperties.add(property.toString());
-			} else {
-
-				loadFuzzynessThreshold(key);
 			}
 		}
 
-		if (bucketName != null && bucketName.trim().length() > 0) {
-			for (String dictionaryProperty : dictionaryProperties) {
-				Property property = PropertyValue
-						.getProperty(dictionaryProperty);
-				String value = ConfigurationManager.getConfigInstance()
-						.getString(property.toString());
+		Set<String> dictionaries = dictionaryInfos.keySet();
 
-				getStoredPathInfo();
+		for (String key : dictionaries) {
 
-				if (property.isDictionaryPathRelated()
-						&& isDictionaryAlreadyLoaded(
-								property.getDictionayName(), value)) {
+			DictionaryInfo info = dictionaryInfos.get(key);
 
-					log.info("**************************************************************");
-					log.info("Trying to Load the  dictionary for "
-							+ dictionaryProperty + " BucketName : "
-							+ bucketName + "  ,Path : " + value
-							+ " again  .. reloading ignored ");
-					log.info("**************************************************************");
+			getStoredPathInfo();
 
-					continue;
+			String s3bucket = info.getInfos().get(property.S3_BUCKET_SUFFIX);
 
-				}
+			s3bucket = s3bucket == null ? bucketName : s3bucket;
 
-				log.info("**************************************************************");
-				log.info(" Loading dictionary for " + dictionaryProperty
-						+ " BucketName : " + bucketName + "  ,Path : " + value);
-				log.info("**************************************************************");
-				try {
+			String s3Path = info.getDictionaryPath();
 
-					S3Object s3file = s3Client.getObject(bucketName, value);
-					log.info("**************************************************************");
-					log.info("Successfully got access to S3 bucket : "
-							+ bucketName);
-					log.info("**************************************************************");
-
-					InputStream is = s3file.getObjectContent();
-
-					/********** Important code to work on ************************/
-
-					if (property.getDictionayName().equalsIgnoreCase(
-							Property.organization)) {
-
-						TRAnalyzingSuggesterExt suggester = createAnalyzingSuggesterForOrganization(is);
-						suggesterList.put(property.getDictionayName(),
-								suggester);
-
-					} else if (property.getDictionayName().equalsIgnoreCase(
-							Property.company)) {
-
-						TRAnalyzingSuggesterExt suggester = createAnalyzingSuggesterForCompany(is);
-						suggesterList.put(property.getDictionayName(),
-								suggester);
-
-					} else if (property.getDictionayName().equalsIgnoreCase(
-							Property.wos)) {
-
-						TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
-								is, new KeywordEntry());
-
-						suggesterList.put(property.getDictionayName(),
-								suggester);
-					} else if (property.getDictionayName().equalsIgnoreCase(
-							Property.topic)) {
-
-						TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
-								is, new TopicEntry());
-
-						suggesterList.put(property.getDictionayName(),
-								suggester);
-					} else if (property.getDictionayName().equalsIgnoreCase(
-							Property.category)) {
-						TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
-								is, new CategoryEntry());
-						suggesterList.put(property.getDictionayName(),
-								suggester);
-
-					}
-
-					/***************************** End **********************************/
-
-					storeLoadedDictoanryInfo(property.getDictionayName(), value);
-					log.info("**************************************************************");
-
-					log.info("  Loading dictionary for " + dictionaryProperty
-							+ " completed successfully.");
-					log.info("**************************************************************");
-
-				} catch (Exception e) {
-
-					log.info(" fail loading dictionary for "
-							+ dictionaryProperty);
-
-					e.printStackTrace();
-				}
+			if (s3bucket == null) {
+				s3bucket = bucketName;
 			}
+
+			StartLoadingProcess(info, bucketName, false);
+
 		}
 
 	}
@@ -279,84 +165,180 @@ public abstract class SuggesterHelper {
 					" S3Client found null pls initilize s3Client first");
 		}
 
+		Property property = new GroupTerms();
+
+		if (!property.isDictionaryRelated(propertyName)) {
+			return;
+		}
+
+		if (property.isBucketName(propertyName)) {
+			initializeSuggesterList();
+			return;
+		}
+
 		log.info("**************************************************************");
 		log.info("reloading dictionary of " + propertyName + " starting");
 		log.info("**************************************************************");
-		Property bucketProperty = PropertyValue.getProperty(Property.S3_BUCKET);
-		String bucketName = ConfigurationManager.getConfigInstance().getString(
-				bucketProperty.toString());
 
-		Property property = PropertyValue.getProperty(propertyName);
-		String dictionaryPath = ConfigurationManager.getConfigInstance()
-				.getString(property.toString());
+		String dictionaryName = property.getDictionayName(propertyName);
 
-		getStoredPathInfo();
+		Iterator<String> keys = ConfigurationManager.getConfigInstance()
+				.getKeys();
 
-		if (property.isDictionaryPathRelated()
-				&& isDictionaryAlreadyLoaded(property.getDictionayName(),
-						dictionaryPath)) {
-			log.info("**************************************************************");
-			log.info("Try to reLoad the  dictionary for " + propertyName
-					+ " BucketName : " + bucketName + "  ,Path : "
-					+ dictionaryPath + " again  .. reloading ignored ");
+		List<String> allkeyReferenctToChange = new ArrayList<String>();
+		while (keys.hasNext()) {
+			String key = keys.next();
+			if (property.isDictionaryRelated(key)) {
+				if (property.getDictionayName(key).trim()
+						.equalsIgnoreCase(dictionaryName)) {
 
-			log.info("**************************************************************");
+					allkeyReferenctToChange.add(key);
+				}
 
-			return;
-
+			}
 		}
 
-		S3Object s3file = s3Client.getObject(bucketName, dictionaryPath);
-		InputStream is = s3file.getObjectContent();
+		Map<String, DictionaryInfo> changeDictionaryInfos = new HashMap<String, DictionaryInfo>();
 
-		/********** Important code to work on ************************/
+		property.groupTermsBasedOnDictionary(allkeyReferenctToChange,
+				changeDictionaryInfos);
 
-		if (property.getDictionayName().equalsIgnoreCase(Property.organization)) {
+		loadAllDictionaryProperyValues(changeDictionaryInfos);
 
-			TRAnalyzingSuggesterExt suggester = createAnalyzingSuggesterForOrganization(is);
-			suggesterList.put(property.getDictionayName(), suggester);
+		DictionaryInfo changedDictionaryInfo = changeDictionaryInfos
+				.get(dictionaryName);
 
-		} else if (property.getDictionayName().equalsIgnoreCase(
-				Property.company)) {
+		DictionaryInfo realDictionaryInfo = dictionaryInfos.get(dictionaryName);
 
-			TRAnalyzingSuggesterExt suggester = createAnalyzingSuggesterForCompany(is);
-			suggesterList.put(property.getDictionayName(), suggester);
+		if (realDictionaryInfo == null
+				|| (!realDictionaryInfo.compare(changedDictionaryInfo))) {
+			
+			if(realDictionaryInfo==null){
+				log.info("Reloading new dictionary "+dictionaryName);	
+			}else{
+				log.info("updating  dictionary "+dictionaryName);	
+			}
 
-		} else if (property.getDictionayName().equalsIgnoreCase(Property.wos)) {
+			String s3bucket = changedDictionaryInfo.getInfos().get(
+					property.S3_BUCKET_SUFFIX);
 
-			com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
-					is, new KeywordEntry());
-			suggesterList.put(property.getDictionayName(), suggester);
-		} else if (property.getDictionayName().equalsIgnoreCase(
-				Property.category)) {
-			TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
-					is, new CategoryEntry());
-			suggesterList.put(property.getDictionayName(), suggester);
+			s3bucket = s3bucket == null ? ConfigurationManager
+					.getConfigInstance().getString(Property.S3_BUCKET)
+					: s3bucket;
 
+			String s3Path = changedDictionaryInfo.getDictionaryPath();
+
+			StartLoadingProcess(changedDictionaryInfo, s3bucket, true);
+			
+			
+			/**
+			 * new changes must replace the old one 
+			 */
+			dictionaryInfos.put(dictionaryName, changedDictionaryInfo);
+		}
+	}
+
+	public void StartLoadingProcess(DictionaryInfo info, String s3bucket,
+			boolean isReload) {
+
+		String suggesterType = info.getInfos().get(Property.SUGGESTER);
+		String bucketName = "";
+		if ((bucketName = info.getInfos().get(Property.S3_BUCKET_SUFFIX)) != null
+				&& bucketName.trim().length() > 0) {
+			s3bucket = bucketName;
 		}
 
-		else if (property.getDictionayName().equalsIgnoreCase(Property.topic)) {
-
-			TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
-					is, new TopicEntry());
-
-			suggesterList.put(property.getDictionayName(), suggester);
-		}
-
-		/***************************** End **********************************/
-
-		storeLoadedDictoanryInfo(property.getDictionayName(), dictionaryPath);
+		suggesterType = suggesterType == null ? Property.SUGGESTER_TYPE.analyzingsuggester
+				.toString() : suggesterType;
 
 		log.info("**************************************************************");
-		log.info(" reloading dictionary of " + propertyName + " completed");
+		log.info(" Loading dictionary for " + info.getDictionaryName()
+				+ "  bucketName " + s3bucket + "  ,Path : "
+				+ info.getDictionaryPath());
 		log.info("**************************************************************");
+		try {
+
+			S3Object s3file = s3Client.getObject(s3bucket,
+					info.getDictionaryPath());
+			log.info("**************************************************************");
+			log.info("Successfully got access to S3 bucket : " + s3bucket);
+			log.info("**************************************************************");
+
+			InputStream is = s3file.getObjectContent();
+
+			/********** Important code to work on ************************/
+
+			/***/
+
+			if (suggesterType
+					.equalsIgnoreCase(Property.SUGGESTER_TYPE.complexfuzzysuggester
+							.toString())) {
+
+				TRAnalyzingSuggesterExt suggester = createComplexFuzzysuggester(is);
+				suggesterList.put(info.getDictionaryName(), suggester);
+
+			} else if (suggesterType
+					.equalsIgnoreCase(Property.SUGGESTER_TYPE.analyzingsuggester
+							.toString())) {
+				TRAnalyzingSuggester suggester = createAnalyzingSuggesterForOthers(
+						is, new DictionaryEntry());
+
+				suggesterList.put(info.getDictionaryName(), suggester);
+			} else if (suggesterType
+					.equalsIgnoreCase(Property.SUGGESTER_TYPE.fuzzysuggester
+							.toString())) {
+
+				TRAnalyzingSuggesterExt suggester = createSimpleFuzzysuggester(is);
+				suggesterList.put(info.getDictionaryName(), suggester);
+
+			} else if (suggesterType
+					.equalsIgnoreCase(Property.SUGGESTER_TYPE.companytypeaheadsuggester
+							.toString())) {
+
+				CompanyTypeaheadSuggester suggester = createCompanySuggester(is);
+				suggesterList.put(info.getDictionaryName(), suggester);
+
+			} else if (suggesterType
+					.equalsIgnoreCase(Property.SUGGESTER_TYPE.defaultcomplextypeaheadsuggester
+							.toString())) {
+
+				TechnicalTypeaheadSuggester suggester = createTechnicalSuggester(is);
+				suggesterList.put(info.getDictionaryName(), suggester);
+
+			}
+
+			/***************************** End **********************************/
+
+			log.info("**************************************************************");
+			if (!isReload) {
+				log.info("  Loading dictionary for " + info.getDictionaryName()
+						+ " completed successfully.");
+			} else {
+
+				log.info("  Reloading dictionary for "
+						+ info.getDictionaryName() + " completed successfully.");
+			}
+			log.info("**************************************************************");
+
+		} catch (Exception e) {
+			if (!isReload) {
+				log.info(" fail loading dictionary for "
+						+ info.getDictionaryName());
+			} else {
+				log.info(" fail reloading dictionary for "
+						+ info.getDictionaryName());
+			}
+
+			e.printStackTrace();
+		}
+
 	}
 
 	/****************************************************************************************/
 	/********************* Creating Analyzers starts Here ************************************/
 	/****************************************************************************************/
 
-	public TRAnalyzingSuggester createAnalyzingSuggester(InputStream is)
+	public TRAnalyzingSuggester createDefaultAnalyzingSuggester(InputStream is)
 			throws IOException {
 
 		FileDictionary dictionary = (new FileDictionary(
@@ -370,31 +352,6 @@ public abstract class SuggesterHelper {
 		try {
 			is.close();
 		} catch (Exception e) {
-		}
-
-		return suggester;
-	}
-
-	public TRAnalyzingSuggesterExt createAnalyzingSuggesterForOrganization(
-			InputStream is) {
-		TRAnalyzingSuggesterExt suggester = null;
-		try {
-
-			PrepareDictionary dictionary = new PrepareDictionary(is,
-					new OrganizationEntry());
-
-			suggester = new TRFuzzySuggesterExt(indexAnalyzer, queryAnalyzer);
-
-			suggester.build(new EntryIterator(dictionary));
-
-			dictionary.close();
-			is.close();
-
-			System.gc();
-			System.gc();
-
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 
 		return suggester;
@@ -430,8 +387,31 @@ public abstract class SuggesterHelper {
 		return suggester;
 	}
 
-	public TRAnalyzingSuggesterExt createAnalyzingSuggesterForCompany(
-			InputStream is) {
+	public TRAnalyzingSuggesterExt createSimpleFuzzysuggester(InputStream is) {
+		TRAnalyzingSuggesterExt suggester = null;
+		try {
+
+			PrepareDictionary dictionary = new PrepareDictionary(is,
+					new OrganizationEntry());
+
+			suggester = new TRFuzzySuggesterExt(indexAnalyzer, queryAnalyzer);
+
+			suggester.build(new EntryIterator(dictionary));
+
+			dictionary.close();
+			is.close();
+
+			System.gc();
+			System.gc();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return suggester;
+	}
+
+	public TRAnalyzingSuggesterExt createComplexFuzzysuggester(InputStream is) {
 		TRAnalyzingSuggesterExt suggester = null;
 		try {
 
@@ -453,6 +433,71 @@ public abstract class SuggesterHelper {
 		}
 
 		return suggester;
+	}
+
+	public CompanyTypeaheadSuggester createCompanySuggester(InputStream is) {
+		CompanyTypeaheadSuggester suggester = null;
+		try {
+
+			suggester = new CompanyTypeaheadSuggester(is);
+
+			is.close();
+
+			System.gc();
+			System.gc();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return suggester;
+	}
+
+	public TechnicalTypeaheadSuggester createTechnicalSuggester(InputStream is) {
+		TechnicalTypeaheadSuggester suggester = null;
+		try {
+
+			suggester = new TechnicalTypeaheadSuggester(is);
+
+			is.close();
+
+			System.gc();
+			System.gc();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return suggester;
+	}
+
+	public void loadAllDictionaryProperyValues(
+			Map<String, DictionaryInfo> dictionaryInfos) {
+
+		Set<String> paths = dictionaryInfos.keySet();
+
+		for (String key : paths) {
+
+			String path = Property.DICTIONARY_PATH + key;
+			String DictionaryS3PAth = ConfigurationManager.getConfigInstance()
+					.getString(path);
+
+			DictionaryInfo info = dictionaryInfos.get(key);
+
+			info.setDictionaryPath(DictionaryS3PAth);
+			Enumeration<String> innerpaths = info.getInfos().keys();
+			while (innerpaths.hasMoreElements()) {
+				String realProperty = innerpaths.nextElement();
+				String extraProperty = path + "." + realProperty;
+
+				String extraValue = ConfigurationManager.getConfigInstance()
+						.getString(extraProperty);
+				info.getInfos().put(realProperty, extraValue);
+			}
+
+			dictionaryInfos.put(key, info);
+		}
+
 	}
 
 }

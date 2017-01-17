@@ -192,12 +192,13 @@ public class SuggestorResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response searchQuery(@PathParam("path") String path,
 			@PathParam("query") String query,
-			@DefaultValue("10") @QueryParam("size") int size) {
+			@DefaultValue("10") @QueryParam("size") int size,
+			@DefaultValue("true") @QueryParam("countchild") boolean countchild) {
 		try {
 
 			ObjectMapper mapper = new ObjectMapper();
 			return Response.ok(ipaSuggesterHandler.lookup(path,
-					query,size)).build();
+					query,size,countchild)).build();
 		} catch (Exception e) {
 			logger.error("Error creating json response.", e);
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
