@@ -79,7 +79,8 @@ public class TRCompanyPrepareDictionary
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			System.out.println(Json);
+			//System.out.println(Json);
+			log.error("Erron in following json line:  "+ Json);
 		}
 
 		return map;

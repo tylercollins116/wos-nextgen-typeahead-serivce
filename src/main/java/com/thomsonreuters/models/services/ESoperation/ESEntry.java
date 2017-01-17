@@ -27,6 +27,7 @@ public class ESEntry extends IQueryGenerator {
 		this.from = from;
 		this.size = size;
 		this.source = source;
+		this.aliasFields=eep.getAliasFields();
 
 		/**
 		 * this.returnFields = eep.getReturnFields();
