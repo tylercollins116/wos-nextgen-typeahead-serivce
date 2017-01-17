@@ -86,8 +86,9 @@ public class PrepareDictionary
 				}
 			}
 		} catch (Exception e) {
-			System.out.println(Json);
+			 
 			e.printStackTrace();
+			log.error("error in Json cannot parse the json line "+Json);
 
 		}
 

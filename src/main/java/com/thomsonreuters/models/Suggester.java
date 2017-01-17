@@ -42,7 +42,6 @@ import com.thomsonreuters.models.services.suggesters.ProcessPreSearchTerm;
 import com.thomsonreuters.models.services.util.ElasticEntityProperties;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
 import com.thomsonreuters.models.services.util.Property;
- 
 
 @Singleton
 public class Suggester implements SuggesterHandler {
@@ -116,89 +115,86 @@ public class Suggester implements SuggesterHandler {
 					.getDictionaryAnalyzer().getSuggesterList().get(path);
 
 			if (suggester instanceof TRAnalyzingSuggester) {
-				String fuzzyness=ConfigurationManager.getConfigInstance().getString(Property.FUZZTNESS_THRESHOLD);
-				
-				fuzzyness=fuzzyness==null ?Property.DEFAULT_FUZZTNESS_THRESHOLD+"":fuzzyness;
-				
-				int fuzzynessLength=10;
-				try{
-				fuzzynessLength=Integer.parseInt(fuzzyness);
-				}catch(Exception e){
-					fuzzynessLength=Property.DEFAULT_FUZZTNESS_THRESHOLD;
+				String fuzzyness = ConfigurationManager.getConfigInstance()
+						.getString(Property.FUZZTNESS_THRESHOLD);
+
+				fuzzyness = fuzzyness == null ? Property.DEFAULT_FUZZTNESS_THRESHOLD
+						+ ""
+						: fuzzyness;
+
+				int fuzzynessLength = 10;
+				try {
+					fuzzynessLength = Integer.parseInt(fuzzyness);
+				} catch (Exception e) {
+					fuzzynessLength = Property.DEFAULT_FUZZTNESS_THRESHOLD;
 				}
-	 
+
 				if (query.trim().length() < fuzzynessLength) {
 
 					suggester = ((TRFuzzySuggester) suggester).setMaxEdits(0);
 				} else {
 					suggester = ((TRFuzzySuggester) suggester).setMaxEdits(1);
 				}
-				
-				 
- 
 
-					startTime = System.currentTimeMillis();
-					SuggestData suggestData = new SuggestData();
-					suggestData.source = path;
+				startTime = System.currentTimeMillis();
+				SuggestData suggestData = new SuggestData();
+				suggestData.source = path;
 
-					/****************************/
-					/**** For pre searched Terms **/
-					/****************************/
+				/****************************/
+				/**** For pre searched Terms **/
+				/****************************/
 
-					List<SuggestData.Suggestions> preSearchTerms = null;
+				List<SuggestData.Suggestions> preSearchTerms = null;
 
-					if (preSearchedTermsInfo != null
-							&& (preSearchTerms = preSearchedTermsInfo
-									.get(path)) != null
-							&& preSearchTerms.size() > 0) {
-						suggestData.suggestions.addAll(preSearchTerms);
-					} else {
-						preSearchTerms = new ArrayList<SuggestData.Suggestions>();
-					}
+				if (preSearchedTermsInfo != null
+						&& (preSearchTerms = preSearchedTermsInfo.get(path)) != null
+						&& preSearchTerms.size() > 0) {
+					suggestData.suggestions.addAll(preSearchTerms);
+				} else {
+					preSearchTerms = new ArrayList<SuggestData.Suggestions>();
+				}
 
-					/************************************/
-					/** End of for pre searched Terms **/
-					/************************************/
+				/************************************/
+				/** End of for pre searched Terms **/
+				/************************************/
 
-					try {
-						for (LookupResult result : ((TRAnalyzingSuggester) suggester)
-								.lookup(query, false, n)) {
+				try {
+					for (LookupResult result : ((TRAnalyzingSuggester) suggester)
+							.lookup(query, false, n)) {
 
-							/** output[] **/
+						/** output[] **/
 
-							Suggestions suggestions = suggestData.new Suggestions();
+						Suggestions suggestions = suggestData.new Suggestions();
 
-							suggestions.keyword = result.key.toString();
+						suggestions.keyword = result.key.toString();
 
-							if (preSearchTerms.contains(suggestions)) {
-								continue;
-							}
-
-							Map<String, String> map = PrepareDictionary
-									.processJson(new String(
-											result.payload.bytes));
-							Set<String> keys = map.keySet();
-
-							for (String key : keys) {
-
-								Info info$ = suggestData.new Info();
-								info$.key = key;
-								info$.value = map.get(key);
-								suggestions.info.add(info$);
-							}
-
-							suggestData.suggestions.add(suggestions);
-
+						if (preSearchTerms.contains(suggestions)) {
+							continue;
 						}
-					} catch (Exception e) {
-						log.info("cannot find the suggester ");
+
+						Map<String, String> map = PrepareDictionary
+								.processJson(new String(result.payload.bytes));
+						Set<String> keys = map.keySet();
+
+						for (String key : keys) {
+
+							Info info$ = suggestData.new Info();
+							info$.key = key;
+							info$.value = map.get(key);
+							suggestions.info.add(info$);
+						}
+
+						suggestData.suggestions.add(suggestions);
+
 					}
+				} catch (Exception e) {
+					log.info("cannot find the suggester ");
+				}
 
-					suggestData.took = (System.currentTimeMillis() - startTime)
-							+ "";
-					results.add(suggestData);
+				suggestData.took = (System.currentTimeMillis() - startTime)
+						+ "";
+				results.add(suggestData);
 
-				 
 			} else if (suggester instanceof TRAnalyzingSuggesterExt) {
 
 				startTime = System.currentTimeMillis();
@@ -242,14 +238,15 @@ public class Suggester implements SuggesterHandler {
 						+ "";
 				results.add(suggestData);
 
-			}else if (suggester instanceof TechnicalTypeaheadSuggester) {
- 
+			} else if (suggester instanceof TechnicalTypeaheadSuggester) {
+
 				try {
-					results.add(((TechnicalTypeaheadSuggester)suggester).lookup(query, n, 3, false));
+					results.add(((TechnicalTypeaheadSuggester) suggester)
+							.lookup(query, n, 3, false));
 				} catch (Exception e) {
-					SuggestData suggestData = new SuggestData();					
-					suggestData.source="technology";
-					suggestData.took=0+"";
+					SuggestData suggestData = new SuggestData();
+					suggestData.source = "technology";
+					suggestData.took = 0 + "";
 					results.add(suggestData);
 					log.error("Exception thrown while executing technical typeahead");
 					log.info("Exception thrown while executing technical typeahead");
@@ -283,8 +280,8 @@ public class Suggester implements SuggesterHandler {
 			int size, String uid) {
 
 		List<SuggestData> results = new ArrayList<SuggestData>();
-		
-		//ES query is duplicate have to check and delete it if its unnecessary
+
+		// ES query is duplicate have to check and delete it if its unnecessary
 
 		// get avail search index
 		Set<String> keysForES = Property.ES_SEARCH_PATH.keySet();
@@ -304,13 +301,14 @@ public class Suggester implements SuggesterHandler {
 			} catch (Exception e) {
 				log.error("elastic search error", e);
 			}
-			
-			//ES query is duplicate have to check and delete it if its unnecessary ends
-		}else{
-			try{
-			return (lookup(source,query,size,null));
-			}catch(Exception e){
-				 log.error("Fail to execute message because of underline error on dictionary based ");
+
+			// ES query is duplicate have to check and delete it if its
+			// unnecessary ends
+		} else {
+			try {
+				return (lookup(source, query, size, null));
+			} catch (Exception e) {
+				log.error("Fail to execute message because of underline error on dictionary based ");
 			}
 		}
 		return results;
@@ -326,11 +324,12 @@ public class Suggester implements SuggesterHandler {
 		/***************************************************/
 
 		Map<String, List<SuggestData.Suggestions>> preSearchedTermsInfo = new HashMap<String, List<SuggestData.Suggestions>>();
-		
-		String isPresearchTermInclude=ConfigurationManager.getConfigInstance().getString(Property.INCLUDE_PRESEARCH_TERMS);
-		
-		
-		boolean includePreSearch=Boolean.parseBoolean(isPresearchTermInclude);
+
+		String isPresearchTermInclude = ConfigurationManager
+				.getConfigInstance()
+				.getString(Property.INCLUDE_PRESEARCH_TERMS);
+
+		boolean includePreSearch = Boolean.parseBoolean(isPresearchTermInclude);
 
 		if (includePreSearch && uid != null && uid.trim().length() > 0) {
 
@@ -374,8 +373,6 @@ public class Suggester implements SuggesterHandler {
 			 **/
 
 			Set<String> includeType = new HashSet<String>();
-
-			 
 
 			boolean defaulTypeExists = (includeType != null && includeType
 					.size() > 0);
@@ -461,13 +458,20 @@ public class Suggester implements SuggesterHandler {
 			boolean all) {
 		// TODO Auto-generated method stub
 
+		
+
 		List<SuggestData> allsuggestions = new ArrayList<SuggestData>();
-		long startTime = System.currentTimeMillis();
 
 		String[] suggestions = null;
 
+		long startTime = System.currentTimeMillis();
 		String[] presearchedTerms = processPreSearchTerm
 				.getPreSearchedTerm(uid);
+
+		long totalTime = System.currentTimeMillis() - startTime;
+
+		log.info("\t\t total time to fetch pre-search time is : " + totalTime
+				+ " , Is it normal?");
 
 		query = processPreSearchTerm.processAndNormalizeToken(query);
 
@@ -515,8 +519,8 @@ public class Suggester implements SuggesterHandler {
 
 				}
 
-				List<SuggestData> allSuggestdataForKeywords = lookup(
-						"wos", suggestion, 50);
+				List<SuggestData> allSuggestdataForKeywords = lookup("wos",
+						suggestion, 50);
 
 				for (SuggestData suggestdata : allSuggestdataForKeywords) {
 

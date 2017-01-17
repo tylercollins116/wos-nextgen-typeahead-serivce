@@ -398,7 +398,7 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 					TokenFilter filter;
 					if (matchVersion.onOrAfter(Version.LUCENE_4_4_0)) {
 
-						System.out.println(minPrefixChars);
+						//System.out.println(minPrefixChars);
 						filter = new EdgeNGramTokenFilter(
 								components.getTokenStream(), 1, minPrefixChars);
 					} else {

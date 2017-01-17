@@ -93,15 +93,24 @@ entity.people.sortFields=citingsrcscount:desc
 entity.people.maxExpansion=100,500,1500,4000
 
 
-#-------------------------------------------------------
-#technology
  
-search.path.technology=/term_db_final/term
-entity.technology.type=technology
-entity.technology.port=9600
-entity.technology.host=localhost
-entity.technology.searchField=term_search
-entity.technology.returnFields=term_string,term_count,inf
-entity.technology.sortFields=inf:desc
-entity.technology.slop=0
-entity.technology.maxExpansion=7000
+
+s3.bucket=tr-ips-ses-data
+ 
+#dictionary.path.technology=type-ahead-dictionaries/technicalTypeahead_20170122.dict
+##dictionary.path.technology=dicts/technical/technicalterm_20161213.dict
+#dictionary.path.technology.suggester=defaultcomplextypeaheadsuggester
+
+
+
+dictionary.path.topics=type-ahead-dictionaries/orgdictionary/topic/topic_20151211.dict
+dictionary.path.topics.suggester=analyzingsuggester
+
+dictionary.path.wos=type-ahead-dictionaries/orgdictionary/wos/wos_20151015.dict
+dictionary.path.wos.suggester=analyzingsuggester
+
+dictionary.path.categories=type-ahead-dictionaries/orgdictionary/categories/categories_20151113.dict
+dictionary.path.categories.suggester=analyzingsuggester
+
+dictionary.path.organizations=type-ahead-dictionaries/orgdictionary/organization/organization_20160114.dict
+dictionary.path.organizations.suggester=fuzzysuggester

@@ -15,12 +15,18 @@ import java.util.StringTokenizer;
 
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.thomsonreuters.client.statistics.StatisticsServiceClient;
 import com.thomsonreuters.client.statistics.impl.StatisticsServiceClientImpl;
 import com.thomsonreuters.models.services.suggesterOperation.IProcessPreSearchTerm;
+import com.thomsonreuters.models.services.util.PrepareDictionary;
 
 public class ProcessPreSearchTerm implements IProcessPreSearchTerm {
+	
+	private static final Logger log = LoggerFactory
+			.getLogger(ProcessPreSearchTerm.class);
 
 	private final StatisticsServiceClient statisticsServiceClient = new StatisticsServiceClientImpl();
 
@@ -45,7 +51,9 @@ public class ProcessPreSearchTerm implements IProcessPreSearchTerm {
 					.forName("UTF-8"));
 			long end = System.currentTimeMillis();
 			
-			System.out.println("Time taken to execute statistics "+(end-start));
+			//System.out.println("Time taken to execute statistics "+(end-start));
+			
+			log.info("\t\tTime taken to execute statistics "+(end-start) +" . Is it normal ?");
 
 			return formatResponse(truid, statisticsResponse);
 
