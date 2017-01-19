@@ -1,6 +1,6 @@
 package com.thomsonreuters.models;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 
@@ -66,6 +66,13 @@ public class CompanyTypeaheadTest {
 		result = (suggester.lookup("SAM", 10, 2, true));
 		expectiondResult ="{\"suggestion\":[{\"name\":\"SAMSUNG MOBILE DISPLAY CO LTD\",\"count\":36848,\"clusterId\":\"C1790_SAMSUNGMOBILE\",\"children\":[]}]}";
 		assertEquals(expectiondResult, result);
+		
+		
+		try {
+			result = (suggester.lookup("FEDER", 10, 2, true)); 
+	    } catch (Exception e){
+	        assertNull(e);
+	    }
 		 
 	}
 }

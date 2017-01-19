@@ -46,9 +46,9 @@ public class OrganizationEntry extends Entry {
 				if (key.toLowerCase().equals(ALIAS)) {
 					sb.append("\"" + TERM + "\":");
 					if (JsonToMap.get("name") != null) {
-						sb.append("\"" + JsonToMap.get("name") + "\"");
+						sb.append(org.codehaus.jettison.json.JSONObject.quote(JsonToMap.get("name")));
 					} else {
-						sb.append("\"" + JsonToMap.get(key) + "\"");
+						sb.append(org.codehaus.jettison.json.JSONObject.quote(JsonToMap.get(key)));
 					}
 					alias = JsonToMap.get(key);
 				} else {
