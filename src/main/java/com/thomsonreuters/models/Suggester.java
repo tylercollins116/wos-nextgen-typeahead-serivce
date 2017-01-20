@@ -293,7 +293,7 @@ public class Suggester implements SuggesterHandler {
 			ElasticEntityProperties eep = suggesterConfigurationHandler
 					.getElasticEntityProperties(Property.ENTITY_PREFIX + path);
 
-			IQueryGenerator entry = new ESEntry(eep, query, 0, size, path);
+			IQueryGenerator entry = new ESEntry(eep, query, offset, size, path);
 
 			try {
 				results.add(getSuggestionsDataWithCount(entry,
