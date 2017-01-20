@@ -46,9 +46,9 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 					new WaitingBlockingQueue<Runnable>(),
 					new NamedThreadFactory("Suggester"));
 
-			//dictionaryReader = SuggesterFactory.createSuggesters("S3");
+			dictionaryReader = SuggesterFactory.createSuggesters("S3");
 
-			dictionaryReader = SuggesterFactory.createSuggesters("S3IAM");
+			//dictionaryReader = SuggesterFactory.createSuggesters("S3IAM");
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -61,7 +61,8 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 		prepareESEntities();
 
 		final Property property = new GroupTerms();
-
+		
+		
 		ConfigurationManager.getConfigInstance().addConfigurationListener(
 				new ConfigurationListener() {
 
@@ -69,6 +70,9 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 					public void configurationChanged(ConfigurationEvent event) {
 
 						String triggredProperty = event.getPropertyName();
+						log.info("********************************************");
+						log.info("Executing Configuration changed trigger for   "
+								+ event.getPropertyName());
 
 						if (property.isDictionaryRelated(triggredProperty)
 								|| property.isBucketName(triggredProperty)) {
