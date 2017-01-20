@@ -61,7 +61,8 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 		prepareESEntities();
 
 		final Property property = new GroupTerms();
-
+		
+		
 		ConfigurationManager.getConfigInstance().addConfigurationListener(
 				new ConfigurationListener() {
 
@@ -69,6 +70,9 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 					public void configurationChanged(ConfigurationEvent event) {
 
 						String triggredProperty = event.getPropertyName();
+						log.info("********************************************");
+						log.info("Executing Eiddo Configuration changed trigger for   "
+								+ event.getPropertyName());
 
 						if (property.isDictionaryRelated(triggredProperty)
 								|| property.isBucketName(triggredProperty)) {
