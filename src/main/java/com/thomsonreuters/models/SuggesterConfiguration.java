@@ -71,7 +71,7 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 
 						String triggredProperty = event.getPropertyName();
 						log.info("********************************************");
-						log.info("Executing Configuration changed trigger for   "
+						log.info("Executing Eiddo Configuration changed trigger for   "
 								+ event.getPropertyName());
 
 						if (property.isDictionaryRelated(triggredProperty)
