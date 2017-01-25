@@ -8,12 +8,18 @@ import java.util.Set;
 
 import org.apache.lucene.search.suggest.InputIterator;
 import org.apache.lucene.util.BytesRef;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.thomsonreuters.models.Suggester;
 import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
 
 public class TRCompanyEntryIterator implements InputIterator {
 	private Iterator<Entry> TRIterator;
 	private Entry currentSuggest;
+	private int count=0;
+	
+	private static final Logger log = LoggerFactory.getLogger(InputIterator.class);
 
 	public TRCompanyEntryIterator(Iterator<Entry> organizationEntry) {
 		this.TRIterator = organizationEntry;
@@ -29,6 +35,9 @@ public class TRCompanyEntryIterator implements InputIterator {
 
 	public BytesRef next() {
 		if (TRIterator.hasNext()) {
+			if(++count%100000==0){
+				log.info(count+" documents indexed");
+			}
 			currentSuggest = TRIterator.next();
 		 
 			try {
