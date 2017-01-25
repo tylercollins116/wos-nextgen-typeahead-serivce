@@ -147,6 +147,8 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 
 	private final boolean commitOnBuild;
 
+	private boolean isTreeStructure = true;
+
 	/** Used for ongoing NRT additions/updates. */
 	private IndexWriter writer;
 
@@ -171,6 +173,10 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 	/** How we sort the postings and search results. */
 	private static final Sort SORT = new Sort(new SortField("weight",
 			SortField.Type.LONG, true));
+
+	public void setTreeStructure(boolean isTreeStructure) {
+		this.isTreeStructure = isTreeStructure;
+	}
 
 	/**
 	 * Create a new instance, loading from a previously built
@@ -459,7 +465,7 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 			long weight, BytesRef payload) throws IOException {
 		String textString = text.utf8ToString();
 
-	 String payloads=new String(payload.bytes);
+		String payloads = new String(payload.bytes);
 
 		String processedTextString = processeTextForExactMatch(textString);
 		Document doc = new Document();
@@ -473,16 +479,18 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 		doc.add(new BinaryDocValuesField(TEXT_FIELD_NAME, text));
 		doc.add(new NumericDocValuesField("weight", weight));
 		if (payload != null) {
-			
+
 			doc.add(new BinaryDocValuesField("payloads", payload));
 
+			if (isTreeStructure) {
 			 
-			String key = new String(payload.bytes).split(Entry.DELIMETER)[0];
-			if (key != null) {
-				doc.add(new StringField(PARENT_TEXT_FIELD_NAME,
-						processeTextForExactMatch(key), Field.Store.NO));
-			} 
-			
+				String key = new String(payload.bytes).split(Entry.DELIMETER)[0];
+				if (key != null) {
+					doc.add(new StringField(PARENT_TEXT_FIELD_NAME,
+							processeTextForExactMatch(key), Field.Store.NO));
+				}
+			}
+
 		}
 		if (contexts != null) {
 			for (BytesRef context : contexts) {
@@ -718,9 +726,10 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 			boolean allTermsRequired, boolean doHighlight) throws IOException {
 
 		int realNum = num;
-		//num = num + 1000;//When varients  is included then we have to increase th bucket size
-		//num = num + 500;
-		
+		// num = num + 1000;//When varients is included then we have to increase
+		// th bucket size
+		// num = num + 500;
+
 		num = num + 500;
 
 		/**
@@ -884,14 +893,14 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 		final MergePolicy mergePolicy = writer.getConfig().getMergePolicy();
 		Collector c2 = new EarlyTerminatingSortingCollector(c, SORT, num,
 				(SortingMergePolicy) mergePolicy);
-		
-		/******This is for second query********/
-		TopFieldCollector c13 = TopFieldCollector.create(SORT, num, true, false,
-				false);		
+
+		/****** This is for second query ********/
+		TopFieldCollector c13 = TopFieldCollector.create(SORT, num, true,
+				false, false);
 		Collector c3 = new EarlyTerminatingSortingCollector(c13, SORT, num,
 				(SortingMergePolicy) mergePolicy);
 		/***************************************/
-		
+
 		IndexSearcher searcher = searcherMgr.acquire();
 
 		List<LookupResult> results = null;
@@ -920,7 +929,7 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 						doHighlight, matchedTokens, prefixToken);
 			}
 
-			results = mergeResultSet(results1, results2, realNum*10);
+			results = mergeResultSet(results1, results2, realNum * 10);
 
 		} finally {
 			searcherMgr.release(searcher);
