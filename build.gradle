@@ -88,12 +88,6 @@ subprojects {
   }
 }
 
-def permanentPackageName = rootProject.name
-def group = 'thomsonreuters-1p'
-def rpmRelease = 1
-def snapshot = true
-if (snapshot) { rpmRelease = 'SNAPSHOT' }
-
 sourceSets {
     main {
         java {
@@ -181,33 +175,60 @@ distributions {
     }
   }
 }
+
+// Set some variables for ospackage plugin: https://github.com/nebula-plugins/gradle-ospackage-plugin
+// define name and some meta data for the Yum repository
+// Naming needs to fit http://rpm.org/max-rpm-snapshot/ch-rpm-file-format.html
+// Additional reference: https://fedoraproject.org/wiki/Packaging:Naming?rd=Packaging:NamingGuidelines
+def rpmPackageName = rootProject.name // name of package
+def rpmPackageGroup = "" // snapshot or release
+def rpmRelease = "1" // SNAPSHOT or RELEASE
+def rpmVersion = "" // remove SNAPSHOT from version
+def rpmVendor = "Clarivate" // branding is never good for the cow
+def snapshot = true // I am not sure why this is true ask Sam
+
+if (snapshot) {
+    rpmPackageGroup = "snapshot"
+    rpmRelease = "SNAPSHOT"
+    rpmVersion = version.replaceAll(/-SNAPSHOT/,"")
+    } else {
+    rpmPackageGroup = "release"
+    rpmRelease = "RELEASE"
+    rpmVersion = version.replaceAll(/-SNAPSHOT/,"") // just in case
+  }
+
 ospackage {
-      packageName = permanentPackageName
+      packageName = rpmPackageName
+      version = rpmVersion
       release = rpmRelease
       arch = NOARCH
       os = LINUX
+      packageGroup = rpmPackageGroup
+      vendor = rpmVendor
+      // Copy any extra settings you may want to have
       from(file('root/etc/reuters/karyon')) {
           into('/etc/reuters')
           user 'root'
           permissionGroup 'root'
-            }
-
-
+      }
+      // Copy actual binary files
       from("build/install/"+ name) {
           into('/opt/reuters/apps/karyon')
           user 'karyon'
           permissionGroup 'karyon'
-
       }
 }
 
 buildRpm.dependsOn installDist
 
+// Create a text file of useful information
+// Currently sourced in Jenkins
+
 task svcVersion() << {
     def file = new File("$projectDir/build/svcVersion.txt")
     file.createNewFile()
-    file.text = """version=$version
-applicationName=.name
+    file.text = """version=$rpmVersion
+release=$rpmPackageGroup
+applicationName=$rpmPackageName
 """
 }
-
