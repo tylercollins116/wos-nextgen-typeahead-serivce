@@ -2,3 +2,9 @@
 build
 conf
 /bin/
+.idea
+.classpath
+.project
+.settings
+*.iml
+*.log
