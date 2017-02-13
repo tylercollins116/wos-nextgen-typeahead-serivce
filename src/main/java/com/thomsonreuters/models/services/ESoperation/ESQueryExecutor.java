@@ -78,6 +78,7 @@ public class ESQueryExecutor implements IESQueryExecutor {
 			final List<String> results) throws Exception {
 
 		String[] queries = queryGenerator.createQuery();
+		logQueries(queries);
 		ExecutorService executor = Executors.newFixedThreadPool(queries.length);
 
 		FutureTask<String>[] workers = new FutureTask[queries.length];
@@ -97,6 +98,17 @@ public class ESQueryExecutor implements IESQueryExecutor {
 		}
 		executor.shutdown();
 
+	}
+
+	private void logQueries(String[] queries) {
+		if (queries == null || queries.length == 0) {
+			return;
+		}
+		logger.info("Number of ES queries generated : " + queries.length);
+		for (int i = 0; i < queries.length; i++) {
+			logger.info("Query : " + i);
+			logger.info(queries[i]);
+		}
 	}
 
 	public class collectorCallable implements Callable<String> {
