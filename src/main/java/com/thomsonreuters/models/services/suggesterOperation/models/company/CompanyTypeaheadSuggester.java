@@ -560,7 +560,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 
 			suggester = new TRInfixSuggester(new RAMDirectory(), indexAnalyzer);
 
-			suggester.build(new TRCompanyEntryIterator(dictionary));
+			suggester.build(new TRCompanyEntryIterator(dictionary,"Company Typeahead"));
 
 			dictionary.close();
 			is.close();

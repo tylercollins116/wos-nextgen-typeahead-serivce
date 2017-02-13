@@ -140,7 +140,7 @@ public class TechnicalTypeaheadSuggester extends Lookup {
 
 			suggester = new TRInfixSuggester(new RAMDirectory(), indexAnalyzer);
 			suggester.setTreeStructure(isTreeStructure);
-			suggester.build(new TRCompanyEntryIterator(dictionary));
+			suggester.build(new TRCompanyEntryIterator(dictionary,"Technical typeahead"));
 
 			dictionary.close();
 			is.close();
