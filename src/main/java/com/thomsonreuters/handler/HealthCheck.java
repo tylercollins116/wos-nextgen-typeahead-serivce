@@ -108,14 +108,14 @@ public class HealthCheck implements HealthCheckHandler {
 		
 		try {
 
-			log.info("AvaliableMemory %.3fGB",
+			log.info(String.format("AvaliableMemory %.3fGB",
 					(Runtime.getRuntime().totalMemory())
-							/ (1024.0 * 1024.0 * 1024.0));
-			log.info("UsedMemory %.3fGB",
+							/ (1024.0 * 1024.0 * 1024.0)));
+			log.info(String.format("UsedMemory %.3fGB",
 					(Runtime.getRuntime().totalMemory() - Runtime.getRuntime()
-							.freeMemory()) / (1024.0 * 1024.0 * 1024.0));
-			log.info("FreeMemory %.3fGB", (Runtime.getRuntime().freeMemory())
-					/ (1024.0 * 1024.0 * 1024.0));
+							.freeMemory()) / (1024.0 * 1024.0 * 1024.0)));
+			log.info(String.format("FreeMemory %.3fGB", (Runtime.getRuntime().freeMemory())
+					/ (1024.0 * 1024.0 * 1024.0)));
 
 		} catch (Exception e) {
 			// No need to handle anything above code is  just for information
