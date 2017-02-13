@@ -104,6 +104,24 @@ public class HealthCheck implements HealthCheckHandler {
 			log.error("Eiddo appears to be corrupted. The instance has to be terminated and relaunched");
 			return 500;
 		}
+		
+		
+		try {
+
+			log.info("AvaliableMemory %.3fGB",
+					(Runtime.getRuntime().totalMemory())
+							/ (1024.0 * 1024.0 * 1024.0));
+			log.info("UsedMemory %.3fGB",
+					(Runtime.getRuntime().totalMemory() - Runtime.getRuntime()
+							.freeMemory()) / (1024.0 * 1024.0 * 1024.0));
+			log.info("FreeMemory %.3fGB", (Runtime.getRuntime().freeMemory())
+					/ (1024.0 * 1024.0 * 1024.0));
+
+		} catch (Exception e) {
+			// No need to handle anything above code is  just for information
+		}
+		
+		
 
 		if (checkLoadedDictionaryAndResults() == 200
 				&& checkConnectionaAndResultsFromES() == 200) {
