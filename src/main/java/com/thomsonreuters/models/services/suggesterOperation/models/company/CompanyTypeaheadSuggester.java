@@ -102,6 +102,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		
 		if(showall){
 			includeChild=false;
+			 
 			for (Company company : ultimateParentList) {
 				getChild(company);
 			}
@@ -213,7 +214,8 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		}
 		return company;
 	}
-
+	
+ 
 	private void processToModel(LookupResult r, TRInfixSuggester suggester,
 			List<Company> companyList) throws JSONException {
 
@@ -370,7 +372,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 
 			if (remove != null) {
 				this.children.remove(remove);
-			}
+			} 
 			this.children.put(company.getName(), company);
 
 		}
@@ -561,13 +563,13 @@ public class CompanyTypeaheadSuggester extends Lookup {
 	}
 
 	private void getChild(Company company) throws Exception {
+		
 		List<Company> companyList = new ArrayList<CompanyTypeaheadSuggester.Company>();
+		 
 		List<LookupResult> results = suggester
-				.lookForParentOrChild(company.getName(), false);
+				.lookForParentOrChild(company.getId(), false);
 
-		if (results.size() <= 0) {
-			return;
-		}
+		 
 
 		if (results.size() > 0) {
 			for (LookupResult result : results) {
@@ -575,9 +577,9 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			}
 		}
 
-		for (Company childCompany : companyList) {
+		for (Company childCompany : companyList) {			
+			getChild(childCompany);				
 			company.add(childCompany);
-			getChild(childCompany);
 		}
 	}
 
