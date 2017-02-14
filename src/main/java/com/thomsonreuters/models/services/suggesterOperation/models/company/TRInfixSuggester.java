@@ -503,7 +503,7 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 					if (parent != null && (parent = parent.trim()).length() > 0
 							&& !parent.equals("[]")) {
 						doc.add(new StringField(PARENTS_TEXT_FIELD_NAME,
-								processeTextForExactMatch(parent),
+								processeTextForExactMatch(removeUnnecessaryCharacter(parent)),
 								Field.Store.NO));
 					}
 				} catch (Exception e) {
@@ -525,20 +525,7 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 	}
 
 	private String processeTextForExactMatch(String text) {
-		StringBuilder processedString = new StringBuilder();
-		
-		char[] chars=text.toCharArray();
-		for(char c:chars){
-			if(c=='['||c==']'||c=='"'){
-				continue;
-			}
-			processedString.append(c);
-		}
-		
-		text=processedString.toString();
-		
-		processedString.delete(0, processedString.length());
-		
+		StringBuilder processedString = new StringBuilder();  
 		Tokenizer tokenizer = new Tokenizer();
 		tokenizer.resetToken(text.toCharArray(), 0, text.length());
 		String token = null;
@@ -743,6 +730,8 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 			field=ID_TEXT_FIELD_NAME;
 		}else{
 			field=PARENTS_TEXT_FIELD_NAME;
+			
+			queryString=removeUnnecessaryCharacter(queryString);
 		}
 
 		Term term = new Term(field,
@@ -1561,5 +1550,18 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 			return currentTokenPreSpace;
 		}
 
+	}
+	
+	private String removeUnnecessaryCharacter(String text){
+		StringBuilder processedString=new StringBuilder();
+		char[] chars=text.toCharArray();
+		for(char c:chars){
+			if(c=='['||c==']'||c=='"'){
+				continue;
+			}
+			processedString.append(c);
+		}
+		
+		return processedString.toString();
 	}
 }

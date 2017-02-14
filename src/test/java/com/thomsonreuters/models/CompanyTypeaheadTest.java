@@ -38,7 +38,7 @@ public class CompanyTypeaheadTest {
 				ClassLoader.class
 						.getResourceAsStream("/sampledict/company.dict"));
 
-		String wholetree = (suggester.lookup("PAREN", 10, 2, false, true));
+		String wholetree = (suggester.lookup("PAREN", 10, 2, false, true));	 
 		String expectedResult = "{\"suggestion\":[{\"name\":\"GRAND PARENT\",\"count\":2,\"clusterId\":\"CHILD\",\"children\":[{\"name\":\"PARENT\",\"count\":5,\"clusterId\":\"CHILD_1\",\"children\":[{\"name\":\"CHILD\",\"count\":6,\"clusterId\":\"CHILD_2\",\"children\":[{\"name\":\"GRAND CHILD\",\"count\":6,\"clusterId\":\"CHILD_3\",\"children\":[{\"name\":\"GRAND GRAND CHILD2\",\"count\":50,\"clusterId\":\"CHILD_4_2\",\"children\":[{\"name\":\"THOMSON\",\"count\":20,\"clusterId\":\"CHILD_5_1\",\"children\":[]}]},{\"name\":\"GRAND GRAND CHILD1\",\"count\":10,\"clusterId\":\"CHILD_4_1\",\"children\":[]}]}]}]}]}]}";
 		assertEquals(expectedResult, wholetree);
 
