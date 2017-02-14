@@ -526,6 +526,19 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 
 	private String processeTextForExactMatch(String text) {
 		StringBuilder processedString = new StringBuilder();
+		
+		char[] chars=text.toCharArray();
+		for(char c:chars){
+			if(c=='['||c==']'||c=='"'){
+				continue;
+			}
+			processedString.append(c);
+		}
+		
+		text=processedString.toString();
+		
+		processedString.delete(0, processedString.length());
+		
 		Tokenizer tokenizer = new Tokenizer();
 		tokenizer.resetToken(text.toCharArray(), 0, text.length());
 		String token = null;
@@ -703,10 +716,15 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 
 	public List<LookupResult> lookForParentOrChild(String queryString,boolean isParent)
 			throws IOException {
-
+		 
 		String prefixToken = null;
 		Set<String> matchedTokens = new HashSet<String>();
+		 
 		int num = 1;
+		
+		if(!isParent){
+			num=1000;
+		}
 
 		TopFieldCollector c = TopFieldCollector.create(SORT, num, true, false,
 				false);

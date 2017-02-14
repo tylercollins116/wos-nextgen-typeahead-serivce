@@ -93,8 +93,8 @@ public class CompanyTypeaheadSuggester extends Lookup {
 
 			@Override
 			public int compare(Company o1, Company o2) {
-				return ((Integer) o2.getCount(0, query_))
-						.compareTo((Integer) o1.getCount(0, query_));
+				return ((Integer) o2.getCount(0, query_,showall))
+						.compareTo((Integer) o1.getCount(0, query_,showall));
 			}
 		});
 
@@ -102,6 +102,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		
 		if(showall){
 			includeChild=false;
+			 
 			for (Company company : ultimateParentList) {
 				getChild(company);
 			}
@@ -112,7 +113,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		for (Company company : ultimateParentList) {
 			JSONObject json = null;
 
-			if ((json = company.createJson(query, countInt)) != null) {
+			if ((json = company.createJson(query, countInt,showall)) != null) {
 				finalOnj.add(json);
 
 				if (countInt.isSufficient()) {
@@ -213,7 +214,8 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		}
 		return company;
 	}
-
+	
+ 
 	private void processToModel(LookupResult r, TRInfixSuggester suggester,
 			List<Company> companyList) throws JSONException {
 
@@ -370,7 +372,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 
 			if (remove != null) {
 				this.children.remove(remove);
-			}
+			} 
 			this.children.put(company.getName(), company);
 
 		}
@@ -397,7 +399,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			return this.name;
 		}
 
-		private JSONObject createJson(String term, WrapInt counts)
+		private JSONObject createJson(String term, WrapInt counts,boolean showall)
 				throws Exception {
 
 			JSONObject jsonobj = new JSONObject();
@@ -410,10 +412,10 @@ public class CompanyTypeaheadSuggester extends Lookup {
 
 			term = term.toLowerCase();
 
-			if (canInclude(this.getName(), term)) {
+			if (canInclude(this.getName(), term,showall)) {
 				jsonobj.put("name", this.getName().toUpperCase());
 				counts.current++;
-			} else if (canInclude(this.getVariation(), term)) {
+			} else if (canInclude(this.getVariation(), term,showall)) {
 				jsonobj.put("name", this.getVariation().toUpperCase());
 				counts.current++;
 			} else {
@@ -437,7 +439,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 				}
 
 				JSONObject json = null;
-				if ((json = company_1.createJson(term, counts)) != null) {
+				if ((json = company_1.createJson(term, counts,showall)) != null) {
 					object.add(json);
 				}
 			}
@@ -457,10 +459,10 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			return sb.toString().trim().toLowerCase();
 		}
 
-		public int getCount(int count, String subterm) {
+		public int getCount(int count, String subterm,boolean showall) {
 
-			if (canInclude(this.name, subterm)
-					|| canInclude(this.variation, subterm)) {
+			if (canInclude(this.name, subterm,showall)
+					|| canInclude(this.variation, subterm,showall)) {
 				if (this.count > count) {
 					count = this.count;
 				}
@@ -476,20 +478,20 @@ public class CompanyTypeaheadSuggester extends Lookup {
 
 				@Override
 				public int compare(Company o1, Company o2) {
-					return ((Integer) o2.getCount(0, subterm))
-							.compareTo((Integer) o1.getCount(0, subterm));
+					return ((Integer) o2.getCount(0, subterm,showall))
+							.compareTo((Integer) o1.getCount(0, subterm,showall));
 				}
 			});
 
 			for (Company company : this.sortedCompany) {
-				count = company.getCount(count, subterm);
+				count = company.getCount(count, subterm,showall);
 			}
 
 			return count;
 		}
 	}
 
-	public boolean canInclude(String term, String subterm) {
+	public boolean canInclude(String term, String subterm,boolean showall) {
 
 		StringBuilder sb = new StringBuilder();
 		char[] chars = subterm.toCharArray();
@@ -525,9 +527,9 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			term = sb.toString();
 		}
 
-		return (term != null && (term.toLowerCase().startsWith(subterm)
+		return (term != null && (showall||(term.toLowerCase().startsWith(subterm)
 				|| (convertSpaceIntoUnderScore(term).indexOf("_" + subterm) > -1) || term
-					.equalsIgnoreCase(subterm)));
+					.equalsIgnoreCase(subterm))));
 	}
 
 	private String convertSpaceIntoUnderScore(String text) {
@@ -561,13 +563,13 @@ public class CompanyTypeaheadSuggester extends Lookup {
 	}
 
 	private void getChild(Company company) throws Exception {
+		
 		List<Company> companyList = new ArrayList<CompanyTypeaheadSuggester.Company>();
+		 
 		List<LookupResult> results = suggester
-				.lookForParentOrChild(company.getName(), false);
+				.lookForParentOrChild(company.getId(), false);
 
-		if (results.size() <= 0) {
-			return;
-		}
+		 
 
 		if (results.size() > 0) {
 			for (LookupResult result : results) {
@@ -575,9 +577,9 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			}
 		}
 
-		for (Company childCompany : companyList) {
+		for (Company childCompany : companyList) {			
+			getChild(childCompany);				
 			company.add(childCompany);
-			getChild(childCompany);
 		}
 	}
 
