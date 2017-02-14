@@ -88,7 +88,18 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			maintainNode(company, ultimateParentList);
 		}
 
+		
+		
+		if(showall){
+			includeChild=false;
+			 
+			for (Company company : ultimateParentList) {
+				getChild(company);
+			}
+		}
+		
 		final String query_ = query;
+		
 		Collections.sort(ultimateParentList, new Comparator<Company>() {
 
 			@Override
@@ -100,13 +111,9 @@ public class CompanyTypeaheadSuggester extends Lookup {
 
 		List<JSONObject> finalOnj = new ArrayList<JSONObject>();
 		
-		if(showall){
-			includeChild=false;
-			 
-			for (Company company : ultimateParentList) {
-				getChild(company);
-			}
-		}
+		
+		
+		
 
 		WrapInt countInt = new WrapInt(num, includeChild);
 
@@ -412,10 +419,10 @@ public class CompanyTypeaheadSuggester extends Lookup {
 
 			term = term.toLowerCase();
 
-			if (canInclude(this.getName(), term,showall)) {
+			if (showall ||canInclude(this.getName(), term)) {
 				jsonobj.put("name", this.getName().toUpperCase());
 				counts.current++;
-			} else if (canInclude(this.getVariation(), term,showall)) {
+			} else if (showall || canInclude(this.getVariation(), term)) {
 				jsonobj.put("name", this.getVariation().toUpperCase());
 				counts.current++;
 			} else {
@@ -461,8 +468,8 @@ public class CompanyTypeaheadSuggester extends Lookup {
 
 		public int getCount(int count, String subterm,boolean showall) {
 
-			if (canInclude(this.name, subterm,showall)
-					|| canInclude(this.variation, subterm,showall)) {
+			if (showall ||canInclude(this.name, subterm)
+					|| canInclude(this.variation, subterm)) {
 				if (this.count > count) {
 					count = this.count;
 				}
@@ -491,7 +498,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		}
 	}
 
-	public boolean canInclude(String term, String subterm,boolean showall) {
+	public boolean canInclude(String term, String subterm) {
 
 		StringBuilder sb = new StringBuilder();
 		char[] chars = subterm.toCharArray();
@@ -527,9 +534,9 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			term = sb.toString();
 		}
 
-		return (term != null && (showall||(term.toLowerCase().startsWith(subterm)
+		return (term != null && (term.toLowerCase().startsWith(subterm)
 				|| (convertSpaceIntoUnderScore(term).indexOf("_" + subterm) > -1) || term
-					.equalsIgnoreCase(subterm))));
+					.equalsIgnoreCase(subterm)));
 	}
 
 	private String convertSpaceIntoUnderScore(String text) {
