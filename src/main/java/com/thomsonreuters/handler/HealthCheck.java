@@ -229,7 +229,7 @@ public class HealthCheck implements HealthCheckHandler {
 			if (suggesters.get(dictionaryName) instanceof CompanyTypeaheadSuggester) {
 
 				String result = ipaSuggesterHandler.lookup(dictionaryName, "c",
-						2, false);
+						2, false,false);
 
 				JSONObject Json = null;
 				JSONArray array = null;

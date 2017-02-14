@@ -55,7 +55,7 @@ public class CompanyEntry extends Entry implements Iterator<Entry> {
 		for (String term : terms) {
 			Map<String, String> map = new HashMap<String, String>();
 			map.put(TERM, term);
-			map.put(WEIGHT, count+"");
+			map.put(WEIGHT, count + "");
 			map.put(PARENTS, parent);
 			map.put("name", name);
 			map.put(ALIAS, id);
@@ -65,11 +65,11 @@ public class CompanyEntry extends Entry implements Iterator<Entry> {
 		}
 
 		Map<String, String> map = new HashMap<String, String>();
-		if(id==null){
-			id=name;
+		if (id == null) {
+			id = name;
 		}
 		map.put(TERM, name);
-		map.put(WEIGHT, count+"");
+		map.put(WEIGHT, count + "");
 		map.put(PARENTS, parent);
 		map.put("name", name);
 		map.put(ALIAS, id);
