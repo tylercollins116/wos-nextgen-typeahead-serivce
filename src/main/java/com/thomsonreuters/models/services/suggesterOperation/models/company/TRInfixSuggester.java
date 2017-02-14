@@ -90,6 +90,7 @@ import org.apache.lucene.util.Accountables;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.RamUsageEstimator;
 import org.apache.lucene.util.Version;
+import org.codehaus.jettison.json.JSONObject;
 
 import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
 
@@ -126,7 +127,9 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 	 * Field name used for the indexed text, as a StringField, for exact lookup.
 	 */
 	protected final static String EXACT_TEXT_FIELD_NAME = "exacttext";
-	protected final static String PARENT_TEXT_FIELD_NAME = "parent";
+	protected final static String ID_TEXT_FIELD_NAME = "idfield";
+
+	protected final static String PARENTS_TEXT_FIELD_NAME = "parentfield";
 
 	/**
 	 * Field name used for the indexed context, as a StringField and a
@@ -404,7 +407,7 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 					TokenFilter filter;
 					if (matchVersion.onOrAfter(Version.LUCENE_4_4_0)) {
 
-						//System.out.println(minPrefixChars);
+						// System.out.println(minPrefixChars);
 						filter = new EdgeNGramTokenFilter(
 								components.getTokenStream(), 1, minPrefixChars);
 					} else {
@@ -483,12 +486,30 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 			doc.add(new BinaryDocValuesField("payloads", payload));
 
 			if (isTreeStructure) {
-			 
-				String key = new String(payload.bytes).split(Entry.DELIMETER)[0];
-				if (key != null) {
-					doc.add(new StringField(PARENT_TEXT_FIELD_NAME,
-							processeTextForExactMatch(key), Field.Store.NO));
+
+				String id = new String(payload.bytes).split(Entry.DELIMETER)[0];
+				if (id != null) {
+					doc.add(new StringField(ID_TEXT_FIELD_NAME,
+							processeTextForExactMatch(id), Field.Store.NO));
 				}
+
+				try {
+					String json = getReturn(new String(payload.bytes),
+							Process.json);
+
+					JSONObject oject = new JSONObject(json);
+					String parent = oject.getString("parents");
+
+					if (parent != null && (parent = parent.trim()).length() > 0
+							&& !parent.equals("[]")) {
+						doc.add(new StringField(PARENTS_TEXT_FIELD_NAME,
+								processeTextForExactMatch(parent),
+								Field.Store.NO));
+					}
+				} catch (Exception e) {
+					// dont do anything if its a ultimate parent it reaches here
+				}
+
 			}
 
 		}
@@ -680,7 +701,7 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 
 	}
 
-	public List<LookupResult> lookForParent(String queryString)
+	public List<LookupResult> lookForParentOrChild(String queryString,boolean isParent)
 			throws IOException {
 
 		String prefixToken = null;
@@ -698,8 +719,15 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 		IndexSearcher searcher = searcherMgr.acquire();
 
 		List<LookupResult> results = null;
+		
+		String field=null;
+		if(isParent){
+			field=ID_TEXT_FIELD_NAME;
+		}else{
+			field=PARENTS_TEXT_FIELD_NAME;
+		}
 
-		Term term = new Term(PARENT_TEXT_FIELD_NAME,
+		Term term = new Term(field,
 				processeTextForExactMatch(queryString));
 		Query query = new TermQuery(term);
 
@@ -720,6 +748,9 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 		return results;
 
 	}
+	
+	
+	 
 
 	public List<LookupResult> lookup(CharSequence key,
 			BooleanQuery contextQuery, int num, int condition,
@@ -1077,11 +1108,9 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 		return results;
 	}
 
-	public static final String deliminator = ":::::";
-
 	protected String getReturn(String data, Process process) {
 
-		String[] result = data.split(deliminator);
+		String[] result = data.split(Entry.DELIMETER);
 		if (process == process.json) {
 			return result[1];
 		} else if (process == process.keyword) {

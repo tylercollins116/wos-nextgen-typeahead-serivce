@@ -67,7 +67,7 @@ public class OrganizationEntry extends Entry {
 
 		sb.append("}");
 
-		return alias + TRAnalyzingSuggesterExt.deliminator + sb.toString();
+		return alias + Entry.DELIMETER + sb.toString();
 	}
 
 	@Override
