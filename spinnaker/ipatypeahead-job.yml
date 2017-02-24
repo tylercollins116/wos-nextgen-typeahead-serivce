@@ -1,4 +1,4 @@
-pipeline_dev_snapshot-us-west-2:
+pipeline_dev_snapshot_v2.0-us-west-2:
   name: ipa-typeahead DEV Snapshot Deploy
   application: ipatypeahead
   stages.0.clusters.0.application: ipatypeahead
@@ -13,7 +13,7 @@ pipeline_dev_snapshot-us-west-2:
   triggers.0.job: "karyon-snapshot-ipa-typeahead"
   triggers.0.propertyFile: "AMI-ipa-typeahead.json"
 
-pipeline_dev_stable-us-west-2:
+pipeline_dev_stable_v2.0-us-west-2:
   name: ipa-typeahead DEV Stable Deploy
   application: ipatypeahead
   stages.0.clusters.0.application: ipatypeahead
@@ -33,7 +33,7 @@ pipeline_promote_stable_to_prod_v1.0-us-west-2:
    application: ipatypeahead
    stages.1.clusters.0.application: ipatypeahead
    stages.1.clusters.0.keyPair: KP_developer
-   stages.1.clusters.0.freeFormDetails: "d0prod-r01"
+   stages.1.clusters.0.freeFormDetails: "d0prod1-r01"
    stages.1.clusters.0.securityGroups: ["sg-f5148393","sg-6f09e617","sg-a0ed99c6"]
    stages.1.clusters.0.tags.Name: ipa-typeahead
    stages.1.clusters.0.capacity.desired: 3
