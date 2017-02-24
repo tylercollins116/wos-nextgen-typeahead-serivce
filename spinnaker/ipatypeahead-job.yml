@@ -36,9 +36,9 @@ pipeline_promote_stable_to_prod_v1.0-us-west-2:
    stages.1.clusters.0.freeFormDetails: "d0prod-r01"
    stages.1.clusters.0.securityGroups: ["sg-f5148393","sg-6f09e617","sg-a0ed99c6"]
    stages.1.clusters.0.tags.Name: ipa-typeahead
-   stages.1.clusters.0.capacity.desired: <cluster size, default is 3, set here to override>
-   stages.1.clusters.0.capacity.max: <cluster size, default is 3, set here to override>
-   stages.1.clusters.0.capacity.min: <cluster size, default is 3, set here to override>
+   stages.1.clusters.0.capacity.desired: 3
+   stages.1.clusters.0.capacity.max: 3
+   stages.1.clusters.0.capacity.min: 3
    stages.1.clusters.0.healthCheckGracePeriod: 900
    stages.1.clusters.0.instanceType: "t2.large"
    stages.2.job: "application-integration-test"
