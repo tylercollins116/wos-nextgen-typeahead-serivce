@@ -199,7 +199,7 @@ public class HealthCheck implements HealthCheckHandler {
 
 		/** every thing seems good **/
 		log.info("\tLoaded Dictionary Names : " + dictionaryNames);
-		log.info("\tNo problem found in loaded Dictionaries");
+		
 
 		/**************************************************************/
 
@@ -223,7 +223,7 @@ public class HealthCheck implements HealthCheckHandler {
 				.getDictionaryAnalyzer().getSuggesterList();
 		Set<String> dictionaryNames = suggesters.keySet();
 
-		log.info("\tSuccessfully loaded dictionaries are   " + dictionaryNames);
+		
 
 		boolean allSet = true;
 
@@ -281,6 +281,9 @@ public class HealthCheck implements HealthCheckHandler {
 		if (!allSet) {
 			return 500;
 		}
+		
+		log.info("\tSuccessfully loaded dictionaries are   " + dictionaryNames);
+		log.info("\tNo problem found in loaded Dictionaries");
 
 		return 200;
 	}
