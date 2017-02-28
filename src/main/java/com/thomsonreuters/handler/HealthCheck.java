@@ -214,7 +214,7 @@ public class HealthCheck implements HealthCheckHandler {
 		 */
 
 		if (checkLoadedDictionaries() != 200) {
-			//return 500;
+			return 500;
 		}
 
 		BlockingHashTable<String, Lookup> suggesters = (BlockingHashTable<String, Lookup>) suggesterConfigurationHandler

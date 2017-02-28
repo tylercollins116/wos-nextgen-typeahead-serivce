@@ -330,6 +330,9 @@ public abstract class SuggesterHelper {
 			}
 
 			e.printStackTrace();
+			
+			//if loading fails then this will help to fail the healthcheck
+			suggesterList.put(info.getDictionaryName(), null);
 		}
 
 	}

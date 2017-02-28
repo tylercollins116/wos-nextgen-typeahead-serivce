@@ -63,7 +63,7 @@ public class GroupTerms implements Property{
 	}
 	
 	public boolean isDictionaryRelated(String value) {
-		if (value.toLowerCase().startsWith(Property.DICTIONARY_PATH)) {
+		if (value.toLowerCase().startsWith(Property.DICTIONARY_PATH)&& (!value.toLowerCase().endsWith(Property.SUGGESTER))) {
 			return true;
 		}
 		return false;
