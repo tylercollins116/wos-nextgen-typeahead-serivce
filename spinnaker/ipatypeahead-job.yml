@@ -41,8 +41,7 @@ pipeline_promote_stable_to_prod_v1.0-us-west-2:
    stages.1.clusters.0.capacity.min: 3
    stages.1.clusters.0.healthCheckGracePeriod: 900
    stages.1.clusters.0.instanceType: "t2.large"
-   stages.2.job: "application-integration-test"
-   stages.2.parameters: {}
+   
 
 
 application:
