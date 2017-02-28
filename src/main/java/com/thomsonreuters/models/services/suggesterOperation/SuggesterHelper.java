@@ -17,7 +17,11 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.util.CharArraySet;
 import org.apache.lucene.analysis.util.WordlistLoader;
 import org.apache.lucene.search.suggest.FileDictionary;
+import org.apache.lucene.search.suggest.InputIterator;
 import org.apache.lucene.search.suggest.Lookup;
+import org.apache.lucene.store.DataInput;
+import org.apache.lucene.store.DataOutput;
+import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -331,7 +335,7 @@ public abstract class SuggesterHelper {
 			e.printStackTrace();
 
 			// if loading fails then this will help to fail the healthcheck
-			suggesterList.put(info.getDictionaryName(), null);
+			suggesterList.put(info.getDictionaryName(), createDefaultSuggester());
 		}
 
 	}
@@ -471,6 +475,49 @@ public abstract class SuggesterHelper {
 		}
 
 		return suggester;
+	}
+	
+	
+	public Lookup createDefaultSuggester(){
+		return new Lookup(){
+
+			@Override
+			public long ramBytesUsed() {
+				// TODO Auto-generated method stub
+				return 0;
+			}
+
+			@Override
+			public long getCount() throws IOException {
+				// TODO Auto-generated method stub
+				return 0;
+			}
+
+			@Override
+			public void build(InputIterator inputIterator) throws IOException {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public List<LookupResult> lookup(CharSequence key,
+					Set<BytesRef> contexts, boolean onlyMorePopular, int num)
+					throws IOException {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public boolean store(DataOutput output) throws IOException {
+				// TODO Auto-generated method stub
+				return false;
+			}
+
+			@Override
+			public boolean load(DataInput input) throws IOException {
+				// TODO Auto-generated method stub
+				return false;
+			}};
 	}
 
 	public void loadAllDictionaryProperyValues(
