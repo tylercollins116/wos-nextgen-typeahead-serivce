@@ -7,7 +7,6 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -37,7 +36,6 @@ import com.thomsonreuters.models.SuggesterHandler;
 import com.thomsonreuters.models.services.suggesterOperation.IPA.IPASuggesterHandler;
 import com.thomsonreuters.models.services.suggesterOperation.models.company.CompanyTypeaheadSuggester;
 import com.thomsonreuters.models.services.util.BlockingHashTable;
-import com.thomsonreuters.models.services.util.ElasticEntityProperties;
 import com.thomsonreuters.models.services.util.GroupTerms;
 import com.thomsonreuters.models.services.util.Property;
 
@@ -104,24 +102,22 @@ public class HealthCheck implements HealthCheckHandler {
 			log.error("Eiddo appears to be corrupted. The instance has to be terminated and relaunched");
 			return 500;
 		}
-		
-		
+
 		try {
 
 			log.info(String.format("AvaliableMemory %.3fGB",
 					(Runtime.getRuntime().totalMemory())
 							/ (1024.0 * 1024.0 * 1024.0)));
-			log.info(String.format("UsedMemory %.3fGB",
-					(Runtime.getRuntime().totalMemory() - Runtime.getRuntime()
-							.freeMemory()) / (1024.0 * 1024.0 * 1024.0)));
-			log.info(String.format("FreeMemory %.3fGB", (Runtime.getRuntime().freeMemory())
+			log.info(String.format("UsedMemory %.3fGB", (Runtime.getRuntime()
+					.totalMemory() - Runtime.getRuntime().freeMemory())
 					/ (1024.0 * 1024.0 * 1024.0)));
+			log.info(String.format("FreeMemory %.3fGB",
+					(Runtime.getRuntime().freeMemory())
+							/ (1024.0 * 1024.0 * 1024.0)));
 
 		} catch (Exception e) {
-			// No need to handle anything above code is  just for information
+			// No need to handle anything above code is just for information
 		}
-		
-		
 
 		if (checkLoadedDictionaryAndResults() == 200
 				&& checkConnectionaAndResultsFromES() == 200) {
@@ -151,7 +147,11 @@ public class HealthCheck implements HealthCheckHandler {
 				bucketName = ConfigurationManager.getConfigInstance()
 						.getString(key);
 			} else if (property.isDictionaryRelated(key)) {
-				dictionaryProperties.add(property.getDictionayName(key));
+				
+				String dictionaryName=property.getDictionayName(key);
+				if (dictionaryName!=null && !dictionaryName.endsWith("." + property.SUGGESTER)&&dictionaryName.split("\\.").length==1) {
+					dictionaryProperties.add(dictionaryName);
+				}
 			}
 		}
 
@@ -168,9 +168,9 @@ public class HealthCheck implements HealthCheckHandler {
 
 		Set<String> dictionaryNames = suggesters.keySet();
 
-		boolean allSet = true; 
+		boolean allSet = true;
 
-		for (String dictionaryName : dictionaryProperties) { 
+		for (String dictionaryName : dictionaryProperties) {
 			if ((!dictionaryNames.contains(dictionaryName))
 					|| (suggesters.get(dictionaryName) == null)) {
 				allSet = false;
@@ -197,7 +197,7 @@ public class HealthCheck implements HealthCheckHandler {
 			return 500;
 		}
 
-		/** every thing seems good **/	 
+		/** every thing seems good **/
 		log.info("\tLoaded Dictionary Names : " + dictionaryNames);
 		log.info("\tNo problem found in loaded Dictionaries");
 
@@ -208,19 +208,21 @@ public class HealthCheck implements HealthCheckHandler {
 	}
 
 	private int checkLoadedDictionaryAndResults() {
-		
-		/**   check for loaded dictionaries is removed because if a new dictionary is added into eiddo properties file and if it takes long time to load ,
-		 * then healthcheck may  fail ...
+
+		/**
+		 * check for loaded dictionaries is removed because if a new dictionary
+		 * is added into eiddo properties file and if it takes long time to load
+		 * , then healthcheck may fail ...
 		 */
 
 		if (checkLoadedDictionaries() != 200) {
-			//return 500;
+			// return 500;
 		}
 
 		BlockingHashTable<String, Lookup> suggesters = (BlockingHashTable<String, Lookup>) suggesterConfigurationHandler
 				.getDictionaryAnalyzer().getSuggesterList();
 		Set<String> dictionaryNames = suggesters.keySet();
-		
+
 		log.info("\tSuccessfully loaded dictionaries are   " + dictionaryNames);
 
 		boolean allSet = true;
@@ -229,7 +231,7 @@ public class HealthCheck implements HealthCheckHandler {
 			if (suggesters.get(dictionaryName) instanceof CompanyTypeaheadSuggester) {
 
 				String result = ipaSuggesterHandler.lookup(dictionaryName, "c",
-						2, false,false);
+						2, false, false);
 
 				JSONObject Json = null;
 				JSONArray array = null;
@@ -239,7 +241,8 @@ public class HealthCheck implements HealthCheckHandler {
 					array = Json.getJSONArray("suggestion");
 
 				} catch (Exception e) {
-					//no need to log anything here .. result will be evaluated on later code
+					// no need to log anything here .. result will be evaluated
+					// on later code
 				}
 
 				if (array == null || array.length() < 2) {
@@ -249,14 +252,16 @@ public class HealthCheck implements HealthCheckHandler {
 							+ dictionaryName
 							+ " which execute against Dictionary is working properly .. Need attention !!! .Output doesnt match the desired result ");
 				} else {
-					log.info("\ttypeahead service  " + dictionaryName
+					log.info("\ttypeahead service  "
+							+ dictionaryName
 							+ "which execute against dictionary is working fine ");
 				}
 
 			} else {
 				List<SuggestData> results = suggesterHandler.lookup(
 						dictionaryName, "a", 2);
-				if (results.size()<=0 || results.get(0).suggestions.size() < 2) {
+				if (results.size() <= 0
+						|| results.get(0).suggestions.size() < 2) {
 
 					allSet = false;
 
@@ -265,7 +270,8 @@ public class HealthCheck implements HealthCheckHandler {
 							+ "which execute against Dictionary is working properly .. Need attention !!! .Output doesnt match the desired result ");
 
 				} else {
-					log.info("\ttypeahead service  " + dictionaryName
+					log.info("\ttypeahead service  "
+							+ dictionaryName
 							+ " which execute against dictionary is working fine ");
 				}
 			}
@@ -274,8 +280,8 @@ public class HealthCheck implements HealthCheckHandler {
 
 		if (!allSet) {
 			return 500;
-		} 
-		
+		}
+
 		return 200;
 	}
 
@@ -373,28 +379,28 @@ public class HealthCheck implements HealthCheckHandler {
 			return 200;
 		}
 	}
-	
-	public int checkConnectionaAndResultsFromES(){
-		
+
+	public int checkConnectionaAndResultsFromES() {
+
 		if (checkESConnection() != 200) {
 			return 500;
 		}
-		
-		
-		Set<String> registerKeys=suggesterConfigurationHandler.getRegisteredElasticEntityNames();
-		
+
+		Set<String> registerKeys = suggesterConfigurationHandler
+				.getRegisteredElasticEntityNames();
+
 		boolean allSet = true;
-		for(String key:registerKeys){
-			
-			if(key.startsWith(Property.ENTITY_PREFIX)){
-				key=key.replace(Property.ENTITY_PREFIX, "").trim();				 
+		for (String key : registerKeys) {
+
+			if (key.startsWith(Property.ENTITY_PREFIX)) {
+				key = key.replace(Property.ENTITY_PREFIX, "").trim();
 			}
 
-			List<SuggestData> results = suggesterHandler.lookup(
-					key, "c", 2);
-			
-			
-			if ((results==null || results.size() < 1) || (results.get(0) ==null || results.get(0).suggestions.size()<2)) {
+			List<SuggestData> results = suggesterHandler.lookup(key, "c", 2);
+
+			if ((results == null || results.size() < 1)
+					|| (results.get(0) == null || results.get(0).suggestions
+							.size() < 2)) {
 
 				allSet = false;
 
@@ -403,16 +409,16 @@ public class HealthCheck implements HealthCheckHandler {
 						+ " which execute against ES is working properly .. Need attention !!! .Output doesnt match the desired result ");
 
 			} else {
-				log.info("\ttypeahead service  " + key + " which execute query againse ES is  working fine ");
+				log.info("\ttypeahead service  " + key
+						+ " which execute query againse ES is  working fine ");
 			}
-		
+
 		}
-		
-		
-		if(!allSet){
+
+		if (!allSet) {
 			return 500;
 		}
-		
+
 		return 200;
 	}
 }
