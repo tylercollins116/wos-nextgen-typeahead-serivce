@@ -12,6 +12,8 @@ pipeline_dev_snapshot_v2.0-us-west-2:
   stages.0.clusters.0.healthCheckGracePeriod: 900
   triggers.0.job: "karyon-snapshot-ipa-typeahead"
   triggers.0.propertyFile: "AMI-ipa-typeahead.json"
+  stages.1.job: "application-integration-test"
+  stages.1.parameters: {}
 
 pipeline_dev_stable_v2.0-us-west-2:
   name: ipa-typeahead DEV Stable Deploy
@@ -27,6 +29,8 @@ pipeline_dev_stable_v2.0-us-west-2:
   stages.0.clusters.0.healthCheckGracePeriod: 900
   triggers.0.job: "karyon-stable-ipa-typeahead"
   triggers.0.propertyFile: "AMI-ipa-typeahead.json"
+  stages.1.job: "application-integration-test"
+  stages.1.parameters: {}
 
 pipeline_promote_stable_to_prod_v1.0-us-west-2:
    name: promote-stable-to-prod
@@ -41,6 +45,7 @@ pipeline_promote_stable_to_prod_v1.0-us-west-2:
    stages.1.clusters.0.capacity.min: 3
    stages.1.clusters.0.healthCheckGracePeriod: 900
    stages.1.clusters.0.instanceType: "t2.large"
+   stages.2.job: "application-integration-test"
    stages.2.parameters: {}
 
 
