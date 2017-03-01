@@ -1,4 +1,4 @@
-pipeline_dev_snapshot-us-west-2:
+pipeline_dev_snapshot_v2.0-us-west-2:
   name: ipa-typeahead DEV Snapshot Deploy
   application: ipatypeahead
   stages.0.clusters.0.application: ipatypeahead
@@ -9,10 +9,13 @@ pipeline_dev_snapshot-us-west-2:
   stages.0.clusters.0.securityGroups: ["sg-9013eaf4", "sg-62e73904"]
   stages.0.clusters.0.freeFormDetails: "d0snapshot-r01"
   stages.0.clusters.0.instanceType: "t2.large"
+  stages.0.clusters.0.healthCheckGracePeriod: 900
   triggers.0.job: "karyon-snapshot-ipa-typeahead"
   triggers.0.propertyFile: "AMI-ipa-typeahead.json"
+  stages.1.job: "application-integration-test"
+  stages.1.parameters: {}
 
-pipeline_dev_stable-us-west-2:
+pipeline_dev_stable_v2.0-us-west-2:
   name: ipa-typeahead DEV Stable Deploy
   application: ipatypeahead
   stages.0.clusters.0.application: ipatypeahead
@@ -23,8 +26,28 @@ pipeline_dev_stable-us-west-2:
   stages.0.clusters.0.securityGroups: ["sg-9013eaf4", "sg-62e73904"]
   stages.0.clusters.0.freeFormDetails: "d0stable-r01"
   stages.0.clusters.0.instanceType: "t2.large"
+  stages.0.clusters.0.healthCheckGracePeriod: 900
   triggers.0.job: "karyon-stable-ipa-typeahead"
   triggers.0.propertyFile: "AMI-ipa-typeahead.json"
+  stages.1.job: "application-integration-test"
+  stages.1.parameters: {}
+
+pipeline_promote_stable_to_prod_v1.0-us-west-2:
+   name: promote-stable-to-prod
+   application: ipatypeahead
+   stages.1.clusters.0.application: ipatypeahead
+   stages.1.clusters.0.keyPair: KP_developer
+   stages.1.clusters.0.freeFormDetails: "d0prod1-r01"
+   stages.1.clusters.0.securityGroups: ["sg-f5148393","sg-6f09e617","sg-a0ed99c6"]
+   stages.1.clusters.0.tags.Name: ipa-typeahead
+   stages.1.clusters.0.capacity.desired: 3
+   stages.1.clusters.0.capacity.max: 3
+   stages.1.clusters.0.capacity.min: 3
+   stages.1.clusters.0.healthCheckGracePeriod: 900
+   stages.1.clusters.0.instanceType: "t2.large"
+   stages.2.job: "application-integration-test"
+   stages.2.parameters: {}
+
 
 application:
   application: ipatypeahead

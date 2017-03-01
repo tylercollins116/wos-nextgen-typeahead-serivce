@@ -34,9 +34,10 @@ public class TechnicalTypeaheadSuggester extends Lookup {
 
 	private TRInfixSuggester suggester = null;
 
+ 
 	public TechnicalTypeaheadSuggester(InputStream is) {
 
-		suggester = createTechnicalTypeaheadSuggester(is);
+		suggester = createTechnicalTypeaheadSuggester(is,false);
 	}
 
 	/**
@@ -130,7 +131,7 @@ public class TechnicalTypeaheadSuggester extends Lookup {
 		return suggestData;
 	}
 
-	private TRInfixSuggester createTechnicalTypeaheadSuggester(InputStream is) {
+	private TRInfixSuggester createTechnicalTypeaheadSuggester(InputStream is,boolean isTreeStructure) {
 		TRInfixSuggester suggester = null;
 		try {
 
@@ -138,8 +139,8 @@ public class TechnicalTypeaheadSuggester extends Lookup {
 					new DictionaryEntry());
 
 			suggester = new TRInfixSuggester(new RAMDirectory(), indexAnalyzer);
-
-			suggester.build(new TRCompanyEntryIterator(dictionary));
+			suggester.setTreeStructure(isTreeStructure);
+			suggester.build(new TRCompanyEntryIterator(dictionary,"Technical typeahead"));
 
 			dictionary.close();
 			is.close();

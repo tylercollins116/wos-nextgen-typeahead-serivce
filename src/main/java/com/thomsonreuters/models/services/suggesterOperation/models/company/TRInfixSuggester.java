@@ -90,6 +90,7 @@ import org.apache.lucene.util.Accountables;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.RamUsageEstimator;
 import org.apache.lucene.util.Version;
+import org.codehaus.jettison.json.JSONObject;
 
 import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
 
@@ -126,7 +127,9 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 	 * Field name used for the indexed text, as a StringField, for exact lookup.
 	 */
 	protected final static String EXACT_TEXT_FIELD_NAME = "exacttext";
-	protected final static String PARENT_TEXT_FIELD_NAME = "parent";
+	protected final static String ID_TEXT_FIELD_NAME = "idfield";
+
+	protected final static String PARENTS_TEXT_FIELD_NAME = "parentfield";
 
 	/**
 	 * Field name used for the indexed context, as a StringField and a
@@ -146,6 +149,8 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 	private final boolean highlight;
 
 	private final boolean commitOnBuild;
+
+	private boolean isTreeStructure = true;
 
 	/** Used for ongoing NRT additions/updates. */
 	private IndexWriter writer;
@@ -171,6 +176,10 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 	/** How we sort the postings and search results. */
 	private static final Sort SORT = new Sort(new SortField("weight",
 			SortField.Type.LONG, true));
+
+	public void setTreeStructure(boolean isTreeStructure) {
+		this.isTreeStructure = isTreeStructure;
+	}
 
 	/**
 	 * Create a new instance, loading from a previously built
@@ -398,7 +407,7 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 					TokenFilter filter;
 					if (matchVersion.onOrAfter(Version.LUCENE_4_4_0)) {
 
-						//System.out.println(minPrefixChars);
+						// System.out.println(minPrefixChars);
 						filter = new EdgeNGramTokenFilter(
 								components.getTokenStream(), 1, minPrefixChars);
 					} else {
@@ -459,7 +468,7 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 			long weight, BytesRef payload) throws IOException {
 		String textString = text.utf8ToString();
 
-	 String payloads=new String(payload.bytes);
+		String payloads = new String(payload.bytes);
 
 		String processedTextString = processeTextForExactMatch(textString);
 		Document doc = new Document();
@@ -473,16 +482,36 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 		doc.add(new BinaryDocValuesField(TEXT_FIELD_NAME, text));
 		doc.add(new NumericDocValuesField("weight", weight));
 		if (payload != null) {
-			
+
 			doc.add(new BinaryDocValuesField("payloads", payload));
 
-			 
-			String key = new String(payload.bytes).split(Entry.DELIMETER)[0];
-			if (key != null) {
-				doc.add(new StringField(PARENT_TEXT_FIELD_NAME,
-						processeTextForExactMatch(key), Field.Store.NO));
-			} 
-			
+			if (isTreeStructure) {
+
+				String id = new String(payload.bytes).split(Entry.DELIMETER)[0];
+				if (id != null) {
+					doc.add(new StringField(ID_TEXT_FIELD_NAME,
+							processeTextForExactMatch(id), Field.Store.NO));
+				}
+
+				try {
+					String json = getReturn(new String(payload.bytes),
+							Process.json);
+
+					JSONObject oject = new JSONObject(json);
+					String parent = oject.getString("parents");
+
+					if (parent != null && (parent = parent.trim()).length() > 0
+							&& !parent.equals("[]")) {
+						doc.add(new StringField(PARENTS_TEXT_FIELD_NAME,
+								processeTextForExactMatch(removeUnnecessaryCharacter(parent)),
+								Field.Store.NO));
+					}
+				} catch (Exception e) {
+					// dont do anything if its a ultimate parent it reaches here
+				}
+
+			}
+
 		}
 		if (contexts != null) {
 			for (BytesRef context : contexts) {
@@ -496,7 +525,7 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 	}
 
 	private String processeTextForExactMatch(String text) {
-		StringBuilder processedString = new StringBuilder();
+		StringBuilder processedString = new StringBuilder();  
 		Tokenizer tokenizer = new Tokenizer();
 		tokenizer.resetToken(text.toCharArray(), 0, text.length());
 		String token = null;
@@ -672,12 +701,17 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 
 	}
 
-	public List<LookupResult> lookForParent(String queryString)
+	public List<LookupResult> lookForParentOrChild(String queryString,boolean isParent)
 			throws IOException {
-
+		 
 		String prefixToken = null;
 		Set<String> matchedTokens = new HashSet<String>();
+		 
 		int num = 1;
+		
+		if(!isParent){
+			num=1000;
+		}
 
 		TopFieldCollector c = TopFieldCollector.create(SORT, num, true, false,
 				false);
@@ -690,8 +724,17 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 		IndexSearcher searcher = searcherMgr.acquire();
 
 		List<LookupResult> results = null;
+		
+		String field=null;
+		if(isParent){
+			field=ID_TEXT_FIELD_NAME;
+		}else{
+			field=PARENTS_TEXT_FIELD_NAME;
+			
+			queryString=removeUnnecessaryCharacter(queryString);
+		}
 
-		Term term = new Term(PARENT_TEXT_FIELD_NAME,
+		Term term = new Term(field,
 				processeTextForExactMatch(queryString));
 		Query query = new TermQuery(term);
 
@@ -712,15 +755,19 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 		return results;
 
 	}
+	
+	
+	 
 
 	public List<LookupResult> lookup(CharSequence key,
 			BooleanQuery contextQuery, int num, int condition,
 			boolean allTermsRequired, boolean doHighlight) throws IOException {
 
 		int realNum = num;
-		//num = num + 1000;//When varients  is included then we have to increase th bucket size
-		//num = num + 500;
-		
+		// num = num + 1000;//When varients is included then we have to increase
+		// th bucket size
+		// num = num + 500;
+
 		num = num + 500;
 
 		/**
@@ -884,14 +931,14 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 		final MergePolicy mergePolicy = writer.getConfig().getMergePolicy();
 		Collector c2 = new EarlyTerminatingSortingCollector(c, SORT, num,
 				(SortingMergePolicy) mergePolicy);
-		
-		/******This is for second query********/
-		TopFieldCollector c13 = TopFieldCollector.create(SORT, num, true, false,
-				false);		
+
+		/****** This is for second query ********/
+		TopFieldCollector c13 = TopFieldCollector.create(SORT, num, true,
+				false, false);
 		Collector c3 = new EarlyTerminatingSortingCollector(c13, SORT, num,
 				(SortingMergePolicy) mergePolicy);
 		/***************************************/
-		
+
 		IndexSearcher searcher = searcherMgr.acquire();
 
 		List<LookupResult> results = null;
@@ -920,7 +967,7 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 						doHighlight, matchedTokens, prefixToken);
 			}
 
-			results = mergeResultSet(results1, results2, realNum*10);
+			results = mergeResultSet(results1, results2, realNum * 10);
 
 		} finally {
 			searcherMgr.release(searcher);
@@ -1068,11 +1115,9 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 		return results;
 	}
 
-	public static final String deliminator = ":::::";
-
 	protected String getReturn(String data, Process process) {
 
-		String[] result = data.split(deliminator);
+		String[] result = data.split(Entry.DELIMETER);
 		if (process == process.json) {
 			return result[1];
 		} else if (process == process.keyword) {
@@ -1505,5 +1550,18 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 			return currentTokenPreSpace;
 		}
 
+	}
+	
+	private String removeUnnecessaryCharacter(String text){
+		StringBuilder processedString=new StringBuilder();
+		char[] chars=text.toCharArray();
+		for(char c:chars){
+			if(c=='['||c==']'||c=='"'){
+				continue;
+			}
+			processedString.append(c);
+		}
+		
+		return processedString.toString();
 	}
 }

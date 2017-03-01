@@ -17,7 +17,11 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.util.CharArraySet;
 import org.apache.lucene.analysis.util.WordlistLoader;
 import org.apache.lucene.search.suggest.FileDictionary;
+import org.apache.lucene.search.suggest.InputIterator;
 import org.apache.lucene.search.suggest.Lookup;
+import org.apache.lucene.store.DataInput;
+import org.apache.lucene.store.DataOutput;
+import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,10 +88,10 @@ public abstract class SuggesterHelper {
 		log.info("***************************************************************************");
 		Set<String> keys = dictionaryInfos.keySet();
 
-		for (String key : keys) {
-			log.info("Founds following dictionary already loaded \"" + key
-					+ "\" from path " + dictionaryInfos.get(key));
-		}
+		// for (String key : keys) {
+		// log.info("Founds following dictionary already loaded \"" + key
+		// + "\" from path " + dictionaryInfos.get(key));
+		// }
 
 		log.info("***************************************************************************");
 
@@ -212,11 +216,11 @@ public abstract class SuggesterHelper {
 
 		if (realDictionaryInfo == null
 				|| (!realDictionaryInfo.compare(changedDictionaryInfo))) {
-			
-			if(realDictionaryInfo==null){
-				log.info("Reloading new dictionary "+dictionaryName);	
-			}else{
-				log.info("updating  dictionary "+dictionaryName);	
+
+			if (realDictionaryInfo == null) {
+				log.info("Reloading new dictionary " + dictionaryName);
+			} else {
+				log.info("updating  dictionary " + dictionaryName);
 			}
 
 			String s3bucket = changedDictionaryInfo.getInfos().get(
@@ -229,10 +233,9 @@ public abstract class SuggesterHelper {
 			String s3Path = changedDictionaryInfo.getDictionaryPath();
 
 			StartLoadingProcess(changedDictionaryInfo, s3bucket, true);
-			
-			
+
 			/**
-			 * new changes must replace the old one 
+			 * new changes must replace the old one
 			 */
 			dictionaryInfos.put(dictionaryName, changedDictionaryInfo);
 		}
@@ -330,6 +333,9 @@ public abstract class SuggesterHelper {
 			}
 
 			e.printStackTrace();
+
+			// if loading fails then this will help to fail the healthcheck
+			suggesterList.put(info.getDictionaryName(), createDefaultSuggester());
 		}
 
 	}
@@ -470,6 +476,49 @@ public abstract class SuggesterHelper {
 
 		return suggester;
 	}
+	
+	
+	public Lookup createDefaultSuggester(){
+		return new Lookup(){
+
+			@Override
+			public long ramBytesUsed() {
+				// TODO Auto-generated method stub
+				return 0;
+			}
+
+			@Override
+			public long getCount() throws IOException {
+				// TODO Auto-generated method stub
+				return 0;
+			}
+
+			@Override
+			public void build(InputIterator inputIterator) throws IOException {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public List<LookupResult> lookup(CharSequence key,
+					Set<BytesRef> contexts, boolean onlyMorePopular, int num)
+					throws IOException {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public boolean store(DataOutput output) throws IOException {
+				// TODO Auto-generated method stub
+				return false;
+			}
+
+			@Override
+			public boolean load(DataInput input) throws IOException {
+				// TODO Auto-generated method stub
+				return false;
+			}};
+	}
 
 	public void loadAllDictionaryProperyValues(
 			Map<String, DictionaryInfo> dictionaryInfos) {
@@ -489,7 +538,11 @@ public abstract class SuggesterHelper {
 			while (innerpaths.hasMoreElements()) {
 				String realProperty = innerpaths.nextElement();
 				String extraProperty = path + "." + realProperty;
-
+				String suggester = Property.SUGGESTER;
+				/**
+				 * Above line doesnt have any effect but will mark here as we
+				 * will get the suggester type from eiddo
+				 **/
 				String extraValue = ConfigurationManager.getConfigInstance()
 						.getString(extraProperty);
 				info.getInfos().put(realProperty, extraValue);
@@ -499,5 +552,4 @@ public abstract class SuggesterHelper {
 		}
 
 	}
-
 }

@@ -56,7 +56,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 	 */
 
 	public String lookup(String query, int num, int condition,
-			boolean includeChild) throws Exception {
+			boolean includeChild, boolean showall) throws Exception {
 
 		/**
 		 * 
@@ -88,24 +88,39 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			maintainNode(company, ultimateParentList);
 		}
 
+		
+		
+		if(showall){
+			includeChild=false;
+			 
+			for (Company company : ultimateParentList) {
+				getChild(company);
+			}
+		}
+		
 		final String query_ = query;
+		
 		Collections.sort(ultimateParentList, new Comparator<Company>() {
 
 			@Override
 			public int compare(Company o1, Company o2) {
-				return ((Integer) o2.getCount(0, query_))
-						.compareTo((Integer) o1.getCount(0, query_));
+				return ((Integer) o2.getCount(0, query_,showall))
+						.compareTo((Integer) o1.getCount(0, query_,showall));
 			}
 		});
 
 		List<JSONObject> finalOnj = new ArrayList<JSONObject>();
+		
+		
+		
+		
 
 		WrapInt countInt = new WrapInt(num, includeChild);
 
 		for (Company company : ultimateParentList) {
 			JSONObject json = null;
 
-			if ((json = company.createJson(query, countInt)) != null) {
+			if ((json = company.createJson(query, countInt,showall)) != null) {
 				finalOnj.add(json);
 
 				if (countInt.isSufficient()) {
@@ -166,6 +181,8 @@ public class CompanyTypeaheadSuggester extends Lookup {
 
 	}
 
+	
+
 	private void addChildOnCorrespondingPosition(Company ultimateparent,
 			Company parentCompany) {
 		if (ultimateparent == null || ultimateparent.getChildren().size() == 0) {
@@ -180,7 +197,6 @@ public class CompanyTypeaheadSuggester extends Lookup {
 				.values()).get(0);
 
 		Company parent = null;
-
 
 		if ((parentCompany.getChildren().size() > 0)
 				&& (parent = parentCompany.getChildren().get(child.getName())) != null) {
@@ -205,7 +221,8 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		}
 		return company;
 	}
-
+	
+ 
 	private void processToModel(LookupResult r, TRInfixSuggester suggester,
 			List<Company> companyList) throws JSONException {
 
@@ -362,7 +379,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 
 			if (remove != null) {
 				this.children.remove(remove);
-			}
+			} 
 			this.children.put(company.getName(), company);
 
 		}
@@ -389,7 +406,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			return this.name;
 		}
 
-		private JSONObject createJson(String term, WrapInt counts)
+		private JSONObject createJson(String term, WrapInt counts,boolean showall)
 				throws Exception {
 
 			JSONObject jsonobj = new JSONObject();
@@ -402,10 +419,10 @@ public class CompanyTypeaheadSuggester extends Lookup {
 
 			term = term.toLowerCase();
 
-			if (canInclude(this.getName(), term)) {
+			if (showall ||canInclude(this.getName(), term)) {
 				jsonobj.put("name", this.getName().toUpperCase());
 				counts.current++;
-			} else if (canInclude(this.getVariation(), term)) {
+			} else if (showall || canInclude(this.getVariation(), term)) {
 				jsonobj.put("name", this.getVariation().toUpperCase());
 				counts.current++;
 			} else {
@@ -421,36 +438,37 @@ public class CompanyTypeaheadSuggester extends Lookup {
 				if (counts.isSufficient()) {
 					break;
 				}
-				
-				 
-				if(this.count==company_1.count && removeSpace(this.name).equals(removeSpace(company_1.name))){
+
+				if (this.count == company_1.count
+						&& removeSpace(this.name).equals(
+								removeSpace(company_1.name))) {
 					continue;
 				}
 
 				JSONObject json = null;
-				if ((json = company_1.createJson(term, counts)) != null) {
+				if ((json = company_1.createJson(term, counts,showall)) != null) {
 					object.add(json);
 				}
 			}
 			jsonobj.put("children", object);
 			return jsonobj;
 		}
-		
-		public String removeSpace(String term){
-			char[] chars=term.toCharArray();
-			StringBuilder sb=new StringBuilder();
-			for(char c:chars){
-				if(c!=' '){
+
+		public String removeSpace(String term) {
+			char[] chars = term.toCharArray();
+			StringBuilder sb = new StringBuilder();
+			for (char c : chars) {
+				if (c != ' ') {
 					sb.append(c);
 				}
 			}
-			
+
 			return sb.toString().trim().toLowerCase();
 		}
 
-		public int getCount(int count, String subterm) {
+		public int getCount(int count, String subterm,boolean showall) {
 
-			if (canInclude(this.name, subterm)
+			if (showall ||canInclude(this.name, subterm)
 					|| canInclude(this.variation, subterm)) {
 				if (this.count > count) {
 					count = this.count;
@@ -467,13 +485,13 @@ public class CompanyTypeaheadSuggester extends Lookup {
 
 				@Override
 				public int compare(Company o1, Company o2) {
-					return ((Integer) o2.getCount(0, subterm))
-							.compareTo((Integer) o1.getCount(0, subterm));
+					return ((Integer) o2.getCount(0, subterm,showall))
+							.compareTo((Integer) o1.getCount(0, subterm,showall));
 				}
 			});
 
 			for (Company company : this.sortedCompany) {
-				count = company.getCount(count, subterm);
+				count = company.getCount(count, subterm,showall);
 			}
 
 			return count;
@@ -540,7 +558,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 	private Company getParent(String text) throws Exception {
 		List<Company> companyList = new ArrayList<CompanyTypeaheadSuggester.Company>(
 				1);
-		List<LookupResult> results = suggester.lookForParent(text);
+		List<LookupResult> results = suggester.lookForParentOrChild(text, true);
 
 		if (results.size() > 0) {
 			processToModel(results.get(0), suggester, companyList);
@@ -549,6 +567,27 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			}
 		}
 		return null;
+	}
+
+	private void getChild(Company company) throws Exception {
+		
+		List<Company> companyList = new ArrayList<CompanyTypeaheadSuggester.Company>();
+		 
+		List<LookupResult> results = suggester
+				.lookForParentOrChild(company.getId(), false);
+
+		 
+
+		if (results.size() > 0) {
+			for (LookupResult result : results) {
+				processToModel(result, suggester, companyList);
+			}
+		}
+
+		for (Company childCompany : companyList) {			
+			getChild(childCompany);				
+			company.add(childCompany);
+		}
 	}
 
 	private TRInfixSuggester createCompanyTypeaheadSuggester(InputStream is) {
@@ -560,7 +599,8 @@ public class CompanyTypeaheadSuggester extends Lookup {
 
 			suggester = new TRInfixSuggester(new RAMDirectory(), indexAnalyzer);
 
-			suggester.build(new TRCompanyEntryIterator(dictionary));
+			suggester.build(new TRCompanyEntryIterator(dictionary,
+					"Company Typeahead"));
 
 			dictionary.close();
 			is.close();
