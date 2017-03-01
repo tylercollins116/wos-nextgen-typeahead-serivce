@@ -123,6 +123,8 @@ public class HealthCheck implements HealthCheckHandler {
 				&& checkConnectionaAndResultsFromES() == 200) {
 			return 200;
 		} else {
+			
+			log.error("Returning 500 ");
 			return 500;
 		}
 
@@ -267,7 +269,7 @@ public class HealthCheck implements HealthCheckHandler {
 
 					log.error("Doesn't seems like typeahead service  "
 							+ dictionaryName
-							+ "which execute against Dictionary is working properly .. Need attention !!! .Output doesnt match the desired result ");
+							+ " which execute against Dictionary is working properly .. Need attention !!! .Output doesnt match the desired result ");
 
 				} else {
 					log.info("\ttypeahead service  "
