@@ -209,11 +209,8 @@ public class HealthCheck implements HealthCheckHandler {
 
 	}
 
-	private int checkLoadedDictionaryAndResults() {
-		
-		if(true){
-		return 200;
-		}
+	private int checkLoadedDictionaryAndResults() {	
+	 
 
 		/**
 		 * check for loaded dictionaries is removed because if a new dictionary
