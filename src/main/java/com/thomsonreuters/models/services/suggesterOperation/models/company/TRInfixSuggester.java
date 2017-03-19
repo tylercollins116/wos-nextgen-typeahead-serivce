@@ -750,6 +750,8 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 					false, matchedTokens, prefixToken);
 		} catch (Exception e) {
 
+		}finally {
+			searcherMgr.release(searcher);
 		}
 
 		return results;
