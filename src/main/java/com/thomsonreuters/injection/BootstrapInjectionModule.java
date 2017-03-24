@@ -19,8 +19,7 @@ import com.thomsonreuters.swagger.JerseySwaggerAwareRoutingModule;
 @KaryonBootstrap(name = "1p-typeahead-service", healthcheck = HealthCheck.class)
 @Singleton
 @Modules(include = { ShutdownModule.class, KaryonServoModule.class,
-		KaryonWebAdminModule.class, KaryonEurekaModule.class,
-		EventsModule.class, MainModule.class,
+		KaryonWebAdminModule.class, KaryonEurekaModule.class,  MainModule.class,
 		 SwaggerHystrixModule.class,
 		BootstrapInjectionModule.KaryonRxRouterModuleImpl.class, })
 public interface BootstrapInjectionModule {
