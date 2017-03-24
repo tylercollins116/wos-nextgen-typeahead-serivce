@@ -97,13 +97,15 @@ public class HealthCheck implements HealthCheckHandler {
 	@Override
 	public int getStatus() {
 		
+		log.info("*************************************************");
+		log.info("Health check called.");
+		
 		if(true){
 			return 200;
 		}
 
 		
-		log.info("*************************************************");
-		log.info("Health check called.");
+		
 		if (eiddoCorrupted) {
 			log.error("Eiddo appears to be corrupted. The instance has to be terminated and relaunched");
 			return 500;
