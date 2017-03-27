@@ -27,15 +27,20 @@ buildscript {
     repositories {
         jcenter()
         maven {
+            url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/thirdparty/"
+        }
+        maven {
+            url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/snapshots/"
+        }
+        maven {
+            url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/releases/"
+        }
+        maven {
             url "http://repo.oneplatform.build/nexus/content/groups/public/"
         }
         maven {
             url "http://repo.oneplatform.build/nexus/content/groups/private/"
         }
-        
-        maven {
-     url "http://repo.oneplatform.build/nexus/content/repositories/thirdparty-snapshots/"
-   }
     }
 
     dependencies {
@@ -73,12 +78,21 @@ allprojects {
 subprojects {
   buildscript {
     repositories {
-      maven {
-        url "http://repo.oneplatform.build/nexus/content/groups/public/"
-      }
-      maven {
-        url "http://repo.oneplatform.build/nexus/content/groups/private/"
-      }
+        maven {
+            url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/thirdparty/"
+        }
+        maven {
+            url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/snapshots/"
+        }
+        maven {
+            url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/releases/"
+        }
+        maven {
+            url "http://repo.oneplatform.build/nexus/content/groups/public/"
+        }
+        maven {
+            url "http://repo.oneplatform.build/nexus/content/groups/private/"
+        }
     }
   }
   sonarqube {
@@ -125,13 +139,19 @@ repositories {
    mavenCentral()
    jcenter()
     maven {
-      url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/thirdparty/"
+        url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/thirdparty/"
     }
     maven {
-      url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/snapshots/"
+        url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/snapshots/"
     }
     maven {
-      url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/releases/"
+        url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/releases/"
+    }
+    maven {
+        url "http://repo.oneplatform.build/nexus/content/groups/public/"
+    }
+    maven {
+        url "http://repo.oneplatform.build/nexus/content/groups/private/"
     }
 }
 
@@ -156,10 +176,12 @@ dependencies {
   //compile group: 'com.thomsonreuters', name: 'eiddo-client', version: "${eiddo_client_version}"
   
    compile group: 'com.thomsonreuters',  name: '1p-service-api', version: "${oneplib_version}"
-   compile group: 'com.thomsonreuters', name: '1p-service-swagger', version: "${service_swagger_version}"
-   compile group: 'com.thomsonreuters', name: 'eiddo-client', version: "${eiddo_client_version}"
-  
-  compile  'com.amazonaws:aws-java-sdk:1.10.2'
+   compile group: 'com.thomsonreuters', name: '1p-service-swagger', version: "${oneplib_version}"
+   compile group: 'com.thomsonreuters', name: 'eiddo-client-karyon', version: "${eiddo_client_version}"
+
+   compile group: 'com.amazonaws', name: 'aws-java-sdk-s3', version: '1.10.2'
+
+  //compile  'com.amazonaws:aws-java-sdk:1.10.2'
 
    compile group: 'com.thomsonreuters', name: '1p-statistics-client', version: '0.1.+'
 
