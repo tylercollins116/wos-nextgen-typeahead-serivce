@@ -2,6 +2,7 @@ package com.thomsonreuters.rest.service;
 
 import java.io.IOException;
 
+import com.thomsonreuters.eiddo.client.EiddoPropertiesLoader;
 import netflix.karyon.Karyon;
 import netflix.karyon.KaryonBootstrap;
 import netflix.karyon.KaryonServer;
@@ -20,10 +21,8 @@ import com.netflix.governator.guice.BootstrapModule;
 import com.sun.jersey.test.framework.AppDescriptor;
 import com.sun.jersey.test.framework.JerseyTest;
 import com.sun.jersey.test.framework.WebAppDescriptor;
-import com.thomsonreuters.eiddo.EiddoPropertiesLoader;
 import com.thomsonreuters.handler.HealthCheck;
 import com.thomsonreuters.injection.BootstrapInjectionModule;
-import com.thomsonreuters.injection.SwaggerHystrixModule;
 import com.thomsonreuters.injection.module.MainModule;
 import com.thomsonreuters.rest.service.SuggestorTest.TestInjectionModule.TestModule;
 
@@ -36,7 +35,6 @@ public class SuggestorTest extends JerseyTest {
 	@KaryonBootstrap(name = "junit", healthcheck = HealthCheck.class)
 	@Singleton
 	@Modules(include = { ShutdownModule.class, TestModule.class,
-			SwaggerHystrixModule.class,
 			BootstrapInjectionModule.KaryonRxRouterModuleImpl.class, })
 	public interface TestInjectionModule {
 		public static class TestModule extends MainModule {

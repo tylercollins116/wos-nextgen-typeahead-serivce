@@ -27,15 +27,20 @@ buildscript {
     repositories {
         jcenter()
         maven {
+            url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/thirdparty/"
+        }
+        maven {
+            url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/snapshots/"
+        }
+        maven {
+            url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/releases/"
+        }
+        maven {
             url "http://repo.oneplatform.build/nexus/content/groups/public/"
         }
         maven {
             url "http://repo.oneplatform.build/nexus/content/groups/private/"
         }
-        
-        maven {
-     url "http://repo.oneplatform.build/nexus/content/repositories/thirdparty-snapshots/"
-   }
     }
 
     dependencies {
@@ -73,12 +78,21 @@ allprojects {
 subprojects {
   buildscript {
     repositories {
-      maven {
-        url "http://repo.oneplatform.build/nexus/content/groups/public/"
-      }
-      maven {
-        url "http://repo.oneplatform.build/nexus/content/groups/private/"
-      }
+        maven {
+            url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/thirdparty/"
+        }
+        maven {
+            url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/snapshots/"
+        }
+        maven {
+            url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/releases/"
+        }
+        maven {
+            url "http://repo.oneplatform.build/nexus/content/groups/public/"
+        }
+        maven {
+            url "http://repo.oneplatform.build/nexus/content/groups/private/"
+        }
     }
   }
   sonarqube {
@@ -87,6 +101,12 @@ subprojects {
       }
   }
 }
+
+def permanentPackageName = rootProject.name
+def group = 'thomsonreuters-1p'
+def rpmRelease = 1
+def snapshot = true
+if (snapshot) { rpmRelease = 'SNAPSHOT' }
 
 sourceSets {
     main {
@@ -119,13 +139,19 @@ repositories {
    mavenCentral()
    jcenter()
     maven {
-      url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/thirdparty/"
+        url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/thirdparty/"
     }
     maven {
-      url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/snapshots/"
+        url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/snapshots/"
     }
     maven {
-      url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/releases/"
+        url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/releases/"
+    }
+    maven {
+        url "http://repo.oneplatform.build/nexus/content/groups/public/"
+    }
+    maven {
+        url "http://repo.oneplatform.build/nexus/content/groups/private/"
     }
 }
 
@@ -150,10 +176,12 @@ dependencies {
   //compile group: 'com.thomsonreuters', name: 'eiddo-client', version: "${eiddo_client_version}"
   
    compile group: 'com.thomsonreuters',  name: '1p-service-api', version: "${oneplib_version}"
-   compile group: 'com.thomsonreuters', name: '1p-service-swagger', version: "${service_swagger_version}"
-   compile group: 'com.thomsonreuters', name: 'eiddo-client', version: "${eiddo_client_version}"
-  
-  compile  'com.amazonaws:aws-java-sdk:1.10.2'
+   compile group: 'com.thomsonreuters', name: '1p-service-swagger', version: "${oneplib_version}"
+   compile group: 'com.thomsonreuters', name: 'eiddo-client-karyon', version: "${eiddo_client_version}"
+
+   compile group: 'com.amazonaws', name: 'aws-java-sdk-s3', version: '1.10.2'
+
+  //compile  'com.amazonaws:aws-java-sdk:1.10.2'
 
    compile group: 'com.thomsonreuters', name: '1p-statistics-client', version: '0.1.+'
 
@@ -181,60 +209,33 @@ distributions {
     }
   }
 }
-
-// Set some variables for ospackage plugin: https://github.com/nebula-plugins/gradle-ospackage-plugin
-// define name and some meta data for the Yum repository
-// Naming needs to fit http://rpm.org/max-rpm-snapshot/ch-rpm-file-format.html
-// Additional reference: https://fedoraproject.org/wiki/Packaging:Naming?rd=Packaging:NamingGuidelines
-def rpmPackageName = rootProject.name // name of package
-def rpmPackageGroup = "" // snapshot or release
-def rpmRelease = "1" // SNAPSHOT or RELEASE
-def rpmVersion = "" // remove SNAPSHOT from version
-def rpmVendor = "Clarivate" // branding is never good for the cow
-def snapshot = true // I am not sure why this is true ask Sam
-
-if (snapshot) {
-    rpmPackageGroup = "snapshot"
-    rpmRelease = "SNAPSHOT"
-    rpmVersion = version.replaceAll(/-SNAPSHOT/,"")
-    } else {
-    rpmPackageGroup = "release"
-    rpmRelease = "RELEASE"
-    rpmVersion = version.replaceAll(/-SNAPSHOT/,"") // just in case
-  }
-
 ospackage {
-      packageName = rpmPackageName
-      version = rpmVersion
+      packageName = permanentPackageName
       release = rpmRelease
       arch = NOARCH
       os = LINUX
-      packageGroup = rpmPackageGroup
-      vendor = rpmVendor
-      // Copy any extra settings you may want to have
       from(file('root/etc/reuters/karyon')) {
           into('/etc/reuters')
           user 'root'
           permissionGroup 'root'
-      }
-      // Copy actual binary files
+            }
+
+
       from("build/install/"+ name) {
           into('/opt/reuters/apps/karyon')
           user 'karyon'
           permissionGroup 'karyon'
+
       }
 }
 
 buildRpm.dependsOn installDist
 
-// Create a text file of useful information
-// Currently sourced in Jenkins
-
 task svcVersion() << {
     def file = new File("$projectDir/build/svcVersion.txt")
     file.createNewFile()
-    file.text = """version=$rpmVersion
-release=$rpmPackageGroup
-applicationName=$rpmPackageName
+    file.text = """version=$version
+applicationName=.name
 """
 }
+

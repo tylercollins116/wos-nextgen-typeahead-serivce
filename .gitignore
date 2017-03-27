@@ -2,3 +2,5 @@
 build
 conf
 /bin/
+.idea
+out
