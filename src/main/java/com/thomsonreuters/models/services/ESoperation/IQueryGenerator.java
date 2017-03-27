@@ -50,14 +50,16 @@ public abstract class IQueryGenerator {
 		this.max_expansion = max_expansion;
 	}
 
-	public abstract String createQuery();
+	public abstract String[] createQuery();
 
 	public abstract String getSource();
 
 	public abstract String getQuery();
 
+	public abstract String getESURL();
+
 	protected String generatESQuery(String searchField, int from, int size,
-			String query, String[] returnFields) {
+			String query, String[] returnFields, int slop) {
 
 		String coatedQuery = org.codehaus.jettison.json.JSONObject.quote(query);
 
@@ -91,6 +93,16 @@ public abstract class IQueryGenerator {
 		 */
 
 		/**
+		 * { "from": 0, "size": 10, "sort": [ { "inf": { "order": "desc" } },
+		 * "_score" ], "query": { "multi_match": { "query": "rec", "type":
+		 * "phrase_prefix", "fields": [ "term_search", "term_analyze" ],
+		 * "slop": 0, "max_expansions": 4000 } }, "fields": [ "term_string",
+		 * "term_count", "inf" ] }
+		 * 
+		 * 
+		 */
+
+		/**
 		 * "sort": [ { "citingsrcscount": { "order": "desc" } } ],
 		 * 
 		 */
@@ -109,8 +121,11 @@ public abstract class IQueryGenerator {
 					+ ",";
 		}
 
-		esQuery += "\"slop\":3,\"max_expansions\":" + max_expansion
+		esQuery += "\"slop\":" + slop + ",\"max_expansions\":" + max_expansion
 				+ "}}}}},\"fields\":[" + sb.toString() + "]}";
+
+		// logger.info("ES Query " + esQuery);
+		// System.out.println("ES Query " + esQuery);
 
 		return esQuery;
 
@@ -164,7 +179,7 @@ public abstract class IQueryGenerator {
 
 					JSONObject fieldObject = new JSONObject(fielddata);
 
-					if (! fieldObject.has(field)) {
+					if (!fieldObject.has(field)) {
 						fieldObject.put(field, new JSONArray());
 					}
 
@@ -251,8 +266,9 @@ public abstract class IQueryGenerator {
 
 	/**
 	 * get the total count of hits
+	 * 
 	 * @return total count of hits
-	 * @throws JSONException 
+	 * @throws JSONException
 	 */
 	public long getTotalCount() throws JSONException {
 		JSONObject sonObj = new JSONObject(getResponse());

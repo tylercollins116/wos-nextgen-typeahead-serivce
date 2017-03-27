@@ -25,26 +25,23 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.netflix.config.ConfigurationManager;
 import com.thomsonreuters.models.SuggestData.Info;
 import com.thomsonreuters.models.SuggestData.Suggestions;
-import com.thomsonreuters.models.services.ESoperation.ArticleESEntry;
 import com.thomsonreuters.models.services.ESoperation.ESEntry;
 import com.thomsonreuters.models.services.ESoperation.IESQueryExecutor;
 import com.thomsonreuters.models.services.ESoperation.IQueryGenerator;
-import com.thomsonreuters.models.services.ESoperation.PatentESEntry;
-import com.thomsonreuters.models.services.ESoperation.PeopleESEntry;
-import com.thomsonreuters.models.services.ESoperation.PostESEntry;
 import com.thomsonreuters.models.services.suggesterOperation.IProcessPreSearchTerm;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggester;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt.Process;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester;
 import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
+import com.thomsonreuters.models.services.suggesterOperation.models.company.TechnicalTypeaheadSuggester;
 import com.thomsonreuters.models.services.suggesters.ProcessPreSearchTerm;
 import com.thomsonreuters.models.services.util.ElasticEntityProperties;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
 import com.thomsonreuters.models.services.util.Property;
-import com.thomsonreuters.models.services.util.PropertyValue;
 
 @Singleton
 public class Suggester implements SuggesterHandler {
@@ -91,185 +88,20 @@ public class Suggester implements SuggesterHandler {
 
 		List<SuggestData> results = new ArrayList<SuggestData>();
 		ElasticEntityProperties eep = suggesterConfigurationHandler
-				.getElasticEntityProperties("entity." + path);
+				.getElasticEntityProperties(Property.ENTITY_PREFIX + path);
 		/*************************************************************************************/
 		/** These code are execute against ElasticSearch **/
 		/*************************************************************************************/
+		if (eep != null) {
+			IQueryGenerator entry = new ESEntry(eep, query, 0, n, path);
 
-		if (path.equals(Property.article) || path.equals(Property.people)
-				|| path.equals(Property.patent) || path.equals(Property.post)) {
-
-			if (path.equals(Property.article)) {
-
-				try {
-
-					if (Property.ES_SEARCH_PATH.containsKey(Property.article)) {
-
-						long start = System.currentTimeMillis();
-
-						String returnVaule[] = new String[] {
-								"fullrecord.summary.title", "cuid", "fuid" };
-						/**
-						 * didn't find cuid in patent fullrecord.summary. and
-						 * fuid I find it fullrecord.summary.uid but ignored
-						 **/
-
-						HashMap<String, String> aliasField = new HashMap<String, String>(
-								1);
-						aliasField.put("fullrecord.summary.title", "title");
-
-						IQueryGenerator entry = new ArticleESEntry(returnVaule,
-								query, 0, n, Property.article, aliasField);
-
-						SuggestData data = new SuggestData();
-						for (int count = 0; count <= 3; count++) {
-
-							if (data.suggestions.size() <= 0) {
-								if (count == 1) {
-									entry.setMax_expansion(50);
-								} else if (count == 1) {
-									entry.setMax_expansion(500);
-								} else if (count == 2) {
-									entry.setMax_expansion(1500);
-								} else if (count == 3) {
-									entry.setMax_expansion(4000);
-								}
-
-								data = this.ESQueryExecutor.formatResult(entry);
-
-							} else {
-								break;
-							}
-
-						}
-
-						data.took = (System.currentTimeMillis() - start) + "";
-						results.add(data);
-					}
-
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-			} else if (path.equals(Property.people)) {
-
-				try {
-					if (Property.ES_SEARCH_PATH.containsKey(Property.people)) {
-
-						long start = System.currentTimeMillis();
-
-						String returnVaule[] = new String[] {
-								"fullrecord.summary.country", "institution",
-								"role", "fullrecord.summary.authors",
-								"fullrecord.summary.uid" };
-
-						HashMap<String, String> aliasField = new HashMap<String, String>(
-								3);
-						aliasField.put("fullrecord.summary.country", "country");
-						aliasField.put("fullrecord.summary.authors", "name");
-						aliasField.put("fullrecord.summary.uid", "id");
-
-						IQueryGenerator entry = new PeopleESEntry(returnVaule,
-								query, 0, n, Property.people, aliasField);
-						SuggestData data = null;
-						try {
-							data = this.ESQueryExecutor.formatResult(entry);
-						} catch (Exception e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-
-						data.took = (System.currentTimeMillis() - start) + "";
-
-						results.add(data);
-					}
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-			} else if (path.equals(Property.patent)) {
-
-				try {
-					if (Property.ES_SEARCH_PATH.containsKey(Property.patent)) {
-
-						long start = System.currentTimeMillis();
-
-						String returnVaule[] = new String[] {
-								"fullrecord.summary.uid",
-								"fullrecord.summary.title",
-								"fullrecord.summary.citingsrcscount" };
-
-						HashMap<String, String> aliasField = new HashMap<String, String>(
-								3);
-						aliasField.put("fullrecord.summary.title", "title");
-						aliasField.put("fullrecord.summary.uid", "patentno");
-						aliasField.put("fullrecord.summary.citingsrcscount",
-								"timeCited");
-
-						IQueryGenerator entry = new PatentESEntry(returnVaule,
-								query, 0, n, Property.patent, aliasField);
-						SuggestData data = null;
-						try {
-							data = this.ESQueryExecutor.formatResult(entry);
-						} catch (Exception e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-
-						data.took = (System.currentTimeMillis() - start) + "";
-
-						results.add(data);
-					}
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-			} else if (path.equals(Property.post)) {
-
-				try {
-					if (Property.ES_SEARCH_PATH.containsKey(Property.post)) {
-
-						long start = System.currentTimeMillis();
-
-						String returnVaule[] = new String[] {
-								"fullrecord.summary.uid",
-								"fullrecord.summary.title",
-								"fullrecord.summary.truid",
-								"fullrecord.summary.pubdate" };
-
-						HashMap<String, String> aliasField = new HashMap<String, String>(
-								4);
-						aliasField.put("fullrecord.summary.title", "title");
-						aliasField.put("fullrecord.summary.uid", "uid");
-						aliasField.put("fullrecord.summary.truid", "truid");
-						aliasField.put("fullrecord.summary.pubdate",
-								"publishdate");
-
-						IQueryGenerator entry = new PostESEntry(returnVaule,
-								query, 0, n, Property.post, aliasField);
-						SuggestData data = null;
-						try {
-							data = this.ESQueryExecutor.formatResult(entry);
-						} catch (Exception e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-
-						data.took = (System.currentTimeMillis() - start) + "";
-
-						results.add(data);
-					}
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
+			try {
+				results.add(getSuggestionsData(entry, eep.getMaxExpansion()));
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-
 		}
+
 		/*************************************************************************************/
 		/** End of codes that execute against ElasticSearch **/
 		/*************************************************************************************/
@@ -277,200 +109,92 @@ public class Suggester implements SuggesterHandler {
 		/*************************************************************************************/
 		/** The below codes are execute against Dictionary in S3 bucket **/
 		/*************************************************************************************/
-		else if (eep != null) {
-			IQueryGenerator entry = new ESEntry(eep.getType(),
-					eep.getReturnFields(), query, 0, n, path,
-					eep.getAliasFields(), eep.getAnalyzer(),
-					eep.getSearchField(), eep.getSortFields());
-
-			try {
-				results.add(getSuggestionsData(entry, eep.getMaxExpansion()));
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		} else {
+		else {
 
 			Lookup suggester = suggesterConfigurationHandler
 					.getDictionaryAnalyzer().getSuggesterList().get(path);
 
 			if (suggester instanceof TRAnalyzingSuggester) {
+				String fuzzyness = ConfigurationManager.getConfigInstance()
+						.getString(Property.FUZZTNESS_THRESHOLD);
 
-				if (query.trim().length() < PropertyValue.FUZZTNESS_THRESHOLD) {
+				fuzzyness = fuzzyness == null ? Property.DEFAULT_FUZZTNESS_THRESHOLD
+						+ ""
+						: fuzzyness;
+
+				int fuzzynessLength = 10;
+				try {
+					fuzzynessLength = Integer.parseInt(fuzzyness);
+				} catch (Exception e) {
+					fuzzynessLength = Property.DEFAULT_FUZZTNESS_THRESHOLD;
+				}
+
+				if (query.trim().length() < fuzzynessLength) {
 
 					suggester = ((TRFuzzySuggester) suggester).setMaxEdits(0);
 				} else {
 					suggester = ((TRFuzzySuggester) suggester).setMaxEdits(1);
 				}
 
-				if (path.equalsIgnoreCase(Property.category)) {
+				startTime = System.currentTimeMillis();
+				SuggestData suggestData = new SuggestData();
+				suggestData.source = path;
 
-					startTime = System.currentTimeMillis();
-					SuggestData suggestData = new SuggestData();
-					suggestData.source = path;
+				/****************************/
+				/**** For pre searched Terms **/
+				/****************************/
 
-					/****************************/
-					/**** For pre searched Terms **/
-					/****************************/
+				List<SuggestData.Suggestions> preSearchTerms = null;
 
-					List<SuggestData.Suggestions> preSearchTerms = null;
-
-					if (preSearchedTermsInfo != null
-							&& (preSearchTerms = preSearchedTermsInfo
-									.get(Property.category)) != null
-							&& preSearchTerms.size() > 0) {
-						suggestData.suggestions.addAll(preSearchTerms);
-					} else {
-						preSearchTerms = new ArrayList<SuggestData.Suggestions>();
-					}
-
-					/************************************/
-					/** End of for pre searched Terms **/
-					/************************************/
-
-					try {
-						for (LookupResult result : ((TRAnalyzingSuggester) suggester)
-								.lookup(query, false, n)) {
-
-							/** output[] **/
-
-							Suggestions suggestions = suggestData.new Suggestions();
-
-							suggestions.keyword = result.key.toString();
-
-							if (preSearchTerms.contains(suggestions)) {
-								continue;
-							}
-
-							Map<String, String> map = PrepareDictionary
-									.processJson(new String(
-											result.payload.bytes));
-							Set<String> keys = map.keySet();
-
-							for (String key : keys) {
-
-								Info info$ = suggestData.new Info();
-								info$.key = key;
-								info$.value = map.get(key);
-								suggestions.info.add(info$);
-							}
-
-							suggestData.suggestions.add(suggestions);
-
-						}
-					} catch (Exception e) {
-						log.info("cannot find the suggester ");
-					}
-
-					suggestData.took = (System.currentTimeMillis() - startTime)
-							+ "";
-					results.add(suggestData);
-
-				} else if (path.equalsIgnoreCase(Property.wos)) {
-
-					startTime = System.currentTimeMillis();
-
-					SuggestData suggestData = new SuggestData();
-					suggestData.source = path;
-
-					/****************************/
-					/**** For pre searched Terms **/
-					/****************************/
-
-					List<SuggestData.Suggestions> preSearchTerms = null;
-					if (preSearchedTermsInfo != null
-							&& (preSearchTerms = preSearchedTermsInfo
-									.get(Property.wos)) != null
-
-							&& preSearchTerms.size() > 0) {
-						suggestData.suggestions.addAll(preSearchTerms);
-					} else {
-						preSearchTerms = new ArrayList<SuggestData.Suggestions>();
-					}
-
-					/************************************/
-					/** End of for pre searched Terms **/
-					/************************************/
-
-					try {
-
-						for (LookupResult result : ((com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester) suggester)
-								.lookup(query, false, n)) {
-
-							Suggestions suggestions = suggestData.new Suggestions();
-							suggestions.keyword = result.key.toString();
-
-							if (preSearchTerms.contains(suggestions)) {
-								continue;
-							}
-
-							Map<String, String> map = PrepareDictionary
-									.processJson(new String(
-											result.payload.bytes));
-
-							Set<String> keys = map.keySet();
-
-							for (String key : keys) {
-
-								Info info = suggestData.new Info();
-								info.key = key;
-								info.value = map.get(key);
-								suggestions.info.add(info);
-							}
-
-							suggestData.suggestions.add(suggestions);
-
-						}
-
-					} catch (Exception e) {
-						log.info("cannot find the suggester ");
-					}
-
-					suggestData.took = (System.currentTimeMillis() - startTime)
-							+ "";
-
-					results.add(suggestData);
-				} else if (path.equalsIgnoreCase(Property.topic)) {
-
-					startTime = System.currentTimeMillis();
-
-					SuggestData suggestData = new SuggestData();
-					suggestData.source = path;
-
-					try {
-
-						for (LookupResult result : ((com.thomsonreuters.models.services.suggesterOperation.ext.TRFuzzySuggester) suggester)
-								.lookup(query, false, n)) {
-
-							Suggestions suggestions = suggestData.new Suggestions();
-							suggestions.keyword = result.key.toString();
-
-							Map<String, String> map = PrepareDictionary
-									.processJson(new String(
-											result.payload.bytes));
-
-							Set<String> keys = map.keySet();
-
-							for (String key : keys) {
-
-								Info info = suggestData.new Info();
-								info.key = key;
-								info.value = map.get(key);
-								suggestions.info.add(info);
-							}
-
-							suggestData.suggestions.add(suggestions);
-
-						}
-
-					} catch (Exception e) {
-						log.info("cannot find the suggester ");
-					}
-
-					suggestData.took = (System.currentTimeMillis() - startTime)
-							+ "";
-
-					results.add(suggestData);
+				if (preSearchedTermsInfo != null
+						&& (preSearchTerms = preSearchedTermsInfo.get(path)) != null
+						&& preSearchTerms.size() > 0) {
+					suggestData.suggestions.addAll(preSearchTerms);
+				} else {
+					preSearchTerms = new ArrayList<SuggestData.Suggestions>();
 				}
+
+				/************************************/
+				/** End of for pre searched Terms **/
+				/************************************/
+
+				try {
+					for (LookupResult result : ((TRAnalyzingSuggester) suggester)
+							.lookup(query, false, n)) {
+
+						/** output[] **/
+
+						Suggestions suggestions = suggestData.new Suggestions();
+
+						suggestions.keyword = result.key.toString();
+
+						if (preSearchTerms.contains(suggestions)) {
+							continue;
+						}
+
+						Map<String, String> map = PrepareDictionary
+								.processJson(new String(result.payload.bytes));
+						Set<String> keys = map.keySet();
+
+						for (String key : keys) {
+
+							Info info$ = suggestData.new Info();
+							info$.key = key;
+							info$.value = map.get(key);
+							suggestions.info.add(info$);
+						}
+
+						suggestData.suggestions.add(suggestions);
+
+					}
+				} catch (Exception e) {
+					log.info("cannot find the suggester ");
+				}
+
+				suggestData.took = (System.currentTimeMillis() - startTime)
+						+ "";
+				results.add(suggestData);
+
 			} else if (suggester instanceof TRAnalyzingSuggesterExt) {
 
 				startTime = System.currentTimeMillis();
@@ -514,6 +238,20 @@ public class Suggester implements SuggesterHandler {
 						+ "";
 				results.add(suggestData);
 
+			} else if (suggester instanceof TechnicalTypeaheadSuggester) {
+
+				try {
+					results.add(((TechnicalTypeaheadSuggester) suggester)
+							.lookup(query, n, 3, false));
+				} catch (Exception e) {
+					SuggestData suggestData = new SuggestData();
+					suggestData.source = "technology";
+					suggestData.took = 0 + "";
+					results.add(suggestData);
+					log.error("Exception thrown while executing technical typeahead");
+					log.info("Exception thrown while executing technical typeahead");
+				}
+
 			}
 		}
 		/***************************************************/
@@ -524,43 +262,58 @@ public class Suggester implements SuggesterHandler {
 
 	/**
 	 * lookup suggest list from elastic
-	 * @param query	user input word
-	 * @param source elastic index
-	 * @param offset elastic offset 
-	 * @param size  total size of suggest list
-	 * @param uid user id
+	 * 
+	 * @param query
+	 *            user input word
+	 * @param source
+	 *            elastic index
+	 * @param offset
+	 *            elastic offset
+	 * @param size
+	 *            total size of suggest list
+	 * @param uid
+	 *            user id
 	 * @return suggest data
 	 */
 	@Override
-	public List<SuggestData> lookup(String query, String source, int offset, 
+	public List<SuggestData> lookup(String query, String source, int offset,
 			int size, String uid) {
-		
+
 		List<SuggestData> results = new ArrayList<SuggestData>();
-		
+
+		// ES query is duplicate have to check and delete it if its unnecessary
+
 		// get avail search index
-		Set<String> keysForES = PropertyValue.ES_SEARCH_PATH.keySet();
+		Set<String> keysForES = Property.ES_SEARCH_PATH.keySet();
 		// validate source index
-		if (source != null && source.length() > 0 
+		if (source != null && source.length() > 0
 				&& keysForES.contains(source.toLowerCase())) {
 			String path = source.toLowerCase();
-			
+
 			ElasticEntityProperties eep = suggesterConfigurationHandler
-					.getElasticEntityProperties("entity." + path);
-			
-			IQueryGenerator entry = new ESEntry(eep.getType(),
-					eep.getReturnFields(), query, offset, size, path,
-					eep.getAliasFields(), eep.getAnalyzer(),
-					eep.getSearchField(), eep.getSortFields());
-			
+					.getElasticEntityProperties(Property.ENTITY_PREFIX + path);
+
+			IQueryGenerator entry = new ESEntry(eep, query, 0, size, path);
+
 			try {
-				results.add(getSuggestionsDataWithCount(entry, eep.getMaxExpansion()));
+				results.add(getSuggestionsDataWithCount(entry,
+						eep.getMaxExpansion()));
 			} catch (Exception e) {
 				log.error("elastic search error", e);
+			}
+
+			// ES query is duplicate have to check and delete it if its
+			// unnecessary ends
+		} else {
+			try {
+				return (lookup(source, query, size, null));
+			} catch (Exception e) {
+				log.error("Fail to execute message because of underline error on dictionary based ");
 			}
 		}
 		return results;
 	}
-	
+
 	/** added **/
 	@Override
 	public List<SuggestData> lookup(String query, List<String> sources,
@@ -572,7 +325,13 @@ public class Suggester implements SuggesterHandler {
 
 		Map<String, List<SuggestData.Suggestions>> preSearchedTermsInfo = new HashMap<String, List<SuggestData.Suggestions>>();
 
-		if (uid != null && uid.trim().length() > 0) {
+		String isPresearchTermInclude = ConfigurationManager
+				.getConfigInstance()
+				.getString(Property.INCLUDE_PRESEARCH_TERMS);
+
+		boolean includePreSearch = Boolean.parseBoolean(isPresearchTermInclude);
+
+		if (includePreSearch && uid != null && uid.trim().length() > 0) {
 
 			List<SuggestData> preSearchedTerms = lookup(query, size, uid, false);
 
@@ -597,7 +356,7 @@ public class Suggester implements SuggesterHandler {
 			 * This is for ES query property in eiddo starts with "search.path."
 			 **/
 
-			Set<String> keysForES = PropertyValue.ES_SEARCH_PATH.keySet();
+			Set<String> keysForES = Property.ES_SEARCH_PATH.keySet();
 
 			/**
 			 * -----------------------------------------------------------------
@@ -614,13 +373,6 @@ public class Suggester implements SuggesterHandler {
 			 **/
 
 			Set<String> includeType = new HashSet<String>();
-
-			if (PropertyValue.SELECTED_DEFAULT_TYPEAHEADS != null
-					&& PropertyValue.SELECTED_DEFAULT_TYPEAHEADS.length > 0) {
-				for (String type : PropertyValue.SELECTED_DEFAULT_TYPEAHEADS) {
-					includeType.add(type.toLowerCase().trim());
-				}
-			}
 
 			boolean defaulTypeExists = (includeType != null && includeType
 					.size() > 0);
@@ -706,13 +458,20 @@ public class Suggester implements SuggesterHandler {
 			boolean all) {
 		// TODO Auto-generated method stub
 
+		
+
 		List<SuggestData> allsuggestions = new ArrayList<SuggestData>();
-		long startTime = System.currentTimeMillis();
 
 		String[] suggestions = null;
 
+		long startTime = System.currentTimeMillis();
 		String[] presearchedTerms = processPreSearchTerm
 				.getPreSearchedTerm(uid);
+
+		long totalTime = System.currentTimeMillis() - startTime;
+
+		log.info("\t\t total time to fetch pre-search time is : " + totalTime
+				+ " , Is it normal?");
 
 		query = processPreSearchTerm.processAndNormalizeToken(query);
 
@@ -733,7 +492,7 @@ public class Suggester implements SuggesterHandler {
 						.processAndNormalizeToken(suggestion);
 
 				List<SuggestData> allSuggestdataForCategories = lookup(
-						Property.category, suggestion, 50);
+						"category", suggestion, 50);
 
 				for (SuggestData suggestdata : allSuggestdataForCategories) {
 					boolean include = false;
@@ -760,8 +519,8 @@ public class Suggester implements SuggesterHandler {
 
 				}
 
-				List<SuggestData> allSuggestdataForKeywords = lookup(
-						Property.wos, suggestion, 50);
+				List<SuggestData> allSuggestdataForKeywords = lookup("wos",
+						suggestion, 50);
 
 				for (SuggestData suggestdata : allSuggestdataForKeywords) {
 
@@ -803,11 +562,11 @@ public class Suggester implements SuggesterHandler {
 			/********************* Sorting Ends *****************************/
 
 			SuggestData perSearchedTermsCategories = new SuggestData();
-			perSearchedTermsCategories.source = Property.category;
+			perSearchedTermsCategories.source = "category";
 			perSearchedTermsCategories.suggestions = allCategoriesSuggestions;
 
 			SuggestData perSearchedTerms = new SuggestData();
-			perSearchedTerms.source = Property.wos;
+			perSearchedTerms.source = "wos";
 			perSearchedTerms.suggestions = allKeywordSuggestions;
 
 			allsuggestions.add(perSearchedTerms);
@@ -845,40 +604,50 @@ public class Suggester implements SuggesterHandler {
 
 	}
 
+	private SuggestData getSuggestionsDataCaller(IQueryGenerator entry,
+			int count, Integer[] expansion) throws Exception {
 
-private SuggestData getSuggestionsDataCaller(IQueryGenerator entry, int count, Integer[] expansion) throws Exception {
-        SuggestData data = this.ESQueryExecutor.formatResult(entry);
-         
-        if (data.suggestions.size() <= 0 && count < expansion.length) {
-            entry.setMax_expansion(expansion[count]);
-            data = getSuggestionsDataCaller(entry, ++count, expansion);
-        }
-        return data;
-    }
+		SuggestData data = this.ESQueryExecutor.formatResult(entry);
 
-    private SuggestData getSuggestionsData(IQueryGenerator entry, Integer[] expansion) throws Exception {
-        
-        long start = System.currentTimeMillis();
-        SuggestData data = getSuggestionsDataCaller(entry, 0, expansion);
-        data.took = (System.currentTimeMillis() - start) + "";        
-        return data;
+		if (data.suggestions.size() <= 0 && count < expansion.length) {
+			entry.setMax_expansion(expansion[count]);
+			data = getSuggestionsDataCaller(entry, ++count, expansion);
+		}
+		return data;
+	}
 
-    }
-    
-    /**
-     * provide suggest list and took is total count of hits
-     * @param entry 
-     * @param expansion
-     * @return suggest data list
-     * @throws Exception
-     */
-    private SuggestData getSuggestionsDataWithCount(IQueryGenerator entry, Integer[] expansion) throws Exception {
-    	SuggestData suggestData = getSuggestionsData(entry, expansion);
-    	// a temp fix to return total count of hits
-    	if (suggestData != null) {
-    		suggestData.took = suggestData.took + ":" + String.valueOf(entry.getTotalCount());
-    	}
-    	return suggestData;
-    }
+	private SuggestData getSuggestionsData(IQueryGenerator entry,
+			Integer[] expansion) throws Exception {
+
+		long start = System.currentTimeMillis();
+
+		if (expansion != null && expansion.length > 0) {
+			entry.setMax_expansion(expansion[0]);
+		}
+
+		SuggestData data = getSuggestionsDataCaller(entry, 0, expansion);
+		data.took = (System.currentTimeMillis() - start) + "";
+		return data;
+
+	}
+
+	/**
+	 * provide suggest list and took is total count of hits
+	 * 
+	 * @param entry
+	 * @param expansion
+	 * @return suggest data list
+	 * @throws Exception
+	 */
+	private SuggestData getSuggestionsDataWithCount(IQueryGenerator entry,
+			Integer[] expansion) throws Exception {
+		SuggestData suggestData = getSuggestionsData(entry, expansion);
+		// a temp fix to return total count of hits
+		if (suggestData != null) {
+			suggestData.took = suggestData.took + ":"
+					+ String.valueOf(entry.getTotalCount());
+		}
+		return suggestData;
+	}
 
 }

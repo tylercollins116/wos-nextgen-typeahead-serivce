@@ -20,6 +20,7 @@ public class CompanyEntry extends Entry implements Iterator<Entry> {
 	private final String CHILDREN = "children";
 	private final String NAME = "name";
 	private final String ALIAS = "alias";
+	private final String COUNT = "count";
 
 	List<Map<String, String>> allInfos = new ArrayList<Map<String, String>>();
 
@@ -41,6 +42,7 @@ public class CompanyEntry extends Entry implements Iterator<Entry> {
 		String parent = get(PARENTS, JsonToMap.get(PARENTS));
 		String id = JsonToMap.get(ID);
 		String name = null;
+		String count = JsonToMap.get(COUNT);
 		try {
 			name = JsonToMap.get(NAME);
 		} catch (Exception e) {
@@ -53,22 +55,26 @@ public class CompanyEntry extends Entry implements Iterator<Entry> {
 		for (String term : terms) {
 			Map<String, String> map = new HashMap<String, String>();
 			map.put(TERM, term);
-			map.put(WEIGHT, "1");
-			map.put(CHILDREN, children);
+			map.put(WEIGHT, count + "");
 			map.put(PARENTS, parent);
-			map.put("NAME", name);
-			map.put(ALIAS, name);
-
+			map.put("name", name);
+			map.put(ALIAS, id);
+			map.put("id", id);
+			map.put(COUNT, count);
 			allInfos.add(map);
 		}
 
 		Map<String, String> map = new HashMap<String, String>();
-		map.put(TERM, id);
-		map.put(WEIGHT, "1");
-		map.put(CHILDREN, children);
+		if (id == null) {
+			id = name;
+		}
+		map.put(TERM, name);
+		map.put(WEIGHT, count + "");
 		map.put(PARENTS, parent);
-		map.put("NAME", name);
-		map.put(ALIAS, name);
+		map.put("name", name);
+		map.put(ALIAS, id);
+		map.put("id", id);
+		map.put(COUNT, count);
 		allInfos.add(map);
 
 	}

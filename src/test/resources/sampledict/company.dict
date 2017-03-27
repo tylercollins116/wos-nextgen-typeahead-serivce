@@ -1,0 +1,23 @@
+{"id":"CNEW_NEW","name":"TOKAI EFFECT YG","parents":"","count":"18"}
+{"id":"CNEW_NEW_3520252","name":"WAFANGDIAN CHENGDA BEARING MFR CO LTD","parents":"CNEW_NEW","count":"1"}
+{"id":"CNEW_NEW_1125736","name":"GLACIALPOWER INC","parents":"CNEW_NEW","count":"1"}
+{"id":"CNEW_NEW_2836251","name":"SCHAKO METAL SCAD KG","parents":"CNEW_NEW_3520252","count":"1"}
+{"id":"CNEW_NEW_1658904","name":"KANGMEI XINKAIHE JILIN PHARM CO LTD","parents":"CNEW_NEW_2836251","count":"13"}
+{"id":"CNEW_NEW_3558530","name":"WEINMANN & PARTNER GMBH","parents":"CNEW_NEW_1658904","count":"12"}
+{"id":"CNEW_NEW_474978","name":"CELLMAX LTD","parents":"CNEW_NEW_1125736","count":"23"}
+{"id":"CNEW_NEW_909659","name":"EUREMO SA","parents":"CNEW_NEW_474978","count":"1"}
+{"id":"CNEW_NEW_2654762","name":"RAPID RACK INDUSTRIES, INC.","parents":"CNEW_NEW_474978","count":"2"}
+{"id":"CHILD","name":"GRAND PARENT","parents":"","count":"2"}
+{"id":"CHILD_1","name":"PARENT","parents":"CHILD","count":"5"}
+{"id":"CHILD_2","name":"CHILD","parents":"CHILD_1","count":"6"}
+{"id":"CHILD_3","name":"GRAND CHILD","parents":"CHILD_2","count":"6"}
+{"id":"CHILD_4_1","name":"GRAND GRAND CHILD1","parents":"CHILD_3","count":"10"}
+{"id":"CHILD_4_2","name":"GRAND GRAND CHILD2","parents":"CHILD_3","count":"50"} 
+{"id":"CHILD_5_1","name":"THOMSON","parents":"CHILD_4_2","count":"20"}
+{"id":"HEWLETT-PACKARD","name":"HEWLETT-PACKARD","parents":"","count":"50"}
+{"id":"CHILDREN_4_2","name":"CHILDREN","parents":"","count":"50"}
+{"id":"10001","name":"LG LED CO LTD","parents":"","count":"18"}
+{"id":"10002","name":"LG LED CO LTD","parents":"10001","count":"18"}
+{"id":"C1790_SAMSUNGMOBILE_2799835","name":"SAMSUNG    MOBILE DISPLAY CO LTD","parents":"C1790_SAMSUNGMOBILE","count":"36848"}
+{"id":"C1790_SAMSUNGMOBILE","name":"SAMSUNG MOBILE DISPLAY CO LTD","parents":"","count":"36848"}
+{"id":"CNEW_NEW_947976","name":"FEDERAL STATE BUDGETARY INSTITUTION \"RESEARCH CENTER OF NEUROLOGY\" RUSSIAN ACADEMY OF MEDICAL SCIENCES (FSBI \"RCN\" RAMS)","parents":"","count":"1"}

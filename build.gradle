@@ -143,10 +143,16 @@ idea {
 }
 
 dependencies {
+
   //compile group: 'com.thomsonreuters', name: '1p-service-lib', version: '0.10.+'
-  compile group: 'com.thomsonreuters', name: '1p-service-lib', version: '0.30.+'
-  compile group: 'com.thomsonreuters', name: '1p-service-swagger', version: '0.30.+'
-  compile group: 'com.thomsonreuters', name: 'eiddo-client', version: '0.4.+'
+  //compile group: 'com.thomsonreuters', name: '1p-service-lib', version: "${service_lib_version}"
+  //compile group: 'com.thomsonreuters', name: '1p-service-swagger', version: "${service_swagger_version}"
+  //compile group: 'com.thomsonreuters', name: 'eiddo-client', version: "${eiddo_client_version}"
+  
+   compile group: 'com.thomsonreuters',  name: '1p-service-api', version: "${oneplib_version}"
+   compile group: 'com.thomsonreuters', name: '1p-service-swagger', version: "${service_swagger_version}"
+   compile group: 'com.thomsonreuters', name: 'eiddo-client', version: "${eiddo_client_version}"
+  
   compile  'com.amazonaws:aws-java-sdk:1.10.2'
 
    compile group: 'com.thomsonreuters', name: '1p-statistics-client', version: '0.1.+'

@@ -1,32 +1,43 @@
 package com.thomsonreuters.models.services.ESoperation;
 
-import java.util.HashMap;
 import java.util.Map;
 
-public class ESEntry extends IQueryGenerator {
+import com.thomsonreuters.models.services.util.ElasticEntityProperties;
 
-	private final String returnFields[];
-	public String query = "";
+public class ESEntry extends IQueryGenerator {
 
 	private int from = 0;
 	private int size = 4;
 	private final String source;
-	private String searchField;
-	private HashMap<String, String> sortFields;
+	public String query = "";
 
-	public ESEntry(String type, String[] returnFields, String userQuery, int from, int size, String source,
-			HashMap<String, String> aliasFields, String analyzer, String searchField,
-			HashMap<String, String> sortFields) {
-		super(type, returnFields);
-		this.returnFields = returnFields;
+	/*
+	 * 
+	 * private String searchField; private HashMap<String, String> sortFields;
+	 * private int slop = 3;
+	 */
+	ElasticEntityProperties eep = null;
+
+	public ESEntry(ElasticEntityProperties eep, String userQuery, int from,
+			int size, String source) {
+		super(eep.getType(), eep.getReturnFields());
+
+		this.eep = eep;
 		this.query = userQuery;
 		this.from = from;
 		this.size = size;
 		this.source = source;
-		super.analyzer = analyzer;
-		this.aliasFields = aliasFields;
-		this.searchField = searchField;
-		this.sortFields = sortFields;
+		this.aliasFields=eep.getAliasFields();
+
+		/**
+		 * this.returnFields = eep.getReturnFields();
+		 * 
+		 * super.analyzer = eep.getAnalyzer(); this.aliasFields =
+		 * eep.getAliasFields(); this.searchField = eep.getSearchField();
+		 * this.sortFields = eep.getSortFields(); if (eep.getSlop() >= 0) {
+		 * this.slop = eep.getSlop(); }
+		 **/
+
 	}
 
 	public void setFrom(int from) {
@@ -44,9 +55,13 @@ public class ESEntry extends IQueryGenerator {
 	}
 
 	@Override
-	public String createQuery() {
-		if (this.sortFields != null && this.sortFields.size() > 0) {
-			for (Map.Entry<String, String> entry : this.sortFields.entrySet()) {
+	public String[] createQuery() {
+
+		String[] queries = null;
+
+		if (eep.getSortFields() != null && eep.getSortFields().size() > 0) {
+			for (Map.Entry<String, String> entry : eep.getSortFields()
+					.entrySet()) {
 				if ("asc".equalsIgnoreCase(entry.getValue())) {
 					super.sorts.add(new sort(entry.getKey(), orderAs.asc));
 				} else {
@@ -54,11 +69,28 @@ public class ESEntry extends IQueryGenerator {
 				}
 			}
 		}
-		return generatESQuery(this.searchField, from, size, query, returnFields);
+
+		String[] searchFields = eep.getSearchField();
+		 
+
+		queries = new String[searchFields.length];
+
+		for (int count = 0; count < searchFields.length; count++) {
+
+			queries[count] = generatESQuery(searchFields[count], from, size,
+					query, eep.getReturnFields(), eep.getSlop());
+		}
+		return queries;
+
 	}
 
 	@Override
 	public String getQuery() {
 		return this.query;
+	}
+
+	@Override
+	public String getESURL() {
+		return this.eep.getHost(this.source);
 	}
 }

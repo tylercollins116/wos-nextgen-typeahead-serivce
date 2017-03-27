@@ -5,12 +5,15 @@ import java.util.HashMap;
 public class ElasticEntityProperties {
 
 	private String type = "";
-	private String searchField = "";
+	private String[] searchField = null;
 	private String[] returnFields = null;
 	private HashMap<String, String> aliasFields = null;
 	private HashMap<String, String> sortFields = null;
 	private String analyzer = "";
 	private Integer[] maxExpansion = new Integer[] {};
+	private int slop = 3;
+	private String host = "";
+	private String port="";
 
 	public String getType() {
 		return type;
@@ -20,11 +23,11 @@ public class ElasticEntityProperties {
 		this.type = type;
 	}
 
-	public String getSearchField() {
+	public String[] getSearchField() {
 		return searchField;
 	}
 
-	public void setSearchField(String searchField) {
+	public void setSearchField(String[] searchField) {
 		this.searchField = searchField;
 	}
 
@@ -67,5 +70,49 @@ public class ElasticEntityProperties {
 	public void setMaxExpansion(Integer[] maxExpansion) {
 		this.maxExpansion = maxExpansion;
 	}
+
+	public int getSlop() {
+		return slop;
+	}
+
+	public void setSlop(String slops) {
+
+		try {
+			this.slop = Integer.parseInt(slops);
+		} catch (Exception e) {
+			this.slop = 3;
+		}
+
+		if (this.slop < 0) {
+			this.slop = 3;
+		}
+		 
+	}
+
+	public String getHost(String source) {
+
+		if (this.host != null && this.host.length() > 5 && this.port!=null && this.port.length()>0) {
+
+			String url = "http://" + host+":"+this.port + Property.ES_SEARCH_PATH.get(source) + "/_search";
+			return url;
+		}
+
+		return null;
+	}
+
+	public void setHost(String host) {
+
+		this.host = host;
+	}
+
+	public String getPort() {
+		return port;
+	}
+
+	public void setPort(String port) {
+		this.port = port;
+	}
+	
+	
 
 }

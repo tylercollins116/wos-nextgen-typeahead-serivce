@@ -127,7 +127,7 @@ public class TRAnalyzingSuggesterExt extends Lookup {
 		keyword, json
 	}
 
-	public static final String deliminator = ":::::";
+	 
 	
 	private FST<Pair<Long, BytesRef>> fst = null;
 
@@ -1063,9 +1063,9 @@ public class TRAnalyzingSuggesterExt extends Lookup {
 				double normalizedWeight = (double) (weight / totalSumOfWeight);
 				
 				String payload="";
-				if(new String(lookupresult.payload.bytes).indexOf(deliminator)>0){
+				if(new String(lookupresult.payload.bytes).indexOf(Entry.DELIMETER)>0){
 					try{
-					payload=new String(lookupresult.payload.bytes).split(deliminator)[1];
+					payload=new String(lookupresult.payload.bytes).split(Entry.DELIMETER)[1];
 					}catch(Exception e){
 						payload=new String(lookupresult.payload.bytes);
 					}
@@ -1282,7 +1282,7 @@ public class TRAnalyzingSuggesterExt extends Lookup {
 	
 	public  String getReturn(String data, Process process) {
 
-		String[] result = data.split(deliminator);
+		String[] result = data.split(Entry.DELIMETER);
 		if (process == process.json) {
 			return result[1];
 		} else if (process == process.keyword) {

@@ -2,6 +2,7 @@ package com.thomsonreuters.models;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -20,16 +21,16 @@ import com.thomsonreuters.models.services.async.NamedThreadFactory;
 import com.thomsonreuters.models.services.async.WaitingBlockingQueue;
 import com.thomsonreuters.models.services.suggesterOperation.DictionaryLoader;
 import com.thomsonreuters.models.services.suggesterOperation.SuggesterFactory;
-import com.thomsonreuters.models.services.suggesterOperation.SuggesterHelper;
 import com.thomsonreuters.models.services.suggesters.BlankSuggester;
 import com.thomsonreuters.models.services.util.ElasticEntityProperties;
+import com.thomsonreuters.models.services.util.GroupTerms;
 import com.thomsonreuters.models.services.util.Property;
-import com.thomsonreuters.models.services.util.PropertyValue;
 
 @Singleton
 public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 
-	private static final Logger log = LoggerFactory.getLogger(SuggesterConfiguration.class);
+	private static final Logger log = LoggerFactory
+			.getLogger(SuggesterConfiguration.class);
 
 	private DictionaryLoader<Lookup> dictionaryReader = null;
 	private HashMap<String, ElasticEntityProperties> elasticEntityProperties = new HashMap<>();
@@ -40,8 +41,10 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 
 		try {
 
-			reloadExecutor = new ThreadPoolExecutor(1, 6, 0L, TimeUnit.MICROSECONDS,
-					new WaitingBlockingQueue<Runnable>(), new NamedThreadFactory("Suggester"));
+			reloadExecutor = new ThreadPoolExecutor(1, 6, 0L,
+					TimeUnit.MICROSECONDS,
+					new WaitingBlockingQueue<Runnable>(),
+					new NamedThreadFactory("Suggester"));
 
 			//dictionaryReader = SuggesterFactory.createSuggesters("S3");
 
@@ -57,44 +60,62 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 		prepareESURL();
 		prepareESEntities();
 
-		ConfigurationManager.getConfigInstance().addConfigurationListener(new ConfigurationListener() {
+		final Property property = new GroupTerms();
+		
+		
+		ConfigurationManager.getConfigInstance().addConfigurationListener(
+				new ConfigurationListener() {
 
-			@Override
-			public void configurationChanged(ConfigurationEvent event) {
+					@Override
+					public void configurationChanged(ConfigurationEvent event) {
 
-				String triggredProperty = event.getPropertyName();
+						String triggredProperty = event.getPropertyName();
+						log.info("********************************************");
+						log.info("Executing Eiddo Configuration changed trigger for   "
+								+ event.getPropertyName());
 
-				if (PropertyValue.getProperty(triggredProperty).isDictionaryPathRelated()
-						|| PropertyValue.getProperty(triggredProperty).isBucketName()) {
+						if (property.isDictionaryRelated(triggredProperty)
+								|| property.isBucketName(triggredProperty)) {
 
-					log.info("reloding  dictionary " + event.getPropertyName());
+							log.info("reloding  dictionary "
+									+ event.getPropertyName());
 
-					Job<Lookup> job = new Job<Lookup>(dictionaryReader, event.getPropertyName());
-					reloadExecutor.execute(job.inputTask);
-				} else if (triggredProperty.trim().equalsIgnoreCase(Property.DEFAULT_TYPEAHEAD_TYPES)) {
+							Job<Lookup> job = new Job<Lookup>(dictionaryReader,
+									event.getPropertyName());
+							reloadExecutor.execute(job.inputTask);
+						} else if (triggredProperty.trim().equalsIgnoreCase(
+								Property.SEARCH_HOST)
+								|| triggredProperty.trim().equalsIgnoreCase(
+										Property.SEARCH_PORT)
+								|| triggredProperty.trim().startsWith(
+										Property.SEARCH_PATH_PREFIX)) {
+							log.info("Preparing ES URL for  "
+									+ event.getPropertyName());
+							prepareESURL();
+						} else if (triggredProperty.trim().startsWith(
+								Property.ENTITY_PREFIX)) {
+							log.info("Recreating ES entities for  "
+									+ event.getPropertyName());
+							prepareESEntities();
 
-					String[] typeaheadvalues = ConfigurationManager.getConfigInstance()
-							.getStringArray(triggredProperty);
+						}
 
-					if (typeaheadvalues != null && typeaheadvalues.length > 0) {
-						PropertyValue.SELECTED_DEFAULT_TYPEAHEADS = typeaheadvalues;
 					}
+				});
 
-				} else if (triggredProperty.trim().equalsIgnoreCase(Property.SEARCH_HOST)
-						|| triggredProperty.trim().equalsIgnoreCase(Property.SEARCH_PORT)
-						|| triggredProperty.trim().startsWith(Property.SEARCH_PATH_PREFIX)) {
-
-					prepareESURL();
-				} else if (triggredProperty.trim().startsWith("entity.")) {
-
-					prepareESEntities();
-
-				} else {
-					SuggesterHelper.loadFuzzynessThreshold(triggredProperty);
-				}
-
-			}
-		});
+		/** for eiddo change testing **/
+		/**
+		 * new Thread(new Runnable() {
+		 * 
+		 * @Override public void run() { try {
+		 *           Thread.currentThread().sleep(1000*60*1); Job<Lookup> job =
+		 *           new Job<Lookup>(dictionaryReader,
+		 *           "dictionary.path.companyterms");
+		 *           reloadExecutor.execute(job.inputTask); } catch
+		 *           (InterruptedException e) { e.printStackTrace(); }
+		 * 
+		 *           } }).start();
+		 **/
 	}
 
 	@Override
@@ -104,23 +125,47 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 
 	private void prepareESURL() {
 
-		PropertyValue.ELASTIC_SEARCH_URL = ConfigurationManager.getConfigInstance().getString(Property.SEARCH_HOST)
-				+ ":" + ConfigurationManager.getConfigInstance().getString(Property.SEARCH_PORT);
+		// String ELASTIC_SEARCH_URL =
+		// ConfigurationManager.getConfigInstance().getString(Property.SEARCH_HOST)
+		// + ":" +
+		// ConfigurationManager.getConfigInstance().getString(Property.SEARCH_PORT);
+		
+		
 
-		Iterator<String> keys = ConfigurationManager.getConfigInstance().getKeys();
+		Iterator<String> keys = ConfigurationManager.getConfigInstance()
+				.getKeys();
+		
+		
+		log.info("*****************************************");
+		log.info(" Starting process for Preparing ES URL ");
+		
+		HashMap<String, String> tmp_es_search_path = new HashMap<String, String>();
 
 		while (keys.hasNext()) {
 			String key = keys.next();
 
 			if (key.startsWith(Property.SEARCH_PATH_PREFIX)) {
 
-				String path = ConfigurationManager.getConfigInstance().getString(key);
-				key = key.toLowerCase().replace(Property.SEARCH_PATH_PREFIX + ".", "");
-				Property.ES_SEARCH_PATH.put(key, path);
+				String path = ConfigurationManager.getConfigInstance()
+						.getString(key);
+				key = key.toLowerCase().replace(
+						Property.SEARCH_PATH_PREFIX + ".", "");
+				tmp_es_search_path.put(key, path);
 
 			}
 
 		}
+
+		Set<String> keyset = tmp_es_search_path.keySet();
+		
+		Property.ES_SEARCH_PATH.clear();
+		for (String key : keyset) {
+			Property.ES_SEARCH_PATH.put(key, tmp_es_search_path.get(key));
+		}
+		
+		log.info(" Ending process for Preparing ES URL , Total number of entities URL  "
+				+ Property.ES_SEARCH_PATH.size());
+		log.info("*****************************************");
 
 	}
 
@@ -138,52 +183,92 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 	}
 
 	private void prepareESEntities() {
-		// String[] esPaths = (String[]) .toArray();//
-		// ConfigurationManager.getConfigInstance().getStringArray("elastic.entities");
 
-		// for (int index = 0; index < esPaths.length; index++) {
+		HashMap<String, ElasticEntityProperties> tmpElasticEntityProperties = new HashMap<>();
+		log.info("*****************************************");
+		log.info(" Starting process for Preparing ES entities ");
+
 		Iterator it = Property.ES_SEARCH_PATH.keySet().iterator();
 		while (it.hasNext()) {
 			String type = "";
-			String searchField = "";
+			String[] searchField = null;
 			String[] returnFields = null;
 			HashMap<String, String> aliasFields = null;
 			HashMap<String, String> sortFields = null;
 			String analyzer = "";
 			Integer[] maxExpansion = new Integer[] {};
+			String slop = "3";
+			String host = "";
+			String port = "";
 
 			String path = it.next().toString();
 			ElasticEntityProperties eep = new ElasticEntityProperties();
-			if (ConfigurationManager.getConfigInstance().containsKey("entity." + path + ".type")) {
-				type = ConfigurationManager.getConfigInstance().getString("entity." + path + ".type");
+			if (ConfigurationManager.getConfigInstance().containsKey(
+					Property.ENTITY_PREFIX + path + ".type")) {
+				type = ConfigurationManager.getConfigInstance().getString(
+						Property.ENTITY_PREFIX + path + ".type");
 			}
-			if (ConfigurationManager.getConfigInstance().containsKey("entity." + path + ".searchField")) {
-				searchField = ConfigurationManager.getConfigInstance().getString("entity." + path + ".searchField");
-			}
-
-			if (ConfigurationManager.getConfigInstance().containsKey("entity." + path + ".returnFields")) {
-				returnFields = ConfigurationManager.getConfigInstance()
-						.getStringArray("entity." + path + ".returnFields");
-			}
-
-			if (ConfigurationManager.getConfigInstance().containsKey("entity." + path + ".aliasFields")) {
-				aliasFields = getKeyValueFields(
-						ConfigurationManager.getConfigInstance().getStringArray("entity." + path + ".aliasFields"));
+			if (ConfigurationManager.getConfigInstance().containsKey(
+					Property.ENTITY_PREFIX + path + ".searchField")) {
+				searchField = ConfigurationManager.getConfigInstance()
+						.getStringArray(
+								Property.ENTITY_PREFIX + path + ".searchField");
 			}
 
-			if (ConfigurationManager.getConfigInstance().containsKey("entity." + path + ".sortFields")) {
-				sortFields = getKeyValueFields(
-						ConfigurationManager.getConfigInstance().getStringArray("entity." + path + ".sortFields"));
+			if (ConfigurationManager.getConfigInstance().containsKey(
+					Property.ENTITY_PREFIX + path + ".returnFields")) {
+				returnFields = ConfigurationManager
+						.getConfigInstance()
+						.getStringArray(
+								Property.ENTITY_PREFIX + path + ".returnFields");
 			}
 
-			if (ConfigurationManager.getConfigInstance().containsKey("entity." + path + ".analyzer")) {
-				analyzer = ConfigurationManager.getConfigInstance().getString("entity." + path + ".analyzer");
+			if (ConfigurationManager.getConfigInstance().containsKey(
+					Property.ENTITY_PREFIX + path + ".aliasFields")) {
+				aliasFields = getKeyValueFields(ConfigurationManager
+						.getConfigInstance().getStringArray(
+								Property.ENTITY_PREFIX + path + ".aliasFields"));
 			}
 
-			if (ConfigurationManager.getConfigInstance().containsKey("entity." + path + ".maxExpansion")) {
+			if (ConfigurationManager.getConfigInstance().containsKey(
+					Property.ENTITY_PREFIX + path + ".sortFields")) {
+				sortFields = getKeyValueFields(ConfigurationManager
+						.getConfigInstance().getStringArray(
+								Property.ENTITY_PREFIX + path + ".sortFields"));
+			}
+
+			if (ConfigurationManager.getConfigInstance().containsKey(
+					Property.ENTITY_PREFIX + path + ".analyzer")) {
+				analyzer = ConfigurationManager.getConfigInstance().getString(
+						Property.ENTITY_PREFIX + path + ".analyzer");
+			}
+
+			if (ConfigurationManager.getConfigInstance().containsKey(
+					Property.ENTITY_PREFIX + path + ".maxExpansion")) {
 				maxExpansion = Stream
-						.of(ConfigurationManager.getConfigInstance().getStringArray("entity." + path + ".maxExpansion"))
+						.of(ConfigurationManager.getConfigInstance()
+								.getStringArray(
+										Property.ENTITY_PREFIX + path
+												+ ".maxExpansion"))
 						.map(Integer::parseInt).toArray(Integer[]::new);
+			}
+
+			if (ConfigurationManager.getConfigInstance().containsKey(
+					Property.ENTITY_PREFIX + path + ".port")) {
+				port = ConfigurationManager.getConfigInstance().getString(
+						Property.ENTITY_PREFIX + path + ".port");
+			}
+
+			if (ConfigurationManager.getConfigInstance().containsKey(
+					Property.ENTITY_PREFIX + path + ".host")) {
+				host = ConfigurationManager.getConfigInstance().getString(
+						Property.ENTITY_PREFIX + path + ".host");
+			}
+
+			if (ConfigurationManager.getConfigInstance().containsKey(
+					Property.ENTITY_PREFIX + path + ".slop")) {
+				slop = ConfigurationManager.getConfigInstance().getString(
+						Property.ENTITY_PREFIX + path + ".slop");
 			}
 
 			eep.setType(type);
@@ -193,14 +278,30 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 			eep.setSortFields(sortFields);
 			eep.setAnalyzer(analyzer);
 			eep.setMaxExpansion(maxExpansion);
-			elasticEntityProperties.put("entity." + path, eep);
+			eep.setSlop(slop);
+			eep.setHost(host);
+			eep.setPort(port);
+			tmpElasticEntityProperties.put(Property.ENTITY_PREFIX + path, eep);
 		}
+
+		if (elasticEntityProperties.size() > 0) {
+			elasticEntityProperties.clear();
+		}
+		elasticEntityProperties = new HashMap<>(tmpElasticEntityProperties);
+		log.info(" Ending process for Preparing ES entities , Total number of entities prepared  "
+				+ elasticEntityProperties.size());
+		log.info("*****************************************");
 
 	}
 
 	@Override
 	public ElasticEntityProperties getElasticEntityProperties(String esPath) {
 		return this.elasticEntityProperties.get(esPath);
+	}
+
+	@Override
+	public Set<String> getRegisteredElasticEntityNames() {
+		return this.elasticEntityProperties.keySet();
 	}
 
 }
