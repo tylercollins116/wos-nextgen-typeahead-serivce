@@ -293,7 +293,7 @@ public class Suggester implements SuggesterHandler {
 			ElasticEntityProperties eep = suggesterConfigurationHandler
 					.getElasticEntityProperties(Property.ENTITY_PREFIX + path);
 
-			IQueryGenerator entry = new ESEntry(eep, query, 0, size, path);
+			IQueryGenerator entry = new ESEntry(eep, query, offset, size, path);
 
 			try {
 				results.add(getSuggestionsDataWithCount(entry,
@@ -610,8 +610,8 @@ public class Suggester implements SuggesterHandler {
 		SuggestData data = this.ESQueryExecutor.formatResult(entry);
 
 		if (data.suggestions.size() <= 0 && count < expansion.length) {
-			entry.setMax_expansion(expansion[count]);
-			data = getSuggestionsDataCaller(entry, ++count, expansion);
+			entry.setMax_expansion(expansion[++count]);
+			data = getSuggestionsDataCaller(entry, count, expansion);
 		}
 		return data;
 	}

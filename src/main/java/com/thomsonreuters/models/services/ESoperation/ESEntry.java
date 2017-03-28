@@ -6,20 +6,21 @@ import com.thomsonreuters.models.services.util.ElasticEntityProperties;
 
 public class ESEntry extends IQueryGenerator {
 
+	public static final String ASCENDING_ORDER = "asc";
 	private int from = 0;
 	private int size = 4;
 	private final String source;
 	public String query = "";
 
 	/*
-	 * 
+	 *
 	 * private String searchField; private HashMap<String, String> sortFields;
 	 * private int slop = 3;
 	 */
 	ElasticEntityProperties eep = null;
 
 	public ESEntry(ElasticEntityProperties eep, String userQuery, int from,
-			int size, String source) {
+				   int size, String source) {
 		super(eep.getType(), eep.getReturnFields());
 
 		this.eep = eep;
@@ -31,7 +32,7 @@ public class ESEntry extends IQueryGenerator {
 
 		/**
 		 * this.returnFields = eep.getReturnFields();
-		 * 
+		 *
 		 * super.analyzer = eep.getAnalyzer(); this.aliasFields =
 		 * eep.getAliasFields(); this.searchField = eep.getSearchField();
 		 * this.sortFields = eep.getSortFields(); if (eep.getSlop() >= 0) {
@@ -59,19 +60,10 @@ public class ESEntry extends IQueryGenerator {
 
 		String[] queries = null;
 
-		if (eep.getSortFields() != null && eep.getSortFields().size() > 0) {
-			for (Map.Entry<String, String> entry : eep.getSortFields()
-					.entrySet()) {
-				if ("asc".equalsIgnoreCase(entry.getValue())) {
-					super.sorts.add(new sort(entry.getKey(), orderAs.asc));
-				} else {
-					super.sorts.add(new sort(entry.getKey(), orderAs.desc));
-				}
-			}
-		}
+		addSortFields();
 
 		String[] searchFields = eep.getSearchField();
-		 
+
 
 		queries = new String[searchFields.length];
 
@@ -82,6 +74,31 @@ public class ESEntry extends IQueryGenerator {
 		}
 		return queries;
 
+	}
+
+	public void addSortFields() {
+		if (eep.getSortFields() != null && eep.getSortFields().size() > 0) {
+			for (Map.Entry<String, String> entry : eep.getSortFields()
+					.entrySet()) {
+				if (ASCENDING_ORDER.equalsIgnoreCase(entry.getValue())) {
+					if (!keyExists(entry)) {
+						super.sorts.add(new sort(entry.getKey(), orderAs.asc));
+					}
+				} else {
+					if (!keyExists(entry)) {
+						super.sorts.add(new sort(entry.getKey(), orderAs.desc));
+					}
+				}
+			}
+		}
+	}
+
+	private boolean keyExists(Map.Entry<String, String> entry) {
+		IQueryGenerator.sort result = super.sorts.stream()
+				.filter( (sort el) -> el.toString().contains(entry.getKey()))
+				.findFirst()
+				.orElse(null);
+		return result != null;
 	}
 
 	@Override
