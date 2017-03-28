@@ -84,7 +84,7 @@ allprojects {
 }
 
 subprojects {
-<<<<<<< HEAD
+ 
   buildscript {
     repositories {
         maven {
@@ -101,21 +101,7 @@ subprojects {
         }
         maven {
             url "http://repo.oneplatform.build/nexus/content/groups/private/"
-=======
-    buildscript {
-        repositories {
-            maven {
-                url "http://repo.oneplatform.build/nexus/content/groups/public/"
-            }
-            maven {
-                url "http://repo.oneplatform.build/nexus/content/groups/private/"
-            }
-        }
-    }
-    sonarqube {
-        properties {
-            property "sonar.projectName", project.name
->>>>>>> b827a863029eea514a9ea011d645a92fd0220397
+ 
         }
     }
 }
@@ -150,7 +136,7 @@ test {
 repositories {
     jcenter()
     maven {
-<<<<<<< HEAD
+ 
         url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/thirdparty/"
     }
     maven {
@@ -163,26 +149,7 @@ repositories {
         url "http://repo.oneplatform.build/nexus/content/groups/public/"
     }
     maven {
-=======
-        url = "https://clojars.org/repo/"
-    }
-    maven {
-        url "https://plugins.gradle.org/m2/"
-    }
-    maven {
-        url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/thirdparty/"
-    }
-    maven {
-        url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/snapshots/"
-    }
-    maven {
-        url "http://repo.1p.thomsonreuters.com/nexus/content/repositories/releases/"
-    }
-    maven {
-        url "http://repo.oneplatform.build/nexus/content/groups/public/"
-    }
-    maven {
->>>>>>> b827a863029eea514a9ea011d645a92fd0220397
+ 
         url "http://repo.oneplatform.build/nexus/content/groups/private/"
     }
 }
@@ -215,12 +182,7 @@ dependencies {
    compile group: 'com.amazonaws', name: 'aws-java-sdk-s3', version: '1.10.2'
 
   //compile  'com.amazonaws:aws-java-sdk:1.10.2'
-=======
-    compile group: 'com.thomsonreuters', name: '1p-service-lib', version: "${servicelib_version}"
-    compile group: 'com.thomsonreuters', name: '1p-service-swagger', version: "${servicelib_version}"
-    compile group: 'com.thomsonreuters', name: 'eiddo-client-karyon', version: "0.6.+"
-    compile  'com.amazonaws:aws-java-sdk:1.10.2'
->>>>>>> b827a863029eea514a9ea011d645a92fd0220397
+ 
 
     compile group: 'com.thomsonreuters', name: '1p-statistics-client', version: '0.1.+'
 
