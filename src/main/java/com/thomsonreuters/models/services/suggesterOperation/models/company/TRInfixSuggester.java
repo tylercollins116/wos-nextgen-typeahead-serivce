@@ -24,7 +24,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -503,8 +502,7 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 
 					if (parent != null && (parent = parent.trim()).length() > 0
 							&& !parent.equals("[]")) {
-						doc.add(new StringField(
-								PARENTS_TEXT_FIELD_NAME,
+						doc.add(new StringField(PARENTS_TEXT_FIELD_NAME,
 								processeTextForExactMatch(removeUnnecessaryCharacter(parent)),
 								Field.Store.NO));
 					}
@@ -527,7 +525,7 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 	}
 
 	private String processeTextForExactMatch(String text) {
-		StringBuilder processedString = new StringBuilder();
+		StringBuilder processedString = new StringBuilder();  
 		Tokenizer tokenizer = new Tokenizer();
 		tokenizer.resetToken(text.toCharArray(), 0, text.length());
 		String token = null;
@@ -703,16 +701,16 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 
 	}
 
-	public List<LookupResult> lookForParentOrChild(String queryString,
-			boolean isParent) throws IOException {
-
+	public List<LookupResult> lookForParentOrChild(String queryString,boolean isParent)
+			throws IOException {
+		 
 		String prefixToken = null;
 		Set<String> matchedTokens = new HashSet<String>();
-
+		 
 		int num = 1;
-
-		if (!isParent) {
-			num = 1000;
+		
+		if(!isParent){
+			num=1000;
 		}
 
 		TopFieldCollector c = TopFieldCollector.create(SORT, num, true, false,
@@ -726,17 +724,18 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 		IndexSearcher searcher = searcherMgr.acquire();
 
 		List<LookupResult> results = null;
-
-		String field = null;
-		if (isParent) {
-			field = ID_TEXT_FIELD_NAME;
-		} else {
-			field = PARENTS_TEXT_FIELD_NAME;
-
-			queryString = removeUnnecessaryCharacter(queryString);
+		
+		String field=null;
+		if(isParent){
+			field=ID_TEXT_FIELD_NAME;
+		}else{
+			field=PARENTS_TEXT_FIELD_NAME;
+			
+			queryString=removeUnnecessaryCharacter(queryString);
 		}
 
-		Term term = new Term(field, processeTextForExactMatch(queryString));
+		Term term = new Term(field,
+				processeTextForExactMatch(queryString));
 		Query query = new TermQuery(term);
 
 		try {
@@ -751,13 +750,14 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 					false, matchedTokens, prefixToken);
 		} catch (Exception e) {
 
-		}finally {
-			searcherMgr.release(searcher);
 		}
 
 		return results;
 
 	}
+	
+	
+	 
 
 	public List<LookupResult> lookup(CharSequence key,
 			BooleanQuery contextQuery, int num, int condition,
@@ -1048,8 +1048,6 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 		List<LookupResult> results = new ArrayList<>();
 		/** to remove duplicate **/
 		final Set<String> globalSeen = new HashSet<String>();
-		HashMap<String, List<Record>> allRecords = new HashMap<String, List<Record>>();
-
 		/** **/
 		for (int i = 0; i < hits.scoreDocs.length; i++) {
 			FieldDoc fd = (FieldDoc) hits.scoreDocs[i];
@@ -1094,26 +1092,6 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 			String alias = getReturn(new String(result.payload.bytes),
 					Process.keyword);
 
-			
-
-			/** new code **/
-
-			try {
-
-				List<Record> allAlias = allRecords.get(alias);
-				if (allAlias == null) {
-					allAlias = new ArrayList<TRInfixSuggester.Record>();
-				}
-				allAlias.add(new Record(text, alias, result));
-
-				allRecords.put(alias, allAlias);
-
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
-			/** new code Ends here **/
-
 			if (!globalSeen.contains(alias)) {
 				globalSeen.add(alias);
 				results.add(result);
@@ -1134,60 +1112,6 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 
 		}
 
-		
-
-		List<LookupResult> tmpResults = new ArrayList<>();
-
-		boolean hasAlisaWithCount = false;
-
-		Set<String> keys = allRecords.keySet();
-		for (String key : keys) {
-			Record record = null;
-			List<Record> allAlias = allRecords.get(key);
-
-			int rcount = 0;
-			if (allAlias.size() > 0) {
-				int count = 0;
-				for (Record data : allAlias) {
-					String name = data.text;					
-					String[] info = name.split("\\^");
-
-					if (info.length > 1) {
-						try {
-							count = Integer.parseInt(info[1]);
-							hasAlisaWithCount = true;
-						} catch (Exception e) {
-							count = 0;
-						}
-
-						if (rcount < count) {
-							rcount=count;
-							record = data;
-						}
-
-					} else {
-						record = data;
-						break;
-					}
-				}
-				
-				if (record != null) {
-					tmpResults.add(record.result);
-					//System.out.println("Adding "+record.text);
-					if (tmpResults.size() == num) {
-						break;
-					}
-				}
-			}
-		}
-		
-		if(hasAlisaWithCount && tmpResults.size()>0){
-			results.clear();
-			results.addAll(tmpResults);
-		}
-		
-		results.addAll(tmpResults);
-
 		return results;
 	}
 
@@ -1200,19 +1124,6 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 			return result[0].trim().toLowerCase();
 		} else {
 			return "";
-		}
-
-	}
-
-	class Record {
-		String text;
-		String alias;
-		LookupResult result;
-
-		public Record(String text, String alias, LookupResult result) {
-			this.result = result;
-			this.text = text;
-			this.alias = alias;
 		}
 
 	}
@@ -1640,17 +1551,17 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 		}
 
 	}
-
-	private String removeUnnecessaryCharacter(String text) {
-		StringBuilder processedString = new StringBuilder();
-		char[] chars = text.toCharArray();
-		for (char c : chars) {
-			if (c == '[' || c == ']' || c == '"') {
+	
+	private String removeUnnecessaryCharacter(String text){
+		StringBuilder processedString=new StringBuilder();
+		char[] chars=text.toCharArray();
+		for(char c:chars){
+			if(c=='['||c==']'||c=='"'){
 				continue;
 			}
 			processedString.append(c);
 		}
-
+		
 		return processedString.toString();
 	}
 }
