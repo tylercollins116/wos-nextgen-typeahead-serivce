@@ -2,14 +2,12 @@ package com.thomsonreuters.rest.service;
 
 import java.io.IOException;
 
-import netflix.adminresources.resources.KaryonWebAdminModule;
+import com.thomsonreuters.eiddo.client.EiddoPropertiesLoader;
 import netflix.karyon.Karyon;
 import netflix.karyon.KaryonBootstrap;
 import netflix.karyon.KaryonServer;
 import netflix.karyon.ShutdownModule;
 import netflix.karyon.archaius.ArchaiusBootstrap;
-import netflix.karyon.eureka.KaryonEurekaModule;
-import netflix.karyon.servo.KaryonServoModule;
 
 import org.codehaus.jettison.json.JSONException;
 import org.junit.AfterClass;
@@ -23,12 +21,10 @@ import com.netflix.governator.guice.BootstrapModule;
 import com.sun.jersey.test.framework.AppDescriptor;
 import com.sun.jersey.test.framework.JerseyTest;
 import com.sun.jersey.test.framework.WebAppDescriptor;
-import com.thomsonreuters.eiddo.client.EiddoPropertiesLoader;
-import com.thomsonreuters.events.karyon.EventsModule;
 import com.thomsonreuters.handler.HealthCheck;
 import com.thomsonreuters.injection.BootstrapInjectionModule;
 import com.thomsonreuters.injection.module.MainModule;
-import com.thomsonreuters.karyon.JerseyBasicRoutingModule;
+import com.thomsonreuters.rest.service.SuggestorTest.TestInjectionModule.TestModule;
 
 public class SuggestorTest extends JerseyTest {
 	private static final int PORT = 7001;
@@ -38,25 +34,18 @@ public class SuggestorTest extends JerseyTest {
 	@ArchaiusBootstrap(loader = EiddoPropertiesLoader.class)
 	@KaryonBootstrap(name = "junit", healthcheck = HealthCheck.class)
 	@Singleton
-	@Modules(include = {
-			ShutdownModule.class,
-			JerseyBasicRoutingModule.class
+	@Modules(include = { ShutdownModule.class, TestModule.class,
+			BootstrapInjectionModule.KaryonRxRouterModuleImpl.class, })
+	public interface TestInjectionModule {
+		public static class TestModule extends MainModule {
+
+			@Override
+			protected void configure() {
+				// bind(HealthCheck.class).toInstance(mockHealthCheck);
+			}
+		}
 	}
-	)
-	public interface TestInjectionModule {}
-	/*
-        @Modules(include = { ShutdownModule.class, TestModule.class,
-                SwaggerHystrixModule.class,
-                BootstrapInjectionModule.KaryonRxRouterModuleImpl.class, })
-        public interface TestInjectionModule {
-            public static class TestModule extends MainModule {
-                @Override
-                protected void configure() {
-                    // bind(HealthCheck.class).toInstance(mockHealthCheck);
-                }
-            }
-        }
-    */
+
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
 		try {
