@@ -1,6 +1,5 @@
 package com.thomsonreuters.models.services.suggesterOperation.models.company;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -19,10 +18,6 @@ import org.apache.lucene.search.suggest.InputIterator;
 import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.store.DataInput;
 import org.apache.lucene.store.DataOutput;
-import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.FSDirectory;
-import org.apache.lucene.store.IOContext;
-import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.BytesRef;
 import org.codehaus.jettison.json.JSONException;
@@ -93,33 +88,39 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			maintainNode(company, ultimateParentList);
 		}
 
-		if (showall) {
-			includeChild = false;
-
+		
+		
+		if(showall){
+			includeChild=false;
+			 
 			for (Company company : ultimateParentList) {
 				getChild(company);
 			}
 		}
-
+		
 		final String query_ = query;
-
+		
 		Collections.sort(ultimateParentList, new Comparator<Company>() {
 
 			@Override
 			public int compare(Company o1, Company o2) {
-				return ((Integer) o2.getCount(0, query_, showall))
-						.compareTo((Integer) o1.getCount(0, query_, showall));
+				return ((Integer) o2.getCount(0, query_,showall))
+						.compareTo((Integer) o1.getCount(0, query_,showall));
 			}
 		});
 
 		List<JSONObject> finalOnj = new ArrayList<JSONObject>();
+		
+		
+		
+		
 
 		WrapInt countInt = new WrapInt(num, includeChild);
 
 		for (Company company : ultimateParentList) {
 			JSONObject json = null;
 
-			if ((json = company.createJson(query, countInt, showall)) != null) {
+			if ((json = company.createJson(query, countInt,showall)) != null) {
 				finalOnj.add(json);
 
 				if (countInt.isSufficient()) {
@@ -180,6 +181,8 @@ public class CompanyTypeaheadSuggester extends Lookup {
 
 	}
 
+	
+
 	private void addChildOnCorrespondingPosition(Company ultimateparent,
 			Company parentCompany) {
 		if (ultimateparent == null || ultimateparent.getChildren().size() == 0) {
@@ -218,20 +221,13 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		}
 		return company;
 	}
-
+	
+ 
 	private void processToModel(LookupResult r, TRInfixSuggester suggester,
 			List<Company> companyList) throws JSONException {
 
 		String json = new String(suggester.getReturn(
 				new String(r.payload.bytes), Process.json));
-
-		String searchterm = null;
-
-		try {
-			searchterm = r.key.toString();
-		} catch (Exception e) {
-			// will be null most of the cases
-		}
 
 		Map<String, String> suggestions = TRCompanyPrepareDictionary
 				.processJson(json);
@@ -297,9 +293,6 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			} else if (key.equalsIgnoreCase("keyword")) {
 				if (value != null && value.length() > 0) {
 					company.setName(value);
-					if (!value.equalsIgnoreCase(searchterm)) {
-						company.setVariation(searchterm);
-					}
 				}
 			} else if (key.equalsIgnoreCase("name")) {
 				if (value != null && value.length() > 0) {
@@ -324,9 +317,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		private int count;
 		private String id = "-";
 		private String variation;
-		private int vCount;
 		private List<Company> sortedCompany = null;
-		private final String delimiter = "^";
 
 		public String getId() {
 			return id;
@@ -345,18 +336,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 		}
 
 		public void setVariation(String variation) {
-			String values[] = variation.split("\\"+delimiter);
-			if (variation.length() > 1) {
-				this.variation = values[0];
-				try {
-					this.vCount = Integer.parseInt(values[1]);
-				} catch (Exception e) {
-					this.vCount = 0;
-				}
-
-			} else {
-				this.variation = variation;
-			}
+			this.variation = variation;
 		}
 
 		public void setPatent(Company patent) {
@@ -379,10 +359,6 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			this.count = count;
 		}
 
-		public int getvCount() {
-			return vCount;
-		}
-
 		public void add(Company company) {
 
 			// remove old one and add new one
@@ -403,7 +379,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 
 			if (remove != null) {
 				this.children.remove(remove);
-			}
+			} 
 			this.children.put(company.getName(), company);
 
 		}
@@ -430,8 +406,8 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			return this.name;
 		}
 
-		private JSONObject createJson(String term, WrapInt counts,
-				boolean showall) throws Exception {
+		private JSONObject createJson(String term, WrapInt counts,boolean showall)
+				throws Exception {
 
 			JSONObject jsonobj = new JSONObject();
 
@@ -443,11 +419,11 @@ public class CompanyTypeaheadSuggester extends Lookup {
 
 			term = term.toLowerCase();
 
-			if (showall || canInclude(this.getName(), term)) {
+			if (showall ||canInclude(this.getName(), term)) {
 				jsonobj.put("name", this.getName().toUpperCase());
 				counts.current++;
 			} else if (showall || canInclude(this.getVariation(), term)) {
-				jsonobj.put("name", this.getName().toUpperCase());
+				jsonobj.put("name", this.getVariation().toUpperCase());
 				counts.current++;
 			} else {
 				jsonobj.put("name", this.getName().toUpperCase());
@@ -463,21 +439,14 @@ public class CompanyTypeaheadSuggester extends Lookup {
 					break;
 				}
 
-				/**
-				 * this is for if parent name and child name is same and count
-				 * also same we simply remove the child
-				 **/
-
 				if (this.count == company_1.count
 						&& removeSpace(this.name).equals(
 								removeSpace(company_1.name))) {
 					continue;
 				}
 
-				/** End of above logic **/
-
 				JSONObject json = null;
-				if ((json = company_1.createJson(term, counts, showall)) != null) {
+				if ((json = company_1.createJson(term, counts,showall)) != null) {
 					object.add(json);
 				}
 			}
@@ -497,15 +466,12 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			return sb.toString().trim().toLowerCase();
 		}
 
-		public int getCount(int count, String subterm, boolean showall) {
+		public int getCount(int count, String subterm,boolean showall) {
 
-			if (showall || canInclude(this.name, subterm)) {
+			if (showall ||canInclude(this.name, subterm)
+					|| canInclude(this.variation, subterm)) {
 				if (this.count > count) {
 					count = this.count;
-				}
-			}else if (showall || canInclude(this.variation, subterm)) {
-				if (this.vCount > count) {
-					count = this.vCount;
 				}
 			}
 
@@ -519,14 +485,13 @@ public class CompanyTypeaheadSuggester extends Lookup {
 
 				@Override
 				public int compare(Company o1, Company o2) {
-					return ((Integer) o2.getCount(0, subterm, showall))
-							.compareTo((Integer) o1.getCount(0, subterm,
-									showall));
+					return ((Integer) o2.getCount(0, subterm,showall))
+							.compareTo((Integer) o1.getCount(0, subterm,showall));
 				}
 			});
 
 			for (Company company : this.sortedCompany) {
-				count = company.getCount(count, subterm, showall);
+				count = company.getCount(count, subterm,showall);
 			}
 
 			return count;
@@ -605,11 +570,13 @@ public class CompanyTypeaheadSuggester extends Lookup {
 	}
 
 	private void getChild(Company company) throws Exception {
-
+		
 		List<Company> companyList = new ArrayList<CompanyTypeaheadSuggester.Company>();
+		 
+		List<LookupResult> results = suggester
+				.lookForParentOrChild(company.getId(), false);
 
-		List<LookupResult> results = suggester.lookForParentOrChild(
-				company.getId(), false);
+		 
 
 		if (results.size() > 0) {
 			for (LookupResult result : results) {
@@ -617,11 +584,8 @@ public class CompanyTypeaheadSuggester extends Lookup {
 			}
 		}
 
-		for (Company childCompany : companyList) {
-			if (childCompany.getId().equalsIgnoreCase(company.getId())) {
-				continue;
-			}
-			getChild(childCompany);
+		for (Company childCompany : companyList) {			
+			getChild(childCompany);				
 			company.add(childCompany);
 		}
 	}
@@ -632,14 +596,7 @@ public class CompanyTypeaheadSuggester extends Lookup {
 
 			TRCompanyPrepareDictionary dictionary = new TRCompanyPrepareDictionary(
 					is, new CompanyEntry());
-			
-			/**
-			
-			  Directory directory = FSDirectory.open(new File("D:\\CompanyDictionaryTest\\index").toPath());
-			  suggester = new TRInfixSuggester(new RAMDirectory(), indexAnalyzer);
-			  
-			  **/
-		 
+
 			suggester = new TRInfixSuggester(new RAMDirectory(), indexAnalyzer);
 
 			suggester.build(new TRCompanyEntryIterator(dictionary,
