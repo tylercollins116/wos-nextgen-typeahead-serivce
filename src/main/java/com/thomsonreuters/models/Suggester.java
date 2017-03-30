@@ -610,8 +610,8 @@ public class Suggester implements SuggesterHandler {
 		SuggestData data = this.ESQueryExecutor.formatResult(entry);
 
 		if (data.suggestions.size() <= 0 && count < expansion.length) {
-			entry.setMax_expansion(expansion[++count]);
-			data = getSuggestionsDataCaller(entry, count, expansion);
+			entry.setMax_expansion(expansion[count]);
+			data = getSuggestionsDataCaller(entry, ++count, expansion);
 		}
 		return data;
 	}
