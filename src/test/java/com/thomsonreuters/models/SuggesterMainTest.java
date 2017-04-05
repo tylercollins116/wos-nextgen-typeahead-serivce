@@ -19,7 +19,7 @@ import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSugg
 import com.thomsonreuters.models.services.util.Blockable;
 import com.thomsonreuters.models.services.util.BlockingHashTable;
 import com.thomsonreuters.models.services.util.ElasticEntityProperties;
-import com.thomsonreuters.models.services.util.Property;
+
 
 public class SuggesterMainTest {
 

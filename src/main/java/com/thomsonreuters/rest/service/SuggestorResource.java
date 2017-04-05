@@ -5,7 +5,6 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 
-import java.io.IOException;
 import java.util.List;
 
 import javax.ws.rs.DefaultValue;
@@ -19,7 +18,6 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +42,7 @@ public class SuggestorResource {
 
 	private final SuggesterHandler suggesterHandler;
 	private final IPASuggesterHandler ipaSuggesterHandler;
+
 	@Inject
 	public SuggestorResource(SuggesterHandler suggesterHandler,IPASuggesterHandler ipaSuggesterHandler) {
 		this.suggesterHandler = suggesterHandler;
@@ -59,7 +58,7 @@ public class SuggestorResource {
 			@PathParam("query") String query, 
 			@DefaultValue("false") @QueryParam("highlight") boolean highlight) {
 
-			return Response.ok(suggesterHandler.lookup(path, query, 10, highlight)).build();
+		return Response.ok(suggesterHandler.lookup(path, query, 10, highlight)).build();
 	}
 
 	@ApiOperation(value = "Suggest check", notes = "Returns list of suggestion for query prefix")
@@ -69,7 +68,7 @@ public class SuggestorResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response searchQuery(@PathParam("query") String query) {
 
-			return Response.ok(suggesterHandler.lookup(query, 10)).build();
+		return Response.ok(suggesterHandler.lookup(query, 10)).build();
 	}
 
 	@ApiOperation(value = "IPA Suggest", notes = "Returns list of suggestion for query")
@@ -111,14 +110,12 @@ public class SuggestorResource {
 		 * &sources=wos&sources=countries&info=health&info=sports
 		 * 
 		 * **/
+		if (uid == null || uid.trim().length() <= 0) {
+			uid = Utils.getUserid(headers);
+			logger.info("User Id from Header" + uid);
+		}
 
-			if (uid == null || uid.trim().length() <= 0) {
-				uid = Utils.getUserid(headers);
-				logger.info("User Id from Header" + uid);
-			}
-
-			return Response.ok(suggesterHandler.lookup(query, source, info, size, uid, highlight)).build();
-
+		return Response.ok(suggesterHandler.lookup(query, source, info, size, uid, highlight)).build();
 	}
 
 	@ApiOperation(value = "Suggest check", notes = "Returns list of suggestion for query prefix")
@@ -138,18 +135,7 @@ public class SuggestorResource {
 		 * &sources=wos&sources=countries&info=health&info=sports
 		 * 
 		 * **/
-
-		try {
-
-			ObjectMapper mapper = new ObjectMapper();
-			return Response.ok(
-					mapper.writeValueAsString(suggesterHandler.lookup(query,
-							size, uid, showall, false))).build();
-		} catch (IOException e) {
-			logger.error("Error creating json response.", e);
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.build();
-		}
+		return Response.ok(suggesterHandler.lookup(query, size, uid, showall, false)).build();
 	}
 	
 	@ApiOperation(value = "Suggest check", notes = "Returns list of suggestion for query prefix")
@@ -163,16 +149,8 @@ public class SuggestorResource {
 			@DefaultValue("10") @QueryParam("size") int size,
 			@DefaultValue("true") @QueryParam("countchild") boolean countchild,
 			@DefaultValue("false") @QueryParam("showall") boolean showall) {
-		try {
 
-			ObjectMapper mapper = new ObjectMapper();
-			return Response.ok(ipaSuggesterHandler.lookup(path,
-					query,size,countchild,showall)).build();
-		} catch (Exception e) {
-			logger.error("Error creating json response.", e);
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.build();
-		}
+		return Response.ok(ipaSuggesterHandler.lookup(path, query,size,countchild,showall)).build();
 	}
 	
 }

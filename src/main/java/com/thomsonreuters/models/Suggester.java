@@ -202,7 +202,6 @@ public class Suggester implements SuggesterHandler {
 				SuggestData suggestData = new SuggestData();
 				suggestData.source = path;
 
-				List<Map<String, String>> typeSuggestions = new ArrayList<Map<String, String>>();
 				try {
 
 					List<LookupResult> allResults = ((TRAnalyzingSuggesterExt) suggester)

@@ -71,7 +71,7 @@ public class HealthCheck implements HealthCheckHandler {
 		this.suggesterHandler = suggesterHandler;
 		this.ipaSuggesterHandler = ipaSuggesterHandler;
 
-		eiddo.addListener(new EiddoListener() {
+		this.eiddo.addListener(new EiddoListener() {
 
 			@Override
 			public void onRepoChainUpdated(List<File> repoDir) {
