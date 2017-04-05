@@ -20,15 +20,16 @@ public class ESEntry extends IQueryGenerator {
 	ElasticEntityProperties eep = null;
 
 	public ESEntry(ElasticEntityProperties eep, String userQuery, int from,
-				   int size, String source) {
-		super(eep.getType(), eep.getReturnFields());
+				   int size, String source, boolean highLight) {
+		super(eep.getType(), eep.getSearchField(), eep.getReturnFields());
 
 		this.eep = eep;
 		this.query = userQuery;
 		this.from = from;
 		this.size = size;
 		this.source = source;
-		this.aliasFields=eep.getAliasFields();
+		this.aliasFields = eep.getAliasFields();
+		this.highLight = highLight;
 
 		/**
 		 * this.returnFields = eep.getReturnFields();
@@ -69,7 +70,7 @@ public class ESEntry extends IQueryGenerator {
 
 		for (int count = 0; count < searchFields.length; count++) {
 
-			queries[count] = generatESQuery(searchFields[count], from, size,
+			queries[count] = generatESQuery(count, from, size,
 					query, eep.getReturnFields(), eep.getSlop());
 		}
 		return queries;

@@ -22,14 +22,17 @@ public abstract class IQueryGenerator {
 	private String query = "";
 	protected HashMap<String, String> aliasFields = null;
 	protected List<sort> sorts = new ArrayList<IQueryGenerator.sort>();
+	private final String[] searchFields;
+	protected boolean highLight;
 
 	private int max_expansion = 50;
 
 	private static final Logger logger = LoggerFactory
 			.getLogger(IQueryGenerator.class);
 
-	public IQueryGenerator(String type, String[] returnFields) {
+	public IQueryGenerator(String type, String[] searchFields, String[] returnFields) {
 		this.type = type;
+		this.searchFields = searchFields;
 		this.returnFields = returnFields;
 	}
 
@@ -58,7 +61,7 @@ public abstract class IQueryGenerator {
 
 	public abstract String getESURL();
 
-	protected String generatESQuery(String searchField, int from, int size,
+	protected String generatESQuery(int queryIndex, int from, int size,
 			String query, String[] returnFields, int slop) {
 
 		String coatedQuery = org.codehaus.jettison.json.JSONObject.quote(query);
@@ -107,12 +110,13 @@ public abstract class IQueryGenerator {
 		 * 
 		 */
 
+		String parsedSearchField = org.codehaus.jettison.json.JSONObject.quote(searchFields[queryIndex]);
 		String esQuery = "{\"from\":" + from + ",\"size\":" + size + ",";
 
 		esQuery += getSortingField();
 
 		esQuery += "\"query\":{\"constant_score\":{\"query\":{\"match_phrase_prefix\":{"
-				+ org.codehaus.jettison.json.JSONObject.quote(searchField)
+				+ parsedSearchField
 				+ ":{\"query\":" + coatedQuery + ",";
 
 		if (this.analyzer != null && this.analyzer.trim().length() > 0) {
@@ -122,7 +126,13 @@ public abstract class IQueryGenerator {
 		}
 
 		esQuery += "\"slop\":" + slop + ",\"max_expansions\":" + max_expansion
-				+ "}}}}},\"fields\":[" + sb.toString() + "]}";
+				+ "}}}}},\"fields\":[" + sb.toString() + "]";
+
+		if(highLight) {
+			esQuery += ",\"highlight\": {\"fields\": { " + parsedSearchField + ": {}}}";
+			
+		}
+		esQuery += "}";
 
 		// logger.info("ES Query " + esQuery);
 		// System.out.println("ES Query " + esQuery);
@@ -153,7 +163,7 @@ public abstract class IQueryGenerator {
 
 	}
 
-	public SuggestData formatResponse() throws JSONException {
+	public SuggestData formatResponse(int queryIndex) throws JSONException {
 
 		SuggestData suggestData = new SuggestData();
 		suggestData.source = type;
@@ -208,12 +218,23 @@ public abstract class IQueryGenerator {
 					e.printStackTrace();
 				}
 			}
-
+			String highLight = getHighLight(finalObj, queryIndex);
+			if(highLight != null) {
+				suggestions.highlight = highLight;
+			}
 			suggestData.suggestions.add(suggestions);
 		}
 
 		return suggestData;
 	}
+	
+	private String getHighLight(JSONObject finalObj, int queryIndex) {
+		try {
+			JSONObject highlightObject = new JSONObject((finalObj.getString("highlight")));
+			return highlightObject.getJSONArray(this.searchFields[queryIndex]).getString(0);
+		} catch (Exception e) { return null; }
+	}
+
 
 	/**
 	 * public String generateQuery(String query, int from, int size) {

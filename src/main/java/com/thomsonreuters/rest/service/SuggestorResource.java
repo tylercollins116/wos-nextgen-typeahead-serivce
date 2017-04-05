@@ -56,18 +56,10 @@ public class SuggestorResource {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response helloTo(@PathParam("path") String path,
-			@PathParam("query") String query) {
-		try {
+			@PathParam("query") String query, 
+			@DefaultValue("false") @QueryParam("highlight") boolean highlight) {
 
-			ObjectMapper mapper = new ObjectMapper();
-			return Response.ok(
-					mapper.writeValueAsString(suggesterHandler.lookup(path,
-							query, 10))).build();
-		} catch (IOException e) {
-			logger.error("Error creating json response.", e);
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.build();
-		}
+			return Response.ok(suggesterHandler.lookup(path, query, 10, highlight)).build();
 	}
 
 	@ApiOperation(value = "Suggest check", notes = "Returns list of suggestion for query prefix")
@@ -76,17 +68,8 @@ public class SuggestorResource {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response searchQuery(@PathParam("query") String query) {
-		try {
 
-			ObjectMapper mapper = new ObjectMapper();
-			return Response.ok(
-					mapper.writeValueAsString(suggesterHandler
-							.lookup(query, 10))).build();
-		} catch (IOException e) {
-			logger.error("Error creating json response.", e);
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.build();
-		}
+			return Response.ok(suggesterHandler.lookup(query, 10)).build();
 	}
 
 	@ApiOperation(value = "IPA Suggest", notes = "Returns list of suggestion for query")
@@ -99,21 +82,14 @@ public class SuggestorResource {
 			@QueryParam("source") String source,
 			@DefaultValue("0") @QueryParam("offset") int offset,
 			@DefaultValue("10") @QueryParam("size") int size,
+			@DefaultValue("false") @QueryParam("highlight") boolean highlight,
 			@QueryParam("uid") String uid) {
-		try {
+
 			if (uid == null || uid.trim().length() == 0) {
 				uid = Utils.getUserid(headers);
 				logger.info("User Id from Header " + uid);
 			}
-			ObjectMapper mapper = new ObjectMapper();
-			return Response.ok(
-					mapper.writeValueAsString(suggesterHandler.lookup(query, source,
-							offset, size, uid))).build();
-		} catch (IOException e) {
-			logger.error("Error creating json response.", e);
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.build();
-		}
+			return Response.ok(suggesterHandler.lookup(query, source, offset, size, uid, highlight)).build();
 	}
 	
 	@ApiOperation(value = "Suggest check", notes = "Returns list of suggestion for query prefix")
@@ -125,6 +101,7 @@ public class SuggestorResource {
 			@QueryParam("source") List<String> source,
 			@QueryParam("info") List<String> info,
 			@DefaultValue("10") @QueryParam("size") int size,
+			@DefaultValue("false") @QueryParam("highlight") boolean highlight,
 			@QueryParam("uid") String uid) {
 
 		/**
@@ -135,22 +112,13 @@ public class SuggestorResource {
 		 * 
 		 * **/
 
-		try {
-
 			if (uid == null || uid.trim().length() <= 0) {
 				uid = Utils.getUserid(headers);
 				logger.info("User Id from Header" + uid);
 			}
 
-			ObjectMapper mapper = new ObjectMapper();
-			return Response.ok(
-					mapper.writeValueAsString(suggesterHandler.lookup(query,
-							source, info, size, uid))).build();
-		} catch (IOException e) {
-			logger.error("Error creating json response.", e);
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.build();
-		}
+			return Response.ok(suggesterHandler.lookup(query, source, info, size, uid, highlight)).build();
+
 	}
 
 	@ApiOperation(value = "Suggest check", notes = "Returns list of suggestion for query prefix")
@@ -176,7 +144,7 @@ public class SuggestorResource {
 			ObjectMapper mapper = new ObjectMapper();
 			return Response.ok(
 					mapper.writeValueAsString(suggesterHandler.lookup(query,
-							size, uid, showall))).build();
+							size, uid, showall, false))).build();
 		} catch (IOException e) {
 			logger.error("Error creating json response.", e);
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)

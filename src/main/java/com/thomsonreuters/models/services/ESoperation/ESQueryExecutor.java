@@ -259,7 +259,7 @@ public class ESQueryExecutor implements IESQueryExecutor {
 
 		for (int i = 0; i < results.size(); i++) {
 			responseFormatter.setResponse(results.get(i));
-			data[i] = responseFormatter.formatResponse();
+			data[i] = responseFormatter.formatResponse(i);
 		}
 		return mergeFinalResult(data);
 	}

@@ -32,7 +32,7 @@ public class ESEntryTest {
 
     @Test
     public void sortFieldsAreAddedOnce() {
-        ESEntry ese = new ESEntry(eep, "userQuery", FROM, SIZE, "source");
+        ESEntry ese = new ESEntry(eep, "userQuery", FROM, SIZE, "source", false);
         ese.addSortFields();
         Assert.assertEquals("There should only be 2 sort fields", 2, ese.sorts.size());
         Assert.assertEquals("Expecting {\"recordInfo.recordName.sorting\": { \"order\": \"asc\" } }", "{\"recordInfo.recordName.sorting\": { \"order\": \"asc\" } }", ese.sorts.get(0).toString());
@@ -43,7 +43,7 @@ public class ESEntryTest {
 
     @Test
     public void existingSortFieldsAreNotDuplicated() {
-        ESEntry ese = new ESEntry(eep, "userQuery", FROM, SIZE, "source");
+        ESEntry ese = new ESEntry(eep, "userQuery", FROM, SIZE, "source", false);
         ese.addSortFields();
         ese.addSortFields();
         Assert.assertEquals("There should only be 2 sort fields", 2, ese.sorts.size());
@@ -53,7 +53,7 @@ public class ESEntryTest {
 
     @Test
     public void multipleAddDoesNotDuplicateExistingField() {
-        ESEntry ese = new ESEntry(eep, "userQuery", FROM, SIZE, "source");
+        ESEntry ese = new ESEntry(eep, "userQuery", FROM, SIZE, "source", false);
         ese.addSortFields();
         ese.addSortFields();
         ese.addSortFields();
@@ -65,7 +65,7 @@ public class ESEntryTest {
 
     @Test
     public void onlyAddNonExitingKeys() {
-        ESEntry ese = new ESEntry(eep, "userQuery", FROM, SIZE, "source");
+        ESEntry ese = new ESEntry(eep, "userQuery", FROM, SIZE, "source", false);
         ese.addSortFields();
         ese.addSortFields();
         sortFields.put("recordInfo.dummy", "desc");
