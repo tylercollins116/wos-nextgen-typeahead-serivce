@@ -7,22 +7,24 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.StringTokenizer;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.NumericDocValuesField;
 import org.apache.lucene.document.StringField;
- 
 import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.index.MergePolicy;
 import org.apache.lucene.index.SortingMergePolicy;
-import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.index.Term;
- 
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
@@ -45,33 +47,15 @@ import org.apache.lucene.search.spans.SpanNearQuery;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.search.suggest.InputIterator;
-import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.search.suggest.Lookup.LookupResult;
-import org.apache.lucene.store.DataInput;
-import org.apache.lucene.store.DataOutput;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.BytesRef;
-import org.apache.lucene.util.Version;
 import org.codehaus.jettison.json.JSONObject;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringTokenizer;
-
-import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
-import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
-
 import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
- 
- 
- 
 
- 
-
-public class TRInfixSuggester  {
+public class TRInfixSuggester implements Closeable {
 
 	/** Field name used for the indexed text. */
 	protected final static String TEXT_FIELD_NAME = "text";
@@ -115,8 +99,9 @@ public class TRInfixSuggester  {
 		storeFieldType.setTokenized(false);
 
 		indexFieldType.setOmitNorms(true);
-		//indexFieldType.setIndexed(true);
-		indexFieldType.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS);
+		// indexFieldType.setIndexed(true);
+		indexFieldType
+				.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS);
 		indexFieldType.setStored(false);
 
 		payloadField = new Field("payload", new byte[0], storeFieldType);
@@ -189,7 +174,7 @@ public class TRInfixSuggester  {
 			}
 
 			writer.commit();
-		//	writer.close();
+			// writer.close();
 			success = true;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -318,20 +303,20 @@ public class TRInfixSuggester  {
 				} else {
 
 					spanQueryList.add(new SpanMultiTermQueryWrapper(
-							new PrefixQuery(new Term(TEXT_FIELD_NAME,
-									words.get(i)))));
+							new PrefixQuery(new Term(TEXT_FIELD_NAME, words
+									.get(i)))));
 				}
 
 			}
 
 			SpanQuery finalSpanQuery = null;
-			
-			if(spanQueryList.size()>1){
-				finalSpanQuery=new SpanNearQuery(
-					spanQueryList.toArray(new SpanQuery[] {}), 1, true);
-			}else {
-				
-				finalSpanQuery=spanQueryList.get(0);
+
+			if (spanQueryList.size() > 1) {
+				finalSpanQuery = new SpanNearQuery(
+						spanQueryList.toArray(new SpanQuery[] {}), 1, true);
+			} else {
+
+				finalSpanQuery = spanQueryList.get(0);
 			}
 
 			BooleanQuery anywherematched = new BooleanQuery();
@@ -357,9 +342,10 @@ public class TRInfixSuggester  {
 
 		TopFieldCollector c2 = TopFieldCollector.create(SORT, num, true, false,
 				false);
-		
+
 		final MergePolicy mergePolicy = writer.getConfig().getMergePolicy();
-		Collector c3 = new EarlyTerminatingSortingCollector(c2, SORT, num,(SortingMergePolicy) mergePolicy);
+		Collector c3 = new EarlyTerminatingSortingCollector(c2, SORT, num,
+				(SortingMergePolicy) mergePolicy);
 
 		// We sorted postings by weight during indexing, so we
 
@@ -419,7 +405,8 @@ public class TRInfixSuggester  {
 		// We sorted postings by weight during indexing, so we
 		// only retrieve the first num hits now:
 		final MergePolicy mergePolicy = writer.getConfig().getMergePolicy();
-		Collector c2 = new EarlyTerminatingSortingCollector(c, SORT, num,(SortingMergePolicy) mergePolicy);
+		Collector c2 = new EarlyTerminatingSortingCollector(c, SORT, num,
+				(SortingMergePolicy) mergePolicy);
 		IndexSearcher searcher = searcherMgr.acquire();
 
 		List<LookupResult> results = null;
@@ -693,28 +680,22 @@ public class TRInfixSuggester  {
 		}
 
 	}
-	
-	
+
 	public static final class DummyAnalyzer extends Analyzer {
 		public static final DummyAnalyzer INSTANCE = new DummyAnalyzer();
-		 
+
 		/**
-		@Override
-		protected TokenStreamComponents createComponents(String fieldName,
-				Reader reader) {
-			// TODO Auto-generated method stub
-			return null;
-		}
-	**/
+		 * @Override protected TokenStreamComponents createComponents(String
+		 *           fieldName, Reader reader) { // TODO Auto-generated method
+		 *           stub return null; }
+		 **/
 		@Override
 		protected TokenStreamComponents createComponents(String fieldName) {
 			// TODO Auto-generated method stub
 			return null;
-		} 
+		}
 	}
-	 
 
-	
 	public class PhraseTokenizerTokens extends TokenStream {
 
 		// This is main part and indexing is the value hold by termAtt
@@ -733,8 +714,8 @@ public class TRInfixSuggester  {
 			termAtt = addAttribute(CharTermAttribute.class);
 			positionAtt = addAttribute(PositionIncrementAttribute.class);
 		}
-		
-		public List<String> getTokenizedWords(){
+
+		public List<String> getTokenizedWords() {
 			return this.tokenizedWords;
 		}
 
@@ -748,27 +729,29 @@ public class TRInfixSuggester  {
 
 		@Override
 		public boolean incrementToken() throws IOException {
-			
+
 			this.termAtt.setEmpty();
-			 
-			if ( tokenizedWords.size()>0) {
+
+			if (tokenizedWords.size() > 0) {
 				this.termAtt.append(tokenizedWords.remove(0));
 				positionAtt.setPositionIncrement(1);
 				return true;
 			} else {
 				tokenizedWords.clear();
 				return false;
-			} 
-		}
-		
-		public String getToken(){
-			return termAtt.toString();
-		 
+			}
 		}
 
-		// This reset function is called automatically for the single time at the
+		public String getToken() {
+			return termAtt.toString();
+
+		}
+
+		// This reset function is called automatically for the single time at
+		// the
 		// beginning of each document( whenever the operation starts this is
-		// called for single time only and if we have to change the value of list
+		// called for single time only and if we have to change the value of
+		// list
 		// then we need to call it again by ourself)
 
 		@Override
@@ -788,16 +771,18 @@ public class TRInfixSuggester  {
 			StringBuilder sb = new StringBuilder();
 
 			for (char c : data) {
-				
+
 				if (c == '[' || c == ']' || c == '"' || c == '.' || c == ','
-						|| c == '`' || c == '?' || c == '|' || c == '~' || c == '!'
-						|| c == '@' || c == '^' || c == '#' || c == '$'|| c == '.' || c == '/'|| c == '-') {
-					
+						|| c == '`' || c == '?' || c == '|' || c == '~'
+						|| c == '!' || c == '@' || c == '^' || c == '#'
+						|| c == '$' || c == '.' || c == '/' || c == '-') {
+
 					sb.append(' ');
 					continue;
 				}
-				
-				if (Character.isAlphabetic(c) || Character.isDigit(c)|| c == ' ' ) {
+
+				if (Character.isAlphabetic(c) || Character.isDigit(c)
+						|| c == ' ') {
 					sb.append(c);
 				}
 			}
@@ -806,15 +791,15 @@ public class TRInfixSuggester  {
 		}
 
 		private void normalizedPhrase(String stringToTokenize) {
-			
-			if(stringToTokenize==null){			 
+
+			if (stringToTokenize == null) {
 				return;
 			}
 
-			StringTokenizer tokenizer = new StringTokenizer(stringToTokenize); 
-	 
+			StringTokenizer tokenizer = new StringTokenizer(stringToTokenize);
+
 			while (tokenizer.hasMoreElements()) {
-			
+
 				tokenizedWords.add(tokenizer.nextToken());
 
 			}
@@ -823,5 +808,18 @@ public class TRInfixSuggester  {
 
 	}
 
-	
+	@Override
+	public void close() throws IOException {
+		if (searcherMgr != null) {
+			searcherMgr.close();
+			searcherMgr = null;
+		}
+		if (writer != null) {
+			writer.close();
+			dir.close();
+			writer = null;
+		}
+
+	}
+
 }
