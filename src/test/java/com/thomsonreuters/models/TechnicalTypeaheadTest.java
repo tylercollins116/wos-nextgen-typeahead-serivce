@@ -1,5 +1,7 @@
 package com.thomsonreuters.models;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,22 +11,19 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 
+import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-import com.thomsonreuters.models.SuggestData.Info;
 import com.thomsonreuters.models.SuggestData.Suggestions;
 import com.thomsonreuters.models.services.suggesterOperation.models.company.TechnicalTypeaheadSuggester;
 
 public class TechnicalTypeaheadTest {
 
-	@Test
-	public void testCompanyTypeahead() throws Exception {
-		
-		if(true){
-			return;
-		}
-		
+	private TechnicalTypeaheadSuggester suggester = null;
+
+	@Before
+	public void loadData() throws Exception {
+
 		/*** creating and *********/
 		InputStreamGenerator obj = new InputStreamGenerator();
 		obj.addLine("{\"keyword\":\"CAPTURING RAW IMAGE\",\"count\":67,\"inf\":1.550053}");
@@ -41,35 +40,31 @@ public class TechnicalTypeaheadTest {
 		obj.addLine("{\"keyword\":\"RETINOPATHY RETINOBLASTOMA RETROLENTAL\",\"count\":1265,\"inf\":0.771618}");
 		obj.addLine("{\"keyword\":\"COMPLETE CHIP\",\"count\":1136,\"inf\":1.447263}");
 		obj.addLine("{\"keyword\":\"NICKEL COBALT MOLYBDENUM CHROMIUM\",\"count\":4225,\"inf\":1.289782}");
-		
-		
+
 		/******************************************/
+
 		
+
+		suggester = new TechnicalTypeaheadSuggester(obj.getStream());
+
+	}
+
+	@Test
+	public void testCompanyTypeahead() throws Exception {
 
 		Long totalMemory = Runtime.getRuntime().totalMemory();
-		
-	
-		
+
 		long start = System.currentTimeMillis();
-		
-		System.out.println(new Date());
+ 
+		System.out.println(System.currentTimeMillis() - start);
 
-		final TechnicalTypeaheadSuggester suggester = new TechnicalTypeaheadSuggester(obj.getStream());
-		
-		
-		System.out.println(new Date());
-		
-		System.out.println(System.currentTimeMillis()-start);
-
-
-		
-		SuggestData result = (suggester.lookup("INNAT", 2, 3,
-				false));
+		SuggestData result = (suggester.lookup("INNAT", 2, 3, false));
 
 		List<Suggestions> allSuggestions = result.suggestions;
-		
-		assertEquals("INNATE AND ADAPTIVE IMMUNE RESPONSES", result.suggestions.get(0).info.get(0).value);
-	
+
+		assertEquals("INNATE AND ADAPTIVE IMMUNE RESPONSES",
+				result.suggestions.get(0).info.get(0).value);
+
 	}
 
 	private class InputStreamGenerator {

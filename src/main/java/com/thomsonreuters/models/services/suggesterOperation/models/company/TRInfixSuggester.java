@@ -728,7 +728,7 @@ public class TRInfixSuggester implements Closeable {
 		}
 
 		@Override
-		public boolean incrementToken() throws IOException {
+		public final boolean  incrementToken() throws IOException {
 
 			this.termAtt.setEmpty();
 

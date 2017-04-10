@@ -10,6 +10,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import com.thomsonreuters.models.services.suggesterOperation.models.company.CompanyTypeaheadSuggester;
@@ -35,14 +36,12 @@ public class CompanyTypeaheadTest {
 		System.out.println();
 
 	}
-
-	@Test
-	public void testCompanyTypeahead() throws Exception {
+	
+	private CompanyTypeaheadSuggester suggester=null;
+	
+	@Before	
+	public void loadData() throws Exception {
 		
-		if(true){
-			return;
-		}
-
 		/*** creating and *********/
 		InputStreamGenerator obj = new InputStreamGenerator();
 		obj.addLine("{\"id\":\"CNEW_NEW\",\"name\":\"TOKAI EFFECT YG\",\"parents\":\"\",\"count\":\"18\"}");
@@ -73,8 +72,14 @@ public class CompanyTypeaheadTest {
 
 		Long totalMemory = Runtime.getRuntime().totalMemory();
 
-		CompanyTypeaheadSuggester suggester = new CompanyTypeaheadSuggester(
+		  suggester = new CompanyTypeaheadSuggester(
 				obj.getStream());
+		
+	}
+
+	@Test
+	public void testCompanyTypeahead() throws Exception { 
+		
 
 		String wholetree = (suggester.lookup("PAREN", 10, 2, false, true));
 		String expectedResult = "{\"suggestion\":[{\"name\":\"GRAND PARENT\",\"count\":2,\"clusterId\":\"CHILD\",\"children\":[{\"name\":\"PARENT\",\"count\":5,\"clusterId\":\"CHILD_1\",\"children\":[{\"name\":\"CHILD\",\"count\":6,\"clusterId\":\"CHILD_2\",\"children\":[{\"name\":\"GRAND CHILD\",\"count\":6,\"clusterId\":\"CHILD_3\",\"children\":[{\"name\":\"GRAND GRAND CHILD2\",\"count\":50,\"clusterId\":\"CHILD_4_2\",\"children\":[{\"name\":\"THOMSON\",\"count\":20,\"clusterId\":\"CHILD_5_1\",\"children\":[]}]},{\"name\":\"GRAND GRAND CHILD1\",\"count\":10,\"clusterId\":\"CHILD_4_1\",\"children\":[]}]}]}]}]}]}";
