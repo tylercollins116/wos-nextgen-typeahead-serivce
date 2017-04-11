@@ -73,7 +73,7 @@ public class SuggestDataJsonTest {
 		System.out.println(output.toString());
 
 		assertEquals(
-				"{\"source\":\"wos\",\"took\":\"2\",\"suggestions\":[{\"keyword\":\"test1\",\"info\":[{\"key\":\"count\",\"value\":\"10\"}]},{\"keyword\":\"test2\",\"info\":[{\"key\":\"count\",\"value\":\"20\"}]}]}",
+				"{\"source\":\"wos\",\"took\":\"2\",\"hits\":0,\"suggestions\":[{\"keyword\":\"test1\",\"info\":[{\"key\":\"count\",\"value\":\"10\"}]},{\"keyword\":\"test2\",\"info\":[{\"key\":\"count\",\"value\":\"20\"}]}]}",
 				output.toString());
 		
 		Collections.sort(suggestData.suggestions,new Comparator<Suggestions>() {
