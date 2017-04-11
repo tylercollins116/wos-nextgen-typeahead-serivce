@@ -78,7 +78,7 @@ public class SuggesterMainTest {
 				// TODO Auto-generated method stub
 				return null;
 			}
-		}, null);
+		});
 
 		assertNotNull(suggester);
 		try {

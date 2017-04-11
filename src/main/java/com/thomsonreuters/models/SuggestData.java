@@ -13,6 +13,9 @@ public class SuggestData {
 	@JsonProperty("took")
 	public String took;
 
+	@JsonProperty("hits")
+	public int hits;
+
 	@JsonProperty("suggestions")
 	public List<Suggestions> suggestions = new ArrayList<SuggestData.Suggestions>();
 
