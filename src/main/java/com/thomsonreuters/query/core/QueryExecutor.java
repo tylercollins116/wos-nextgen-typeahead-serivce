@@ -24,7 +24,14 @@ import org.slf4j.LoggerFactory;
 public class QueryExecutor {
 	
 	private static final Logger log = LoggerFactory.getLogger(QueryExecutor.class);
-	private static ExecutorService executor = Executors.newCachedThreadPool();
+	private static ExecutorService executor;
+	
+	static {
+		if(executor == null) {
+			executor = Executors.newCachedThreadPool();
+			log.debug("Executor created : {}", executor.toString());
+		}
+	}
 	
 	private QueryExecutor() {}
 	
