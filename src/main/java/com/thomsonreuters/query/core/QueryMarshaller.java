@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 import com.thomsonreuters.models.SuggestData;
 import com.thomsonreuters.models.SuggestData.Info;
 import com.thomsonreuters.models.SuggestData.Suggestions;
-import com.thomsonreuters.models.services.util.ElasticEntityProperties;
+import com.thomsonreuters.query.model.QueryManagerInput;
 
 
 public class QueryMarshaller {
@@ -23,14 +23,14 @@ public class QueryMarshaller {
 
 	private QueryMarshaller(){}
 	
-	public static SuggestData parse(List<Pair<String, String>> queryResults, ElasticEntityProperties eep, String queryTerm, String source){
+	public static SuggestData parse(QueryManagerInput queryManagerInput, List<Pair<String, String>> queryResults){
 
 		SuggestData[] data = new SuggestData[queryResults.size()];
 
 		for (int i = 0; i < queryResults.size(); i++) {
 			
 			try {
-				data[i] = formatResponse(queryResults.get(i).getRight(), eep, queryTerm, source);
+				data[i] = formatResponse(queryManagerInput, queryResults.get(i).getRight());
 			} catch (JSONException e) {
 				log.error("Marshaller error (parse):", e.getMessage(), e);
 			}			
@@ -105,10 +105,10 @@ public class QueryMarshaller {
 		return first;
 	}
 	
-	private static SuggestData formatResponse(String response, ElasticEntityProperties eep, String queryTerm, String source) throws JSONException {
+	private static SuggestData formatResponse(QueryManagerInput queryManagerInput, String response) throws JSONException {
 
 		SuggestData suggestData = new SuggestData();
-		suggestData.source = source;
+		suggestData.source = queryManagerInput.getSource();
 
 		if(response == null) {
 			return suggestData;
@@ -125,13 +125,13 @@ public class QueryMarshaller {
 		for (int seq_1 = 0; seq_1 < objs.length(); seq_1++) {
 
 			Suggestions suggestions = suggestData.new Suggestions();
-			suggestions.keyword = queryTerm;
+			suggestions.keyword = queryManagerInput.getQueryTerm();
 
 			Object obj_ = objs.get(seq_1);
 			JSONObject finalObj = new JSONObject(obj_.toString());
 			String fielddata = (finalObj.getString("fields"));
 
-			for (String field : eep.getReturnFields()) {
+			for (String field : queryManagerInput.getReturnFields()) {
 
 				try {
 
@@ -149,9 +149,9 @@ public class QueryMarshaller {
 
 						String aliasFieldName = null;
 
-						if (eep.getAliasFields() != null
-								&& eep.getAliasFields().size() > 0
-								&& (aliasFieldName = eep.getAliasFields()
+						if (queryManagerInput.getAliasFields() != null
+								&& queryManagerInput.getAliasFields().size() > 0
+								&& (aliasFieldName = queryManagerInput.getAliasFields()
 										.get(field)) != null
 								&& aliasFieldName.trim().length() > 0) {
 							info.key = aliasFieldName;

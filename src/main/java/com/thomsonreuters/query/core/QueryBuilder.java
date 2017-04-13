@@ -2,30 +2,29 @@ package com.thomsonreuters.query.core;
 
 import java.util.Map;
 
-import com.thomsonreuters.models.services.util.ElasticEntityProperties;
+import com.thomsonreuters.query.model.QueryManagerInput;
 
 public class QueryBuilder {
 
 	private QueryBuilder() {}
 	
-	public static String generate(ElasticEntityProperties eep, String searchField
-			, int from, int size, int expansion, String queryTerm) {
+	public static String generate(QueryManagerInput queryManagerInput, String searchField) {
 
-		String analyzer = eep.getAnalyzer();
-		String coatedQuery = org.codehaus.jettison.json.JSONObject.quote(queryTerm);
+		String analyzer = queryManagerInput.getAnalyzer();
+		String coatedQuery = org.codehaus.jettison.json.JSONObject.quote(queryManagerInput.getQueryTerm());
 
 		StringBuilder sb = new StringBuilder();
 
-		for (String field : eep.getReturnFields()) {
+		for (String field : queryManagerInput.getReturnFields()) {
 			if (sb.length() > 0) {
 				sb.append(",");
 			}
 			sb.append(org.codehaus.jettison.json.JSONObject.quote(field));
 		}
 
-		String esQuery = "{\"from\":" + from + ",\"size\":" + size + ",";
+		String esQuery = "{\"from\":" + queryManagerInput.getFrom() + ",\"size\":" + queryManagerInput.getSize() + ",";
 
-		esQuery += getSortingField(eep.getSortFields());
+		esQuery += getSortingField(queryManagerInput.getSortFields());
 
 		esQuery += "\"query\":{\"constant_score\":{\"query\":{\"match_phrase_prefix\":{"
 				+ org.codehaus.jettison.json.JSONObject.quote(searchField)
@@ -37,7 +36,7 @@ public class QueryBuilder {
 					+ ",";
 		}
 
-		esQuery += "\"slop\":" + eep.getSlop() + ",\"max_expansions\":" + expansion
+		esQuery += "\"slop\":" + queryManagerInput.getSlop() + ",\"max_expansions\":" + queryManagerInput.getExpansion()
 				+ "}}}}},\"fields\":[" + sb.toString() + "]}";
 
 		return esQuery;

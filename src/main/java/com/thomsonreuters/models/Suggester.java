@@ -40,6 +40,7 @@ import com.thomsonreuters.models.services.util.ElasticEntityProperties;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
 import com.thomsonreuters.models.services.util.Property;
 import com.thomsonreuters.query.core.QueryManager;
+import com.thomsonreuters.query.model.QueryManagerInput;
 
 @Singleton
 public class Suggester implements SuggesterHandler {
@@ -87,7 +88,7 @@ public class Suggester implements SuggesterHandler {
 		/*************************************************************************************/
 		if (eep != null) {
 			try {
-				results.add(getSuggestionsDataWithCount(eep, 0, n, query, path));
+				results.add(getSuggestionsDataWithCount(new QueryManagerInput(eep, 0, n, query, path)));
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -285,7 +286,8 @@ public class Suggester implements SuggesterHandler {
 					.getElasticEntityProperties(Property.ENTITY_PREFIX + path);
 
 			try {
-				results.add(getSuggestionsDataWithCount(eep, offset, size, query, path));
+				
+				results.add(getSuggestionsDataWithCount(new QueryManagerInput(eep, offset, size, query, path)));
 			} catch (Exception e) {
 				log.error("elastic search error", e);
 			}
@@ -591,35 +593,26 @@ public class Suggester implements SuggesterHandler {
 
 	}
 
-	private SuggestData getSuggestionsDataCaller(ElasticEntityProperties eep, int count, int from, int size
-			, Integer[] expansion, String queryTerm, String source) throws Exception {
+	private SuggestData getSuggestionsDataCaller(QueryManagerInput queryManagerInput) throws Exception {
 
-		SuggestData data = QueryManager.query(eep, from, size, expansion[count], queryTerm, source);
-
-		if (data.suggestions.size() <= 0 && count < expansion.length) {
-			data = QueryManager.query(eep, from, size, expansion[count], queryTerm, source);
+		SuggestData data = QueryManager.query(queryManagerInput);
+		log.info("Expansion = {}", queryManagerInput.getExpansion());
+		if (data.suggestions.size() <= 0 && queryManagerInput.increaseMaxExpansion()) {
+			data = getSuggestionsDataCaller(queryManagerInput);
 		}
 		return data;
 	}
 
-	private SuggestData getSuggestionsData(ElasticEntityProperties eep, int from, int size, String queryTerm, String source) throws Exception {
-
-		long start = System.currentTimeMillis();
-
-		SuggestData data = getSuggestionsDataCaller(eep, 0, from, size, eep.getMaxExpansion(), queryTerm, source);
-		data.took = (System.currentTimeMillis() - start) + "";
-		return data;
-
-	}
 
 	/**
 	 * provide suggest list and took is total count of hits
 	 * 
 	 */
-	private SuggestData getSuggestionsDataWithCount(ElasticEntityProperties eep, int from, int size, String queryTerm, String source) throws Exception {
-		SuggestData suggestData = getSuggestionsData(eep, from, size, queryTerm, source);
+	private SuggestData getSuggestionsDataWithCount(QueryManagerInput queryManagerInput) throws Exception {
+		long start = System.currentTimeMillis();
+		SuggestData suggestData = getSuggestionsDataCaller(queryManagerInput);
 		if (suggestData != null) {
-			suggestData.took = suggestData.took + ":"+ suggestData.hits;
+			suggestData.took = (System.currentTimeMillis() - start) + ":"+ suggestData.hits;
 		}
 		return suggestData;
 	}

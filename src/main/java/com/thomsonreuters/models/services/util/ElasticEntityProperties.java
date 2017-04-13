@@ -2,6 +2,8 @@ package com.thomsonreuters.models.services.util;
 
 import java.util.Map;
 
+import com.netflix.config.ConfigurationManager;
+
 public class ElasticEntityProperties {
 
 	private String type = "";
@@ -89,17 +91,11 @@ public class ElasticEntityProperties {
 		 
 	}
 
-	public String getHost(String source) {
-
-		if (this.host != null && this.host.length() > 5 && this.port!=null && this.port.length()>0) {
-			return "http://" + host+":"+this.port + Property.ES_SEARCH_PATH.get(source) + "/_search";
-		}
-
-		return null;
+	public String getHost() {
+		return this.host;
 	}
 
 	public void setHost(String host) {
-
 		this.host = host;
 	}
 
@@ -111,6 +107,17 @@ public class ElasticEntityProperties {
 		this.port = port;
 	}
 	
-	
+	public String getElasticSearchUrl(String source) {
+		String indexPath = Property.ES_SEARCH_PATH.get(source);
+		if (this.host != null && this.host.length() > 5 && this.port!=null && this.port.length()>0) {
+			return "http://" + host+":"+this.port + "/"+ indexPath + "/_search";
+		}
+		else {
+			String genericHost = ConfigurationManager.getConfigInstance().getString(Property.SEARCH_HOST);
+			String genericPort = ConfigurationManager.getConfigInstance().getString(Property.SEARCH_PORT);
+
+			return "http://" + genericHost + ":" + genericPort + "/"+ indexPath + "/_search";
+		}
+	}
 
 }
