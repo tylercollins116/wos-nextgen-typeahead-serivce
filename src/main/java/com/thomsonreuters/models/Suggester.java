@@ -28,9 +28,6 @@ import com.google.inject.Singleton;
 import com.netflix.config.ConfigurationManager;
 import com.thomsonreuters.models.SuggestData.Info;
 import com.thomsonreuters.models.SuggestData.Suggestions;
-import com.thomsonreuters.models.services.ESoperation.ESEntry;
-import com.thomsonreuters.models.services.ESoperation.IESQueryExecutor;
-import com.thomsonreuters.models.services.ESoperation.IQueryGenerator;
 import com.thomsonreuters.models.services.suggesterOperation.IProcessPreSearchTerm;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggester;
 import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSuggesterExt;
@@ -42,6 +39,8 @@ import com.thomsonreuters.models.services.suggesters.ProcessPreSearchTerm;
 import com.thomsonreuters.models.services.util.ElasticEntityProperties;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
 import com.thomsonreuters.models.services.util.Property;
+import com.thomsonreuters.query.core.QueryManager;
+import com.thomsonreuters.query.model.QueryManagerInput;
 
 @Singleton
 public class Suggester implements SuggesterHandler {
@@ -55,14 +54,9 @@ public class Suggester implements SuggesterHandler {
 
 	private final IProcessPreSearchTerm processPreSearchTerm = new ProcessPreSearchTerm();
 
-	private final IESQueryExecutor ESQueryExecutor;
-
 	@Inject
-	public Suggester(
-			SuggesterConfigurationHandler suggesterConfigurationHandler,
-			IESQueryExecutor queryExecutor) {
+	public Suggester(SuggesterConfigurationHandler suggesterConfigurationHandler) {
 		this.suggesterConfigurationHandler = suggesterConfigurationHandler;
-		this.ESQueryExecutor = queryExecutor;
 	}
 
 	public SuggesterConfigurationHandler getSuggesterConfigurationHandler() {
@@ -93,10 +87,8 @@ public class Suggester implements SuggesterHandler {
 		/** These code are execute against ElasticSearch **/
 		/*************************************************************************************/
 		if (eep != null) {
-			IQueryGenerator entry = new ESEntry(eep, query, 0, n, path);
-
 			try {
-				results.add(getSuggestionsData(entry, eep.getMaxExpansion()));
+				results.add(getSuggestionsDataWithCount(new QueryManagerInput(eep, 0, n, query, path)));
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -293,11 +285,9 @@ public class Suggester implements SuggesterHandler {
 			ElasticEntityProperties eep = suggesterConfigurationHandler
 					.getElasticEntityProperties(Property.ENTITY_PREFIX + path);
 
-			IQueryGenerator entry = new ESEntry(eep, query, offset, size, path);
-
 			try {
-				results.add(getSuggestionsDataWithCount(entry,
-						eep.getMaxExpansion()));
+				
+				results.add(getSuggestionsDataWithCount(new QueryManagerInput(eep, offset, size, query, path)));
 			} catch (Exception e) {
 				log.error("elastic search error", e);
 			}
@@ -438,9 +428,8 @@ public class Suggester implements SuggesterHandler {
 			try {
 				allSuggestions.addAll(suggestions.get(1000,
 						TimeUnit.MILLISECONDS));
-			} catch (InterruptedException | ExecutionException
-					| TimeoutException e) {
-				this.log.info("Grace fully handled time out exception ");
+			} catch (InterruptedException | ExecutionException | TimeoutException e) {
+				log.info("Grace fully handled time out exception ", e);
 			}
 		}
 
@@ -604,48 +593,26 @@ public class Suggester implements SuggesterHandler {
 
 	}
 
-	private SuggestData getSuggestionsDataCaller(IQueryGenerator entry,
-			int count, Integer[] expansion) throws Exception {
+	private SuggestData getSuggestionsDataCaller(QueryManagerInput queryManagerInput) throws Exception {
 
-		SuggestData data = this.ESQueryExecutor.formatResult(entry);
-
-		if (data.suggestions.size() <= 0 && count < expansion.length) {
-			entry.setMax_expansion(expansion[count]);
-			data = getSuggestionsDataCaller(entry, ++count, expansion);
+		SuggestData data = QueryManager.query(queryManagerInput);
+		log.info("Expansion = {}", queryManagerInput.getExpansion());
+		if (data.suggestions.size() <= 0 && queryManagerInput.increaseMaxExpansion()) {
+			data = getSuggestionsDataCaller(queryManagerInput);
 		}
 		return data;
 	}
 
-	private SuggestData getSuggestionsData(IQueryGenerator entry,
-			Integer[] expansion) throws Exception {
-
-		long start = System.currentTimeMillis();
-
-		if (expansion != null && expansion.length > 0) {
-			entry.setMax_expansion(expansion[0]);
-		}
-
-		SuggestData data = getSuggestionsDataCaller(entry, 0, expansion);
-		data.took = (System.currentTimeMillis() - start) + "";
-		return data;
-
-	}
 
 	/**
 	 * provide suggest list and took is total count of hits
 	 * 
-	 * @param entry
-	 * @param expansion
-	 * @return suggest data list
-	 * @throws Exception
 	 */
-	private SuggestData getSuggestionsDataWithCount(IQueryGenerator entry,
-			Integer[] expansion) throws Exception {
-		SuggestData suggestData = getSuggestionsData(entry, expansion);
-		// a temp fix to return total count of hits
+	private SuggestData getSuggestionsDataWithCount(QueryManagerInput queryManagerInput) throws Exception {
+		long start = System.currentTimeMillis();
+		SuggestData suggestData = getSuggestionsDataCaller(queryManagerInput);
 		if (suggestData != null) {
-			suggestData.took = suggestData.took + ":"
-					+ String.valueOf(entry.getTotalCount());
+			suggestData.took = (System.currentTimeMillis() - start) + ":"+ suggestData.hits;
 		}
 		return suggestData;
 	}
