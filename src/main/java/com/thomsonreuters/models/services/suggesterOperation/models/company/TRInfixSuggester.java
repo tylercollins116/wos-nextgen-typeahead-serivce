@@ -1,63 +1,28 @@
 package com.thomsonreuters.models.services.suggesterOperation.models.company;
 
-/*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.StringReader;
-import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.AnalyzerWrapper;
-import org.apache.lucene.analysis.TokenFilter;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.ngram.EdgeNGramTokenFilter;
-import org.apache.lucene.analysis.ngram.Lucene43EdgeNGramTokenFilter;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
-import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
-import org.apache.lucene.document.BinaryDocValuesField;
+import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.NumericDocValuesField;
-import org.apache.lucene.document.SortedSetDocValuesField;
 import org.apache.lucene.document.StringField;
-import org.apache.lucene.document.TextField;
-import org.apache.lucene.index.BinaryDocValues;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.FilterLeafReader;
 import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.index.LeafReader;
-import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.index.MergePolicy;
-import org.apache.lucene.index.MultiDocValues;
-import org.apache.lucene.index.ReaderUtil;
-import org.apache.lucene.index.SegmentReader;
-import org.apache.lucene.index.SortedSetDocValues;
 import org.apache.lucene.index.SortingMergePolicy;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause;
@@ -69,289 +34,132 @@ import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.SearcherFactory;
 import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldCollector;
-import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.search.spans.SpanMultiTermQueryWrapper;
 import org.apache.lucene.search.spans.SpanNearQuery;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.search.suggest.InputIterator;
-import org.apache.lucene.search.suggest.Lookup;
-import org.apache.lucene.store.DataInput;
-import org.apache.lucene.store.DataOutput;
+import org.apache.lucene.search.suggest.Lookup.LookupResult;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.FSDirectory;
-import org.apache.lucene.util.Accountable;
-import org.apache.lucene.util.Accountables;
+import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.BytesRef;
-import org.apache.lucene.util.RamUsageEstimator;
-import org.apache.lucene.util.Version;
 import org.codehaus.jettison.json.JSONObject;
 
 import com.thomsonreuters.models.services.suggesterOperation.models.Entry;
 
-// TODO:
-//   - a PostingsFormat that stores super-high-freq terms as
-//     a bitset should be a win for the prefix terms?
-//     (LUCENE-5052)
-//   - we could offer a better integration with
-//     DocumentDictionary and NRT?  so that your suggester
-//     "automatically" keeps in sync w/ your index
-
-/**
- * Analyzes the input text and then suggests matches based on prefix matches to
- * any tokens in the indexed text. This also highlights the tokens that match.
- *
- * <p>
- * This suggester supports payloads. Matches are sorted only by the suggest
- * weight; it would be nice to support blended score + weight sort in the
- * future. This means this suggester best applies when there is a strong
- * a-priori ranking of all the suggestions.
- *
- * <p>
- * This suggester supports contexts, including arbitrary binary terms.
- *
- * @lucene.experimental
- */
-
-public class TRInfixSuggester extends Lookup implements Closeable {
+public class TRInfixSuggester implements Closeable {
 
 	/** Field name used for the indexed text. */
 	protected final static String TEXT_FIELD_NAME = "text";
-
+	private boolean isTreeStructure = true;
 	/**
 	 * Field name used for the indexed text, as a StringField, for exact lookup.
 	 */
 	protected final static String EXACT_TEXT_FIELD_NAME = "exacttext";
 	protected final static String ID_TEXT_FIELD_NAME = "idfield";
-
 	protected final static String PARENTS_TEXT_FIELD_NAME = "parentfield";
-
-	/**
-	 * Field name used for the indexed context, as a StringField and a
-	 * SortedSetDVField, for filtering.
-	 */
-	protected final static String CONTEXTS_FIELD_NAME = "contexts";
-
-	/** Analyzer used at search time */
-	protected final Analyzer queryAnalyzer;
-	/** Analyzer used at index time */
-	protected final Analyzer indexAnalyzer;
-	final Version matchVersion;
-	private final Directory dir;
-	final int minPrefixChars;
-
-	private final boolean allTermsRequired;
-	private final boolean highlight;
-
-	private final boolean commitOnBuild;
-
-	private boolean isTreeStructure = true;
-
-	/** Used for ongoing NRT additions/updates. */
-	private IndexWriter writer;
-
-	/** {@link IndexSearcher} used for lookups. */
-	protected SearcherManager searcherMgr;
-
-	/**
-	 * Default minimum number of leading characters before PrefixQuery is used
-	 * (4).
-	 */
-	public static final int DEFAULT_MIN_PREFIX_CHARS = 4;
-
-	/**
-	 * Default boolean clause option for multiple terms matching (all terms
-	 * required).
-	 */
-	public static final boolean DEFAULT_ALL_TERMS_REQUIRED = true;
-
-	/** Default higlighting option. */
-	public static final boolean DEFAULT_HIGHLIGHT = true;
-
-	/** How we sort the postings and search results. */
 	private static final Sort SORT = new Sort(new SortField("weight",
 			SortField.Type.LONG, true));
+
+	private FieldType storeFieldType = new FieldType();
+	private FieldType indexFieldType = new FieldType();
+
+	private Document document = new Document();
+	private IndexWriter writer;
+
+	private Field weightField = new NumericDocValuesField("weight", 0L);
+	private Field payloadField = null;
+	private Field termField = null;
+	private Field exactTextField = new StringField(EXACT_TEXT_FIELD_NAME, "",
+			Field.Store.NO);
+	private Field parentTextField = new StringField(PARENTS_TEXT_FIELD_NAME,
+			"", Field.Store.NO);
+	private Field idTextField = new StringField(ID_TEXT_FIELD_NAME, "",
+			Field.Store.NO);
+
+	private PhraseTokenizerTokens tokenizer = new PhraseTokenizerTokens();
+
+	protected SearcherManager searcherMgr;
+
+	private Directory dir = null;
+
+	public TRInfixSuggester(Directory dir, Analyzer analyzer) throws Exception {
+
+		storeFieldType.setOmitNorms(true);
+		storeFieldType.setIndexOptions(IndexOptions.NONE);
+		storeFieldType.setStored(true);
+		storeFieldType.setTokenized(false);
+
+		indexFieldType.setOmitNorms(true);
+		// indexFieldType.setIndexed(true);
+		indexFieldType
+				.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS);
+		indexFieldType.setStored(false);
+
+		payloadField = new Field("payload", new byte[0], storeFieldType);
+		termField = new Field("term", new byte[0], storeFieldType);
+
+		document.add(weightField);
+		document.add(payloadField);
+		document.add(exactTextField);
+		document.add(termField);
+		document.add(new Field(TEXT_FIELD_NAME, tokenizer, indexFieldType));
+		if (isTreeStructure) {
+			document.add(parentTextField);
+			document.add(idTextField);
+		}
+
+		if (dir == null) {
+			dir = new RAMDirectory();
+		} else {
+			this.dir = dir;
+		}
+
+		// Already built; open it:
+		writer = getIndexer();
+
+	}
 
 	public void setTreeStructure(boolean isTreeStructure) {
 		this.isTreeStructure = isTreeStructure;
 	}
 
-	/**
-	 * Create a new instance, loading from a previously built
-	 * AnalyzingInfixSuggester directory, if it exists. This directory must be
-	 * private to the infix suggester (i.e., not an external Lucene index). Note
-	 * that {@link #close} will also close the provided directory.
-	 */
-	public TRInfixSuggester(Directory dir, Analyzer analyzer)
-			throws IOException {
-		this(analyzer.getVersion(), dir, analyzer, analyzer,
-				DEFAULT_MIN_PREFIX_CHARS, false, DEFAULT_ALL_TERMS_REQUIRED,
-				DEFAULT_HIGHLIGHT);
-	}
+	private IndexWriter getIndexer() throws Exception {
+		IndexWriterConfig iwc = new IndexWriterConfig(DummyAnalyzer.INSTANCE);
+		iwc.setOpenMode(OpenMode.CREATE);
 
-	/**
-	 * @deprecated Use {@link #AnalyzingInfixSuggester(Directory, Analyzer)}
-	 */
-	@Deprecated
-	public TRInfixSuggester(Version matchVersion, Directory dir,
-			Analyzer analyzer) throws IOException {
-		this(matchVersion, dir, analyzer, analyzer, DEFAULT_MIN_PREFIX_CHARS,
-				false);
-	}
-
-	/**
-	 * Create a new instance, loading from a previously built
-	 * AnalyzingInfixSuggester directory, if it exists. This directory must be
-	 * private to the infix suggester (i.e., not an external Lucene index). Note
-	 * that {@link #close} will also close the provided directory.
-	 *
-	 * @param minPrefixChars
-	 *            Minimum number of leading characters before PrefixQuery is
-	 *            used (default 4). Prefixes shorter than this are indexed as
-	 *            character ngrams (increasing index size but making lookups
-	 *            faster).
-	 *
-	 * @param commitOnBuild
-	 *            Call commit after the index has finished building. This would
-	 *            persist the suggester index to disk and future instances of
-	 *            this suggester can use this pre-built dictionary.
-	 */
-	public TRInfixSuggester(Directory dir, Analyzer indexAnalyzer,
-			Analyzer queryAnalyzer, int minPrefixChars, boolean commitOnBuild)
-			throws IOException {
-		this(indexAnalyzer.getVersion(), dir, indexAnalyzer, queryAnalyzer,
-				minPrefixChars, commitOnBuild, DEFAULT_ALL_TERMS_REQUIRED,
-				DEFAULT_HIGHLIGHT);
-	}
-
-	/**
-	 * Create a new instance, loading from a previously built
-	 * AnalyzingInfixSuggester directory, if it exists. This directory must be
-	 * private to the infix suggester (i.e., not an external Lucene index). Note
-	 * that {@link #close} will also close the provided directory.
-	 *
-	 * @param minPrefixChars
-	 *            Minimum number of leading characters before PrefixQuery is
-	 *            used (default 4). Prefixes shorter than this are indexed as
-	 *            character ngrams (increasing index size but making lookups
-	 *            faster).
-	 *
-	 * @param commitOnBuild
-	 *            Call commit after the index has finished building. This would
-	 *            persist the suggester index to disk and future instances of
-	 *            this suggester can use this pre-built dictionary.
-	 *
-	 * @param allTermsRequired
-	 *            All terms in the suggest query must be matched.
-	 * @param highlight
-	 *            Highlight suggest query in suggestions.
-	 *
-	 */
-	public TRInfixSuggester(Directory dir, Analyzer indexAnalyzer,
-			Analyzer queryAnalyzer, int minPrefixChars, boolean commitOnBuild,
-			boolean allTermsRequired, boolean highlight) throws IOException {
-		this(indexAnalyzer.getVersion(), dir, indexAnalyzer, queryAnalyzer,
-				minPrefixChars, commitOnBuild, allTermsRequired, highlight);
-	}
-
-	/**
-	 * @deprecated Use
-	 *             {@link #AnalyzingInfixSuggester(Directory, Analyzer, Analyzer, int, boolean)}
-	 */
-	@Deprecated
-	public TRInfixSuggester(Version matchVersion, Directory dir,
-			Analyzer indexAnalyzer, Analyzer queryAnalyzer, int minPrefixChars,
-			boolean commitOnBuild) throws IOException {
-		this(matchVersion, dir, indexAnalyzer, queryAnalyzer, minPrefixChars,
-				commitOnBuild, DEFAULT_ALL_TERMS_REQUIRED, DEFAULT_HIGHLIGHT);
-	}
-
-	/**
-	 * @deprecated Use
-	 *             {@link #AnalyzingInfixSuggester(Directory, Analyzer, Analyzer, int, boolean)}
-	 */
-	@Deprecated
-	public TRInfixSuggester(Version matchVersion, Directory dir,
-			Analyzer indexAnalyzer, Analyzer queryAnalyzer, int minPrefixChars,
-			boolean commitOnBuild, boolean allTermsRequired, boolean highlight)
-			throws IOException {
-
-		if (minPrefixChars < 0) {
-			throw new IllegalArgumentException(
-					"minPrefixChars must be >= 0; got: " + minPrefixChars);
-		}
-
-		this.queryAnalyzer = queryAnalyzer;
-		this.indexAnalyzer = indexAnalyzer;
-		this.matchVersion = matchVersion;
-		this.dir = dir;
-		this.minPrefixChars = minPrefixChars;
-		this.commitOnBuild = commitOnBuild;
-		this.allTermsRequired = allTermsRequired;
-		this.highlight = highlight;
-
-		if (DirectoryReader.indexExists(dir)) {
-			// Already built; open it:
-			writer = new IndexWriter(dir, getIndexWriterConfig(
-					getGramAnalyzer(), IndexWriterConfig.OpenMode.APPEND));
-			searcherMgr = new SearcherManager(writer, true, null);
-		}
-	}
-
-	/**
-	 * Override this to customize index settings, e.g. which codec to use.
-	 */
-	protected IndexWriterConfig getIndexWriterConfig(Analyzer indexAnalyzer,
-			IndexWriterConfig.OpenMode openMode) {
-		IndexWriterConfig iwc = new IndexWriterConfig(indexAnalyzer);
-		iwc.setOpenMode(openMode);
-
-		// This way all merged segments will be sorted at
-		// merge time, allow for per-segment early termination
-		// when those segments are searched:
+		iwc.setRAMBufferSizeMB(512.0);
 		iwc.setMergePolicy(new SortingMergePolicy(iwc.getMergePolicy(), SORT));
 
-		return iwc;
+		IndexWriter indexWriter = new IndexWriter(this.dir, iwc);
+		return indexWriter;
+
 	}
 
-	/**
-	 * Subclass can override to choose a specific {@link Directory}
-	 * implementation.
-	 */
-	protected Directory getDirectory(Path path) throws IOException {
-		return FSDirectory.open(path);
-	}
-
-	@Override
 	public void build(InputIterator iter) throws IOException {
 
-		if (searcherMgr != null) {
-			searcherMgr.close();
-			searcherMgr = null;
-		}
-
-		if (writer != null) {
-			writer.close();
-			writer = null;
+		try {
+			if (writer != null) {
+				writer.close();
+				writer = null;
+			}
+		} catch (Exception e) {
+			// Ignore error no need to handle it here
 		}
 
 		boolean success = false;
 		try {
-			// First pass: build a temporary normal Lucene index,
-			// just indexing the suggestions as they iterate:
 
-			Analyzer analyzer = getGramAnalyzer();
+			writer = getIndexer();
 
-			writer = new IndexWriter(dir, getIndexWriterConfig(analyzer,
-					IndexWriterConfig.OpenMode.CREATE));
-			// long t0 = System.nanoTime();
-
-			// TODO: use threads?
 			BytesRef text;
 			while ((text = iter.next()) != null) {
 				BytesRef payload;
@@ -361,16 +169,16 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 					payload = null;
 				}
 
-				add(text, iter.contexts(), iter.weight(), payload);
+				buildDocument(text, iter.weight(), payload);
+				writer.addDocument(document);
 			}
 
-			// System.out.println("initial indexing time: " +
-			// ((System.nanoTime()-t0)/1000000) + " msec");
-			if (commitOnBuild) {
-				commit();
-			}
-			searcherMgr = new SearcherManager(writer, true, null);
+			writer.commit();
+			// writer.close();
 			success = true;
+		} catch (Exception e) {
+			e.printStackTrace();
+			success = false;
 		} finally {
 			if (success == false && writer != null) {
 				writer.rollback();
@@ -379,118 +187,26 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 		}
 	}
 
-	/**
-	 * Commits all pending changes made to this suggester to disk.
-	 *
-	 * @see IndexWriter#commit
-	 */
-	public void commit() throws IOException {
-		if (writer == null) {
-			throw new IllegalStateException(
-					"Cannot commit on an closed writer. Add documents first");
-		}
-		writer.commit();
-	}
-
-	private Analyzer getGramAnalyzer() {
-		return new AnalyzerWrapper(Analyzer.PER_FIELD_REUSE_STRATEGY) {
-			@Override
-			protected Analyzer getWrappedAnalyzer(String fieldName) {
-				return indexAnalyzer;
-			}
-
-			@Override
-			protected TokenStreamComponents wrapComponents(String fieldName,
-					TokenStreamComponents components) {
-				if (fieldName.equals("textgrams") && minPrefixChars > 0) {
-					// TODO: should use an EdgeNGramTokenFilterFactory here
-					TokenFilter filter;
-					if (matchVersion.onOrAfter(Version.LUCENE_4_4_0)) {
-
-						// System.out.println(minPrefixChars);
-						filter = new EdgeNGramTokenFilter(
-								components.getTokenStream(), 1, minPrefixChars);
-					} else {
-						filter = new Lucene43EdgeNGramTokenFilter(
-								components.getTokenStream(), 1, minPrefixChars);
-					}
-					return new TokenStreamComponents(components.getTokenizer(),
-							filter);
-				} else {
-					return components;
-				}
-
-			}
-		};
-	}
-
-	private synchronized void ensureOpen() throws IOException {
-		if (writer == null) {
-			if (searcherMgr != null) {
-				searcherMgr.close();
-				searcherMgr = null;
-			}
-			writer = new IndexWriter(dir, getIndexWriterConfig(
-					getGramAnalyzer(), IndexWriterConfig.OpenMode.CREATE));
-			searcherMgr = new SearcherManager(writer, true, null);
-		}
-	}
-
-	/**
-	 * Adds a new suggestion. Be sure to use {@link #update} instead if you want
-	 * to replace a previous suggestion. After adding or updating a batch of new
-	 * suggestions, you must call {@link #refresh} in the end in order to see
-	 * the suggestions in {@link #lookup}
-	 */
-	public void add(BytesRef text, Set<BytesRef> contexts, long weight,
-			BytesRef payload) throws IOException {
-		ensureOpen();
-		writer.addDocument(buildDocument(text, contexts, weight, payload));
-	}
-
-	/**
-	 * Updates a previous suggestion, matching the exact same text as before.
-	 * Use this to change the weight or payload of an already added suggstion.
-	 * If you know this text is not already present you can use {@link #add}
-	 * instead. After adding or updating a batch of new suggestions, you must
-	 * call {@link #refresh} in the end in order to see the suggestions in
-	 * {@link #lookup}
-	 */
-	public void update(BytesRef text, Set<BytesRef> contexts, long weight,
-			BytesRef payload) throws IOException {
-		ensureOpen();
-		writer.updateDocument(
-				new Term(EXACT_TEXT_FIELD_NAME, text.utf8ToString()),
-				buildDocument(text, contexts, weight, payload));
-	}
-
-	private Document buildDocument(BytesRef text, Set<BytesRef> contexts,
-			long weight, BytesRef payload) throws IOException {
+	private void buildDocument(BytesRef text, long weight, BytesRef payload)
+			throws IOException {
 		String textString = text.utf8ToString();
 
 		String payloads = new String(payload.bytes);
-
 		String processedTextString = processeTextForExactMatch(textString);
-		Document doc = new Document();
-		FieldType ft = getTextFieldType();
-
-		doc.add(new Field(TEXT_FIELD_NAME, textString, ft));
-		doc.add(new Field("textgrams", textString, ft));
-		doc.add(new StringField(EXACT_TEXT_FIELD_NAME, processedTextString,
-				Field.Store.NO));
-
-		doc.add(new BinaryDocValuesField(TEXT_FIELD_NAME, text));
-		doc.add(new NumericDocValuesField("weight", weight));
+		exactTextField.setStringValue(processedTextString);
+		weightField.setLongValue(weight);
+		tokenizer.setText(textString);
+		termField.setBytesValue(text.bytes);
 		if (payload != null) {
 
-			doc.add(new BinaryDocValuesField("payloads", payload));
+			payloadField.setBytesValue(payload.bytes);
 
 			if (isTreeStructure) {
 
 				String id = new String(payload.bytes).split(Entry.DELIMETER)[0];
 				if (id != null) {
-					doc.add(new StringField(ID_TEXT_FIELD_NAME,
-							processeTextForExactMatch(id), Field.Store.NO));
+					idTextField.setStringValue(processeTextForExactMatch(id));
+
 				}
 
 				try {
@@ -499,12 +215,14 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 
 					JSONObject oject = new JSONObject(json);
 					String parent = oject.getString("parents");
+					parentTextField.setStringValue("");
 
 					if (parent != null && (parent = parent.trim()).length() > 0
 							&& !parent.equals("[]")) {
-						doc.add(new StringField(PARENTS_TEXT_FIELD_NAME,
-								processeTextForExactMatch(removeUnnecessaryCharacter(parent)),
-								Field.Store.NO));
+
+						parentTextField
+								.setStringValue(processeTextForExactMatch(parent));
+
 					}
 				} catch (Exception e) {
 					// dont do anything if its a ultimate parent it reaches here
@@ -513,262 +231,21 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 			}
 
 		}
-		if (contexts != null) {
-			for (BytesRef context : contexts) {
-				doc.add(new StringField(CONTEXTS_FIELD_NAME, context,
-						Field.Store.NO));
-				doc.add(new SortedSetDocValuesField(CONTEXTS_FIELD_NAME,
-						context));
-			}
-		}
-		return doc;
-	}
-
-	private String processeTextForExactMatch(String text) {
-		StringBuilder processedString = new StringBuilder();  
-		Tokenizer tokenizer = new Tokenizer();
-		tokenizer.resetToken(text.toCharArray(), 0, text.length());
-		String token = null;
-		while ((token = tokenizer.nextToken()) != null) {
-			if (token.trim().length() <= 0) {
-				continue;
-			}
-			if (processedString.length() > 0) {
-				processedString.append("_");
-			}
-			processedString.append(token);
-		}
-		return processedString.toString().toLowerCase();
-	}
-
-	/**
-	 * Reopens the underlying searcher; it's best to "batch up" many
-	 * additions/updates, and then call refresh once in the end.
-	 */
-	public void refresh() throws IOException {
-		if (searcherMgr == null) {
-			throw new IllegalStateException("suggester was not built");
-		}
-		searcherMgr.maybeRefreshBlocking();
-	}
-
-	/**
-	 * Subclass can override this method to change the field type of the text
-	 * field e.g. to change the index options
-	 */
-	protected FieldType getTextFieldType() {
-		FieldType ft = new FieldType(TextField.TYPE_NOT_STORED);
-		ft.setStoreTermVectors(true);
-		ft.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS);
-		ft.setStoreTermVectorPositions(true);
-		ft.setOmitNorms(false);
-
-		return ft;
-	}
-
-	@Override
-	public List<LookupResult> lookup(CharSequence key, Set<BytesRef> contexts,
-			boolean onlyMorePopular, int num) throws IOException {
-		return lookup(key, contexts, num, allTermsRequired, highlight);
-	}
-
-	/** Lookup, without any context. */
-	public List<LookupResult> lookup(CharSequence key, int num,
-			boolean allTermsRequired, boolean doHighlight) throws IOException {
-		return lookup(key, (BooleanQuery) null, num, allTermsRequired,
-				doHighlight);
-	}
-
-	/**
-	 * Lookup, with context but without booleans. Context booleans default to
-	 * SHOULD, so each suggestion must have at least one of the contexts.
-	 */
-	public List<LookupResult> lookup(CharSequence key, Set<BytesRef> contexts,
-			int num, boolean allTermsRequired, boolean doHighlight)
-			throws IOException {
-		return lookup(key, toQuery(contexts), num, allTermsRequired,
-				doHighlight);
-	}
-
-	/**
-	 * This is called if the last token isn't ended (e.g. user did not type a
-	 * space after it). Return an appropriate Query clause to add to the
-	 * BooleanQuery.
-	 */
-	protected Query getLastTokenQuery(String token) throws IOException {
-		if (token.length() < minPrefixChars) {
-			// The leading ngram was directly indexed:
-			return new TermQuery(new Term("textgrams", token));
-		}
-
-		return new PrefixQuery(new Term(TEXT_FIELD_NAME, token));
-	}
-
-	/**
-	 * Retrieve suggestions, specifying whether all terms must match (
-	 * {@code allTermsRequired}) and whether the hits should be highlighted (
-	 * {@code doHighlight}).
-	 */
-	public List<LookupResult> lookup(CharSequence key,
-			Map<BytesRef, BooleanClause.Occur> contextInfo, int num,
-			boolean allTermsRequired, boolean doHighlight) throws IOException {
-		return lookup(key, toQuery(contextInfo), num, allTermsRequired,
-				doHighlight);
-	}
-
-	private BooleanQuery toQuery(Map<BytesRef, BooleanClause.Occur> contextInfo) {
-		if (contextInfo == null || contextInfo.isEmpty()) {
-			return null;
-		}
-
-		BooleanQuery contextFilter = new BooleanQuery();
-		for (Map.Entry<BytesRef, BooleanClause.Occur> entry : contextInfo
-				.entrySet()) {
-			addContextToQuery(contextFilter, entry.getKey(), entry.getValue());
-		}
-
-		return contextFilter;
-	}
-
-	private BooleanQuery toQuery(Set<BytesRef> contextInfo) {
-		if (contextInfo == null || contextInfo.isEmpty()) {
-			return null;
-		}
-
-		BooleanQuery contextFilter = new BooleanQuery();
-		for (BytesRef context : contextInfo) {
-			addContextToQuery(contextFilter, context,
-					BooleanClause.Occur.SHOULD);
-		}
-		return contextFilter;
-	}
-
-	/**
-	 * This method is handy as we do not need access to internal fields such as
-	 * CONTEXTS_FIELD_NAME in order to build queries However, here may not be
-	 * its best location.
-	 * 
-	 * @param query
-	 *            an instance of @See {@link BooleanQuery}
-	 * @param context
-	 *            the context
-	 * @param clause
-	 *            one of {@link Occur}
-	 */
-	public void addContextToQuery(BooleanQuery query, BytesRef context,
-			BooleanClause.Occur clause) {
-		// NOTE: we "should" wrap this in
-		// ConstantScoreQuery, or maybe send this as a
-		// Filter instead to search.
-
-		// TODO: if we had a BinaryTermField we could fix
-		// this "must be valid ut8f" limitation:
-		query.add(new TermQuery(new Term(CONTEXTS_FIELD_NAME, context)), clause);
-	}
-
-	/**
-	 * This is an advanced method providing the capability to send down to the
-	 * suggester any arbitrary lucene query to be used to filter the result of
-	 * the suggester
-	 * 
-	 * @param key
-	 *            the keyword being looked for
-	 * @param contextQuery
-	 *            an arbitrary Lucene query to be used to filter the result of
-	 *            the suggester. {@link #addContextToQuery} could be used to
-	 *            build this contextQuery.
-	 * @param num
-	 *            number of items to return
-	 * @param allTermsRequired
-	 *            all searched terms must match or not
-	 * @param doHighlight
-	 *            if true, the matching term will be highlighted in the search
-	 *            result
-	 * @param condition
-	 *            values (1,2,3) 1: will return only prefix match 2: return
-	 *            terms matched anywhere 3: first searched for prefix match
-	 *            terms, if prefix max terms are not sufficient then other terms
-	 *            are searched and merged into result
-	 * @return the result of the suggester
-	 * @throws IOException
-	 *             f the is IO exception while reading data from the index
-	 */
-	public List<LookupResult> lookup(CharSequence key,
-			BooleanQuery contextQuery, int num, boolean allTermsRequired,
-			boolean doHighlight) throws IOException {
-
-		return null;
 
 	}
-
-	public List<LookupResult> lookForParentOrChild(String queryString,boolean isParent)
-			throws IOException {
-		 
-		String prefixToken = null;
-		Set<String> matchedTokens = new HashSet<String>();
-		 
-		int num = 1;
-		
-		if(!isParent){
-			num=1000;
-		}
-
-		TopFieldCollector c = TopFieldCollector.create(SORT, num, true, false,
-				false);
-
-		// We sorted postings by weight during indexing, so we
-		// only retrieve the first num hits now:
-		final MergePolicy mergePolicy = writer.getConfig().getMergePolicy();
-		Collector c2 = new EarlyTerminatingSortingCollector(c, SORT, num,
-				(SortingMergePolicy) mergePolicy);
-		IndexSearcher searcher = searcherMgr.acquire();
-
-		List<LookupResult> results = null;
-		
-		String field=null;
-		if(isParent){
-			field=ID_TEXT_FIELD_NAME;
-		}else{
-			field=PARENTS_TEXT_FIELD_NAME;
-			
-			queryString=removeUnnecessaryCharacter(queryString);
-		}
-
-		Term term = new Term(field,
-				processeTextForExactMatch(queryString));
-		Query query = new TermQuery(term);
-
-		try {
-			// System.out.println("got searcher=" + searcher);
-			searcher.search(query, c2);
-
-			TopFieldDocs hits = c.topDocs();
-
-			// Slower way if postings are not pre-sorted by weight:
-			// hits = searcher.search(query, null, num, SORT);
-			results = createResults(searcher, hits, num + 100, queryString,
-					false, matchedTokens, prefixToken);
-		} catch (Exception e) {
-
-		}
-
-		return results;
-
-	}
-	
-	
-	 
 
 	public List<LookupResult> lookup(CharSequence key,
 			BooleanQuery contextQuery, int num, int condition,
-			boolean allTermsRequired, boolean doHighlight) throws IOException {
+			boolean allTermsRequired, boolean doHighlight) throws Exception {
 
 		int realNum = num;
 		// num = num + 1000;//When varients is included then we have to increase
 		// th bucket size
 		// num = num + 500;
 
-		num = num + 500;
+		if (isTreeStructure) {
+			num = num + 500;
+		}
 
 		/**
 		 * condition
@@ -784,7 +261,8 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 		 */
 
 		if (searcherMgr == null) {
-			throw new IllegalStateException("suggester was not built");
+			searcherMgr = new SearcherManager(this.dir, new SearcherFactory());
+			// throw new IllegalStateException("suggester was not built");
 		}
 
 		final BooleanClause.Occur occur;
@@ -794,130 +272,66 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 			occur = BooleanClause.Occur.SHOULD;
 		}
 
-		List<SpanQuery> spanQueryList = new ArrayList<SpanQuery>();
-
 		BooleanQuery query;
 		Set<String> matchedTokens;
 		String prefixToken = null;
 
-		try (TokenStream ts = queryAnalyzer.tokenStream("", new StringReader(
-				key.toString()))) {
-			// long t0 = System.currentTimeMillis();
-			ts.reset();
-			final CharTermAttribute termAtt = ts
-					.addAttribute(CharTermAttribute.class);
-			final OffsetAttribute offsetAtt = ts
-					.addAttribute(OffsetAttribute.class);
-			String lastToken = null;
-			query = new BooleanQuery();
-			int maxEndOffset = -1;
-			matchedTokens = new HashSet<>();
-			while (ts.incrementToken()) {
-				if (lastToken != null) {
-					matchedTokens.add(lastToken);
-					query.add(new TermQuery(
-							new Term(TEXT_FIELD_NAME, lastToken)), occur);
-
-					spanQueryList.add(new SpanTermQuery(new Term(
-							TEXT_FIELD_NAME, lastToken)));
-				}
-				lastToken = termAtt.toString();
-				if (lastToken != null) {
-					maxEndOffset = Math
-							.max(maxEndOffset, offsetAtt.endOffset());
-				}
-			}
-			ts.end();
-
-			if (lastToken != null) {
-				Query lastQuery;
-
-				SpanQuery lastSpanQuery;
-
-				if (maxEndOffset == offsetAtt.endOffset()) {
-					// Use PrefixQuery (or the ngram equivalent) when
-					// there was no trailing discarded chars in the
-					// string (e.g. whitespace), so that if query does
-					// not end with a space we show prefix matches for
-					// that token:
-					lastQuery = getLastTokenQuery(lastToken);
-					prefixToken = lastToken;
-					lastSpanQuery = new SpanMultiTermQueryWrapper(
-							new PrefixQuery(
-									new Term(TEXT_FIELD_NAME, lastToken)));
-
-				} else {
-					// Use TermQuery for an exact match if there were
-					// trailing discarded chars (e.g. whitespace), so
-					// that if query ends with a space we only show
-					// exact matches for that term:
-					matchedTokens.add(lastToken);
-					lastQuery = new TermQuery(new Term(TEXT_FIELD_NAME,
-							lastToken));
-
-					lastSpanQuery = (new SpanTermQuery(new Term(
-							TEXT_FIELD_NAME, lastToken)));
-				}
-
-				if (lastQuery != null) {
-					query.add(lastQuery, occur);
-				}
-
-				if (lastSpanQuery != null) {
-					spanQueryList.add(lastSpanQuery);
-
-				}
-			}
-
-			if (contextQuery != null) {
-				boolean allMustNot = true;
-				for (BooleanClause clause : contextQuery.clauses()) {
-					if (clause.getOccur() != BooleanClause.Occur.MUST_NOT) {
-						allMustNot = false;
-						break;
-					}
-				}
-
-				if (allMustNot) {
-					// all are MUST_NOT: add the contextQuery to the main query
-					// instead (not as sub-query)
-					for (BooleanClause clause : contextQuery.clauses()) {
-						query.add(clause);
-					}
-				} else {
-					// Add contextQuery as sub-query
-					query.add(contextQuery, BooleanClause.Occur.MUST);
-				}
-			}
-		}
-
-		// TODO: we could allow blended sort here, combining
-		// weight w/ score. Now we ignore score and sort only
-		// by weight:
-
-		if (spanQueryList.size() > 1) {
-			SpanQuery finalSpanQuery = new SpanNearQuery(
-					spanQueryList.toArray(new SpanQuery[] {}), 1, true);
-			query.add(finalSpanQuery, Occur.MUST);
-		}
-
 		BooleanQuery pregixMatchedQuery = new BooleanQuery();
+
 		pregixMatchedQuery.add(new PrefixQuery(new Term(EXACT_TEXT_FIELD_NAME,
 				processeTextForExactMatch(key.toString()))), Occur.MUST);
 
 		Query finalQuery = null;
-		Query finalQuerysec = null;
+		BooleanQuery finalQuerysec = null;
 
 		if (condition == 1) {
 			finalQuery = finishQuery(pregixMatchedQuery, allTermsRequired);
 		}
+
 		if (condition == 2) {
-			finalQuery = finishQuery(query, allTermsRequired);
+
+			PhraseTokenizerTokens tokenizer = new PhraseTokenizerTokens();
+
+			tokenizer.setText(key.toString());
+			tokenizer.reset();
+			List<String> words = tokenizer.getTokenizedWords();
+			List<SpanQuery> spanQueryList = new ArrayList<SpanQuery>();
+			for (int i = 0; i < words.size(); i++) {
+				if (i < words.size() - 1) {
+					spanQueryList.add(new SpanTermQuery(new Term(
+							TEXT_FIELD_NAME, words.get(i))));
+				} else {
+
+					spanQueryList.add(new SpanMultiTermQueryWrapper(
+							new PrefixQuery(new Term(TEXT_FIELD_NAME, words
+									.get(i)))));
+				}
+
+			}
+
+			SpanQuery finalSpanQuery = null;
+
+			if (spanQueryList.size() > 1) {
+				finalSpanQuery = new SpanNearQuery(
+						spanQueryList.toArray(new SpanQuery[] {}), 1, true);
+			} else {
+
+				finalSpanQuery = spanQueryList.get(0);
+			}
+
+			BooleanQuery anywherematched = new BooleanQuery();
+			anywherematched.add(finalSpanQuery, Occur.MUST);
+
+			finalQuery = finishQuery(anywherematched, allTermsRequired);
 		}
 
 		if (condition == 3) {
+
 			finalQuery = finishQuery(pregixMatchedQuery, allTermsRequired);
-			finalQuerysec = finishQuery(query, allTermsRequired);
+			finalQuerysec = new BooleanQuery();
+			finalQuerysec.add(new PrefixQuery(new Term(TEXT_FIELD_NAME,
+					processeTextForExactMatch(key.toString()))), Occur.MUST);
+
 		}
 
 		// System.out.println("finalQuery=" + query);
@@ -926,52 +340,45 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 		TopFieldCollector c = TopFieldCollector.create(SORT, num, true, false,
 				false);
 
-		// We sorted postings by weight during indexing, so we
-		// only retrieve the first num hits now:
+		TopFieldCollector c2 = TopFieldCollector.create(SORT, num, true, false,
+				false);
+
 		final MergePolicy mergePolicy = writer.getConfig().getMergePolicy();
-		Collector c2 = new EarlyTerminatingSortingCollector(c, SORT, num,
+		Collector c3 = new EarlyTerminatingSortingCollector(c2, SORT, num,
 				(SortingMergePolicy) mergePolicy);
 
-		/****** This is for second query ********/
-		TopFieldCollector c13 = TopFieldCollector.create(SORT, num, true,
-				false, false);
-		Collector c3 = new EarlyTerminatingSortingCollector(c13, SORT, num,
-				(SortingMergePolicy) mergePolicy);
-		/***************************************/
+		// We sorted postings by weight during indexing, so we
 
 		IndexSearcher searcher = searcherMgr.acquire();
 
 		List<LookupResult> results = null;
-
 		List<LookupResult> results1 = null;
 		List<LookupResult> results2 = null;
+
 		try {
-			// System.out.println("got searcher=" + searcher);
-			searcher.search(finalQuery, c2);
 
-			TopFieldDocs hits = c.topDocs();
+			searcher.search(finalQuery, c);
 
-			// Slower way if postings are not pre-sorted by weight:
-			// hits = searcher.search(query, null, num, SORT);
-			results1 = createResults(searcher, hits, num + 100, key,
-					doHighlight, matchedTokens, prefixToken);
+			TopDocs hits = c.topDocs();
+
+			results1 = createResults(searcher, hits, num, key, prefixToken);
 
 			if (finalQuerysec != null) {
 				searcher.search(finalQuerysec, c3);
 
-				TopFieldDocs hits_sec = c13.topDocs();
+				TopDocs hits_sec = c2.topDocs();
 
 				// Slower way if postings are not pre-sorted by weight:
 				// hits = searcher.search(query, null, num, SORT);
-				results2 = createResults(searcher, hits_sec, num + 100, key,
-						doHighlight, matchedTokens, prefixToken);
+				results2 = createResults(searcher, hits_sec, num, key,
+						prefixToken);
 			}
-
-			results = mergeResultSet(results1, results2, realNum * 10);
 
 		} finally {
 			searcherMgr.release(searcher);
 		}
+
+		results = mergeResultSet(results1, results2, realNum);
 
 		// System.out.println((System.currentTimeMillis() - t0) +
 		// " msec for infix suggest");
@@ -980,10 +387,69 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 		return results;
 	}
 
+	public List<LookupResult> lookForParentOrChild(String queryString,
+			boolean isParent) throws IOException {
+
+		String prefixToken = null;
+		Set<String> matchedTokens = new HashSet<String>();
+
+		int num = 1;
+
+		if (!isParent) {
+			num = 1000;
+		}
+
+		TopFieldCollector c = TopFieldCollector.create(SORT, num, true, false,
+				false);
+
+		// We sorted postings by weight during indexing, so we
+		// only retrieve the first num hits now:
+		final MergePolicy mergePolicy = writer.getConfig().getMergePolicy();
+		Collector c2 = new EarlyTerminatingSortingCollector(c, SORT, num,
+				(SortingMergePolicy) mergePolicy);
+		IndexSearcher searcher = searcherMgr.acquire();
+
+		List<LookupResult> results = null;
+
+		String field = null;
+		if (isParent) {
+			field = ID_TEXT_FIELD_NAME;
+		} else {
+			field = PARENTS_TEXT_FIELD_NAME;
+
+		}
+
+		Term term = new Term(field, processeTextForExactMatch(queryString));
+		Query query = new TermQuery(term);
+
+		try {
+			// System.out.println("got searcher=" + searcher);
+			searcher.search(query, c2);
+
+			TopDocs hits = c.topDocs();
+
+			// Slower way if postings are not pre-sorted by weight:
+			// hits = searcher.search(query, null, num, SORT);
+			results = createResults(searcher, hits, num + 100, queryString,
+					prefixToken);
+		} catch (Exception e) {
+
+		} finally {
+			searcherMgr.release(searcher);
+		}
+
+		return results;
+
+	}
+
 	public List<LookupResult> mergeResultSet(List<LookupResult> results1,
 			List<LookupResult> results2, int num) {
-		List<LookupResult> results = new ArrayList<Lookup.LookupResult>();
+		List<LookupResult> results = new ArrayList<LookupResult>();
 		final Set<String> globalSeen = new HashSet<String>();
+
+		if (isTreeStructure) {
+			num = num * 10;
+		}
 
 		for (LookupResult result : results1) {
 
@@ -1021,76 +487,58 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 
 	}
 
-	/**
-	 * Create the results based on the search hits. Can be overridden by
-	 * subclass to add particular behavior (e.g. weight transformation). Note
-	 * that there is no prefix toke (the {@code prefixToken} argument will be
-	 * null) whenever the final token in the incoming request was in fact
-	 * finished (had trailing characters, such as white-space).
-	 *
-	 * @throws IOException
-	 *             If there are problems reading fields from the underlying
-	 *             Lucene index.
-	 */
 	protected List<LookupResult> createResults(IndexSearcher searcher,
-			TopFieldDocs hits, int num, CharSequence charSequence,
-			boolean doHighlight, Set<String> matchedTokens, String prefixToken)
+			TopDocs hits, int num, CharSequence charSequence, String prefixToken)
 			throws IOException {
 
-		BinaryDocValues textDV = MultiDocValues.getBinaryValues(
-				searcher.getIndexReader(), TEXT_FIELD_NAME);
-
-		// This will just be null if app didn't pass payloads to build():
-		// TODO: maybe just stored fields? they compress...
-		BinaryDocValues payloadsDV = MultiDocValues.getBinaryValues(
-				searcher.getIndexReader(), "payloads");
-		List<LeafReaderContext> leaves = searcher.getIndexReader().leaves();
 		List<LookupResult> results = new ArrayList<>();
 		/** to remove duplicate **/
 		final Set<String> globalSeen = new HashSet<String>();
+		HashMap<String, List<Record>> allRecords = new HashMap<String, List<Record>>();
 		/** **/
-		for (int i = 0; i < hits.scoreDocs.length; i++) {
-			FieldDoc fd = (FieldDoc) hits.scoreDocs[i];
-			BytesRef term = textDV.get(fd.doc);
-			String text = term.utf8ToString();
+
+		int totalhits = hits.scoreDocs.length > num ? num
+				: hits.scoreDocs.length;
+
+		for (int seq_ = 0; seq_ < totalhits; seq_++) {
+			FieldDoc fd = (FieldDoc) hits.scoreDocs[seq_];
 			long score = (Long) fd.fields[0];
+			ScoreDoc scoreDoc = hits.scoreDocs[seq_];
+			int docID = scoreDoc.doc;
+			Document doc = searcher.doc(docID);
+			BytesRef payload = null;
 
-			BytesRef payload;
-			if (payloadsDV != null) {
-				payload = BytesRef.deepCopyOf(payloadsDV.get(fd.doc));
-			} else {
-				payload = null;
+			try {
+				payload = doc.getBinaryValue("payload");
+			} catch (Exception e) {
+				// need to handle , paylod is optional
 			}
 
-			// Must look up sorted-set by segment:
-			int segment = ReaderUtil.subIndex(fd.doc, leaves);
-			SortedSetDocValues contextsDV = leaves.get(segment).reader()
-					.getSortedSetDocValues(CONTEXTS_FIELD_NAME);
-			Set<BytesRef> contexts;
-			if (contextsDV != null) {
-				contexts = new HashSet<BytesRef>();
-				contextsDV.setDocument(fd.doc - leaves.get(segment).docBase);
-				long ord;
-				while ((ord = contextsDV.nextOrd()) != SortedSetDocValues.NO_MORE_ORDS) {
-					BytesRef context = BytesRef.deepCopyOf(contextsDV
-							.lookupOrd(ord));
-					contexts.add(context);
+			String text = new String(doc.getBinaryValue("term").bytes);
+			LookupResult result = new LookupResult(text, score, payload, null);
+			String alias = null;
+			if (payload != null) {
+				alias = getReturn(new String(result.payload.bytes),
+						Process.keyword);
+			}
+
+			/** new code **/
+
+			try {
+
+				List<Record> allAlias = allRecords.get(alias);
+				if (allAlias == null) {
+					allAlias = new ArrayList<TRInfixSuggester.Record>();
 				}
-			} else {
-				contexts = null;
+				allAlias.add(new Record(text, alias, result));
+
+				allRecords.put(alias, allAlias);
+
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 
-			LookupResult result;
-
-			if (doHighlight) {
-				result = new LookupResult(text, highlight(text, matchedTokens,
-						prefixToken), score, payload, contexts);
-			} else {
-				result = new LookupResult(text, score, payload, contexts);
-			}
-
-			String alias = getReturn(new String(result.payload.bytes),
-					Process.keyword);
+			/** new code Ends here **/
 
 			if (!globalSeen.contains(alias)) {
 				globalSeen.add(alias);
@@ -1112,7 +560,69 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 
 		}
 
+		List<LookupResult> tmpResults = new ArrayList<>();
+
+		boolean hasAlisaWithCount = false;
+
+		Set<String> keys = allRecords.keySet();
+		for (String key : keys) {
+			Record record = null;
+			List<Record> allAlias = allRecords.get(key);
+
+			int rcount = 0;
+			if (allAlias.size() > 0) {
+				int count = 0;
+				for (Record data : allAlias) {
+					String name = data.text;
+					String[] info = name.split("\\^");
+
+					if (info.length > 1) {
+						try {
+							count = Integer.parseInt(info[1]);
+							hasAlisaWithCount = true;
+						} catch (Exception e) {
+							count = 0;
+						}
+
+						if (rcount < count) {
+							rcount = count;
+							record = data;
+						}
+
+					} else {
+						record = data;
+						break;
+					}
+				}
+
+				if (record != null) {
+					tmpResults.add(record.result);
+					// System.out.println("Adding "+record.text);
+					if (tmpResults.size() == num) {
+						break;
+					}
+				}
+			}
+		}
+
+		if (hasAlisaWithCount && tmpResults.size() > 0) {
+			results.clear();
+			results.addAll(tmpResults);
+		}
+
 		return results;
+	}
+
+	protected Query finishQuery(BooleanQuery in, boolean allTermsRequired) {
+		return in;
+	}
+
+	private void resetField() {
+		weightField.setLongValue(0L);
+		payloadField.setBytesValue(new byte[] {});
+		exactTextField.setStringValue("");
+		parentTextField.setStringValue("");
+		idTextField.setStringValue("");
 	}
 
 	protected String getReturn(String data, Process process) {
@@ -1128,128 +638,174 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 
 	}
 
-	/**
-	 * Subclass can override this to tweak the Query before searching.
-	 */
-	protected Query finishQuery(BooleanQuery in, boolean allTermsRequired) {
-		return in;
+	private String processeTextForExactMatch(String text) {
+
+		StringBuilder processedString = new StringBuilder();
+		char[] chars = text.toCharArray();
+
+		int space = 0;
+		for (char c : chars) {
+			if (c == ' ') {
+				++space;
+
+				if (space <= 1) {
+					c = '_';
+					processedString.append(c);
+				}
+				continue;
+			}
+			space = 0; // This is to remove multiple space
+
+			if (c == '[' || c == ']' || c == '"' || c == '.' || c == ','
+					|| c == '`' || c == '?' || c == '|' || c == '~' || c == '!'
+					|| c == '@' || c == '^' || c == '#' || c == '$') {
+				continue;
+			}
+			processedString.append(c);
+		}
+		return processedString.toString().toLowerCase();
 	}
 
-	/**
-	 * Override this method to customize the Object representing a single
-	 * highlighted suggestions; the result is set on each
-	 * {@link org.apache.lucene.search.suggest.Lookup.LookupResult#highlightKey}
-	 * member.
-	 */
-	protected Object highlight(String text, Set<String> matchedTokens,
-			String prefixToken) throws IOException {
-		try (TokenStream ts = queryAnalyzer.tokenStream("text",
-				new StringReader(text))) {
-			CharTermAttribute termAtt = ts
-					.addAttribute(CharTermAttribute.class);
-			OffsetAttribute offsetAtt = ts.addAttribute(OffsetAttribute.class);
+	/******************************* MY Class starts here **************************************************/
 
-			ts.reset();
+	class Record {
+		String text;
+		String alias;
+		LookupResult result;
+
+		public Record(String text, String alias, LookupResult result) {
+			this.result = result;
+			this.text = text;
+			this.alias = alias;
+		}
+
+	}
+
+	public static final class DummyAnalyzer extends Analyzer {
+		public static final DummyAnalyzer INSTANCE = new DummyAnalyzer();
+
+		/**
+		 * @Override protected TokenStreamComponents createComponents(String
+		 *           fieldName, Reader reader) { // TODO Auto-generated method
+		 *           stub return null; }
+		 **/
+		@Override
+		protected TokenStreamComponents createComponents(String fieldName) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+	}
+
+	public class PhraseTokenizerTokens extends TokenStream {
+
+		// This is main part and indexing is the value hold by termAtt
+		private final CharTermAttribute termAtt;
+
+		private final PositionIncrementAttribute positionAtt;
+
+		private List<String> tokenizedWords = new ArrayList<String>();
+
+		private String text = "";
+
+		private int index = 0;
+
+		public PhraseTokenizerTokens() {
+
+			termAtt = addAttribute(CharTermAttribute.class);
+			positionAtt = addAttribute(PositionIncrementAttribute.class);
+		}
+
+		public List<String> getTokenizedWords() {
+			return this.tokenizedWords;
+		}
+
+		public String getText() {
+			return text;
+		}
+
+		public void setText(String text) {
+			this.text = text;
+		}
+
+		@Override
+		public final boolean  incrementToken() throws IOException {
+
+			this.termAtt.setEmpty();
+
+			if (tokenizedWords.size() > 0) {
+				this.termAtt.append(tokenizedWords.remove(0));
+				positionAtt.setPositionIncrement(1);
+				return true;
+			} else {
+				tokenizedWords.clear();
+				return false;
+			}
+		}
+
+		public String getToken() {
+			return termAtt.toString();
+
+		}
+
+		// This reset function is called automatically for the single time at
+		// the
+		// beginning of each document( whenever the operation starts this is
+		// called for single time only and if we have to change the value of
+		// list
+		// then we need to call it again by ourself)
+
+		@Override
+		public void reset() throws IOException {
+			index = 0;
+			chunk(text);
+		}
+
+		private void chunk(String data) {
+			text = validateTerm(text.toLowerCase());
+			normalizedPhrase(text);
+		}
+
+		private String validateTerm(String term) {
+
+			char[] data = term.toCharArray();
 			StringBuilder sb = new StringBuilder();
-			int upto = 0;
-			while (ts.incrementToken()) {
-				String token = termAtt.toString();
-				int startOffset = offsetAtt.startOffset();
-				int endOffset = offsetAtt.endOffset();
-				if (upto < startOffset) {
-					addNonMatch(sb, text.substring(upto, startOffset));
-					upto = startOffset;
-				} else if (upto > startOffset) {
+
+			for (char c : data) {
+
+				if (c == '[' || c == ']' || c == '"' || c == '.' || c == ','
+						|| c == '`' || c == '?' || c == '|' || c == '~'
+						|| c == '!' || c == '@' || c == '^' || c == '#'
+						|| c == '$' || c == '.' || c == '/' || c == '-') {
+
+					sb.append(' ');
 					continue;
 				}
 
-				if (matchedTokens.contains(token)) {
-					// Token matches.
-					addWholeMatch(sb, text.substring(startOffset, endOffset),
-							token);
-					upto = endOffset;
-				} else if (prefixToken != null && token.startsWith(prefixToken)) {
-					addPrefixMatch(sb, text.substring(startOffset, endOffset),
-							token, prefixToken);
-					upto = endOffset;
+				if (Character.isAlphabetic(c) || Character.isDigit(c)
+						|| c == ' ') {
+					sb.append(c);
 				}
 			}
-			ts.end();
-			int endOffset = offsetAtt.endOffset();
-			if (upto < endOffset) {
-				addNonMatch(sb, text.substring(upto));
-			}
+
 			return sb.toString();
 		}
-	}
 
-	/**
-	 * Called while highlighting a single result, to append a non-matching chunk
-	 * of text from the suggestion to the provided fragments list.
-	 * 
-	 * @param sb
-	 *            The {@code StringBuilder} to append to
-	 * @param text
-	 *            The text chunk to add
-	 */
-	protected void addNonMatch(StringBuilder sb, String text) {
-		sb.append(text);
-	}
+		private void normalizedPhrase(String stringToTokenize) {
 
-	/**
-	 * Called while highlighting a single result, to append the whole matched
-	 * token to the provided fragments list.
-	 * 
-	 * @param sb
-	 *            The {@code StringBuilder} to append to
-	 * @param surface
-	 *            The surface form (original) text
-	 * @param analyzed
-	 *            The analyzed token corresponding to the surface form text
-	 */
-	protected void addWholeMatch(StringBuilder sb, String surface,
-			String analyzed) {
-		sb.append("<b>");
-		sb.append(surface);
-		sb.append("</b>");
-	}
+			if (stringToTokenize == null) {
+				return;
+			}
 
-	/**
-	 * Called while highlighting a single result, to append a matched prefix
-	 * token, to the provided fragments list.
-	 * 
-	 * @param sb
-	 *            The {@code StringBuilder} to append to
-	 * @param surface
-	 *            The fragment of the surface form (indexed during
-	 *            {@link #build}, corresponding to this match
-	 * @param analyzed
-	 *            The analyzed token that matched
-	 * @param prefixToken
-	 *            The prefix of the token that matched
-	 */
-	protected void addPrefixMatch(StringBuilder sb, String surface,
-			String analyzed, String prefixToken) {
-		// TODO: apps can try to invert their analysis logic
-		// here, e.g. downcase the two before checking prefix:
-		if (prefixToken.length() >= surface.length()) {
-			addWholeMatch(sb, surface, analyzed);
-			return;
+			StringTokenizer tokenizer = new StringTokenizer(stringToTokenize);
+
+			while (tokenizer.hasMoreElements()) {
+
+				tokenizedWords.add(tokenizer.nextToken());
+
+			}
+
 		}
-		sb.append("<b>");
-		sb.append(surface.substring(0, prefixToken.length()));
-		sb.append("</b>");
-		sb.append(surface.substring(prefixToken.length()));
-	}
 
-	@Override
-	public boolean store(DataOutput in) throws IOException {
-		return false;
-	}
-
-	@Override
-	public boolean load(DataInput out) throws IOException {
-		return false;
 	}
 
 	@Override
@@ -1263,305 +819,7 @@ public class TRInfixSuggester extends Lookup implements Closeable {
 			dir.close();
 			writer = null;
 		}
-	}
-
-	@Override
-	public long ramBytesUsed() {
-		long mem = RamUsageEstimator.shallowSizeOf(this);
-		try {
-			if (searcherMgr != null) {
-				IndexSearcher searcher = searcherMgr.acquire();
-				try {
-					for (LeafReaderContext context : searcher.getIndexReader()
-							.leaves()) {
-						LeafReader reader = FilterLeafReader.unwrap(context
-								.reader());
-						if (reader instanceof SegmentReader) {
-							mem += ((SegmentReader) context.reader())
-									.ramBytesUsed();
-						}
-					}
-				} finally {
-					searcherMgr.release(searcher);
-				}
-			}
-			return mem;
-		} catch (IOException ioe) {
-			throw new RuntimeException(ioe);
-		}
-	}
-
-	@Override
-	public Collection<Accountable> getChildResources() {
-		List<Accountable> resources = new ArrayList<>();
-		try {
-			if (searcherMgr != null) {
-				IndexSearcher searcher = searcherMgr.acquire();
-				try {
-					for (LeafReaderContext context : searcher.getIndexReader()
-							.leaves()) {
-						LeafReader reader = FilterLeafReader.unwrap(context
-								.reader());
-						if (reader instanceof SegmentReader) {
-							resources.add(Accountables.namedAccountable(
-									"segment", (SegmentReader) reader));
-						}
-					}
-				} finally {
-					searcherMgr.release(searcher);
-				}
-			}
-			return Collections.unmodifiableList(resources);
-		} catch (IOException ioe) {
-			throw new RuntimeException(ioe);
-		}
-	}
-
-	@Override
-	public long getCount() throws IOException {
-		if (searcherMgr == null) {
-			return 0;
-		}
-		IndexSearcher searcher = searcherMgr.acquire();
-		try {
-			return searcher.getIndexReader().numDocs();
-		} finally {
-			searcherMgr.release(searcher);
-		}
-	}
-
-	/******************************* MY Class starts here **************************************************/
-
-	public class Tokenizer {
-
-		private char allChars[]; // hold all the character of the String in
-									// array
-		private int tokenStartPosition;// hold the first index of the char array
-		private int tokenLastPosition; // hold the last index of the char array
-		private int tokenPosition;
-		private int tokenStart;
-		private int tokenLastTokenIndex;
-		private int tokenLastTokenStartPosition;
-		private int tokenLastTokenEndPosition;
-		private int currentTokenPreSpace = -1;
-
-		private int mp = -1;
-
-		private int mts = -1;
-		private int mlti = -1;
-		private int mtsp = -1;
-		private int mltep = -1;
-		private int mcurrentTokenPreSpace = -1;
-
-		private int mPositon_previous = -1;
-
-		public Tokenizer() {
-			// TODO Auto-generated constructor stub
-		}
-
-		public Tokenizer(char ch[], int offset, int length) {
-			tokenLastTokenStartPosition = -1;
-			tokenLastTokenEndPosition = -1;
-			if (offset < 0 || offset + length > ch.length) {
-				String msg = (new StringBuilder())
-						.append("Illegal slice. cs.length=").append(ch.length)
-						.append(" offset=").append(offset).append(" length=")
-						.append(length).toString();
-				throw new IllegalArgumentException(msg);
-			} else {
-				allChars = ch;
-				tokenPosition = offset;
-				tokenLastPosition = offset + length;
-				tokenStart = -1;
-				tokenLastTokenIndex = -1;
-				tokenStartPosition = offset;
-				return;
-			}
-		}
-
-		public void resetToken(char ch[], int offset, int length) {
-			tokenLastTokenStartPosition = -1;
-			tokenLastTokenEndPosition = -1;
-			if (offset < 0 || offset + length > ch.length) {
-				String msg = (new StringBuilder())
-						.append("Illegal slice. cs.length=").append(ch.length)
-						.append(" offset=").append(offset).append(" length=")
-						.append(length).toString();
-				throw new IllegalArgumentException(msg);
-			} else {
-				allChars = ch;
-				tokenPosition = offset;
-				tokenLastPosition = offset + length;
-				tokenStart = -1;
-				tokenLastTokenIndex = -1;
-				tokenStartPosition = 0;
-
-				tokenLastTokenStartPosition = tokenPosition;
-				tokenLastTokenEndPosition = -1;
-				return;
-			}
-
-		}
-
-		private void skipWhitespace() {
-			currentTokenPreSpace = 0;
-			while (hasMoreCharacters() && Character.isWhitespace(currentChar())) {
-				tokenPosition++;
-				currentTokenPreSpace++;
-			}
-		}
-
-		private String getToken() {
-
-			if (!hasMoreCharacters())
-				return null;
-			tokenStart = tokenPosition;
-			tokenLastTokenIndex++;
-			char startChar = allChars[tokenPosition++];
-
-			if (startChar == '.') {
-				while (currentCharEquals('.'))
-					tokenPosition++;
-				return currentToken();
-			}
-
-			if (startChar == '=') {
-				while (currentCharEquals('='))
-					tokenPosition++;
-				return currentToken();
-			}
-
-			if (startChar == '`') {
-				if (currentCharEquals('`'))
-					tokenPosition++;
-				return currentToken();
-			}
-			if (isLetter(startChar)) {
-				String value = alphaNumToken();
-				return value;
-			}
-			if (Character.isDigit(startChar))
-				return numToken();
-			else
-				return currentToken();
-		}
-
-		private String numToken() {
-			while (hasMoreCharacters()) {
-				if (isLetter(currentChar())) {
-					tokenPosition++;
-					return alphaNumToken();
-				}
-				if (Character.isDigit(currentChar()))
-					tokenPosition++;
-				else if (currentChar() == '.' || currentChar() == ',')
-					return numPunctToken();
-				else
-					return currentToken();
-			}
-			return currentToken();
-		}
-
-		private boolean currentCharEquals(char c) {
-			return hasMoreCharacters() && currentChar() == c;
-		}
-
-		private String currentToken() {
-			int length = tokenPosition - tokenStart;
-			tokenLastTokenStartPosition = tokenStart - tokenStartPosition;
-			tokenLastTokenEndPosition = tokenLastTokenStartPosition + length;
-
-			return new String(allChars, tokenStart, length);
-
-		}
-
-		private String numPunctToken() {
-			while (hasMoreCharacters())
-				if (Character.isDigit(currentChar()))
-					tokenPosition++;
-				else if (currentChar() == '.' || currentChar() == ',') {
-					tokenPosition++;
-					if (!hasMoreCharacters()
-							|| !Character.isDigit(currentChar())) {
-						tokenPosition--;
-						return currentToken();
-					}
-				} else {
-					return currentToken();
-				}
-			return currentToken();
-		}
-
-		private String alphaNumToken() {
-
-			while (hasMoreCharacters()
-					&& (isLetter(currentChar()) || Character
-							.isDigit(currentChar())))
-				tokenPosition++;
-			return currentToken();
-		}
-
-		private boolean isLetter(char c) {
-			return Character.isLetter(c);
-		}
-
-		private boolean hasMoreCharacters() {
-			return tokenPosition < tokenLastPosition;
-		}
-
-		private char currentChar() {
-			return allChars[tokenPosition];
-		}
-
-		public int lastTokenStartPosition() {
-			return tokenLastTokenStartPosition;
-		}
-
-		public int lastTokenEndPosition() {
-			return tokenLastTokenEndPosition;
-		}
-
-		/**
-		 * @param position
-		 *            : The position of the cursor is set to the parameter
-		 *            position
-		 */
-		public void setPositon(int position) {
-			this.tokenPosition = position;
-		}
-
-		public String nextToken() {
-			skipWhitespace();
-			return getToken();
-		}
-
-		// Count the no of space after the token
-
-		public int currentTokenPostSpace() {
-			int tmp_mposisiont = tokenPosition;
-			while ((tmp_mposisiont < tokenLastPosition)
-					&& (Character.isWhitespace(allChars[tmp_mposisiont])))
-				tmp_mposisiont++;
-
-			return (tmp_mposisiont - tokenPosition);
-		}
-
-		public int currentTokenPreSpace() {
-			return currentTokenPreSpace;
-		}
 
 	}
-	
-	private String removeUnnecessaryCharacter(String text){
-		StringBuilder processedString=new StringBuilder();
-		char[] chars=text.toCharArray();
-		for(char c:chars){
-			if(c=='['||c==']'||c=='"'){
-				continue;
-			}
-			processedString.append(c);
-		}
-		
-		return processedString.toString();
-	}
+
 }

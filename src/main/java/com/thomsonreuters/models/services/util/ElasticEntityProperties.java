@@ -1,14 +1,16 @@
 package com.thomsonreuters.models.services.util;
 
-import java.util.HashMap;
+import java.util.Map;
+
+import com.netflix.config.ConfigurationManager;
 
 public class ElasticEntityProperties {
 
 	private String type = "";
 	private String[] searchField = null;
 	private String[] returnFields = null;
-	private HashMap<String, String> aliasFields = null;
-	private HashMap<String, String> sortFields = null;
+	private Map<String, String> aliasFields = null;
+	private Map<String, String> sortFields = null;
 	private String analyzer = "";
 	private Integer[] maxExpansion = new Integer[] {};
 	private int slop = 3;
@@ -39,19 +41,19 @@ public class ElasticEntityProperties {
 		this.returnFields = returnFields;
 	}
 
-	public HashMap<String, String> getAliasFields() {
+	public Map<String, String> getAliasFields() {
 		return aliasFields;
 	}
 
-	public void setAliasFields(HashMap<String, String> aliasFields) {
+	public void setAliasFields(Map<String, String> aliasFields) {
 		this.aliasFields = aliasFields;
 	}
 
-	public HashMap<String, String> getSortFields() {
+	public Map<String, String> getSortFields() {
 		return sortFields;
 	}
 
-	public void setSortFields(HashMap<String, String> sortFields) {
+	public void setSortFields(Map<String, String> sortFields) {
 		this.sortFields = sortFields;
 	}
 
@@ -89,19 +91,11 @@ public class ElasticEntityProperties {
 		 
 	}
 
-	public String getHost(String source) {
-
-		if (this.host != null && this.host.length() > 5 && this.port!=null && this.port.length()>0) {
-
-			String url = "http://" + host+":"+this.port + Property.ES_SEARCH_PATH.get(source) + "/_search";
-			return url;
-		}
-
-		return null;
+	public String getHost() {
+		return this.host;
 	}
 
 	public void setHost(String host) {
-
 		this.host = host;
 	}
 
@@ -113,6 +107,17 @@ public class ElasticEntityProperties {
 		this.port = port;
 	}
 	
-	
+	public String getElasticSearchUrl(String source) {
+		String indexPath = Property.ES_SEARCH_PATH.get(source);
+		if (this.host != null && this.host.length() > 5 && this.port!=null && this.port.length()>0) {
+			return "http://" + host+":"+this.port + "/"+ indexPath + "/_search";
+		}
+		else {
+			String genericHost = ConfigurationManager.getConfigInstance().getString(Property.SEARCH_HOST);
+			String genericPort = ConfigurationManager.getConfigInstance().getString(Property.SEARCH_PORT);
+
+			return "http://" + genericHost + ":" + genericPort + "/"+ indexPath + "/_search";
+		}
+	}
 
 }

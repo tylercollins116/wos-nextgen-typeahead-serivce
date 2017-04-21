@@ -6,8 +6,6 @@ import com.thomsonreuters.models.Suggester;
 import com.thomsonreuters.models.SuggesterConfiguration;
 import com.thomsonreuters.models.SuggesterConfigurationHandler;
 import com.thomsonreuters.models.SuggesterHandler;
-import com.thomsonreuters.models.services.ESoperation.ESQueryExecutor;
-import com.thomsonreuters.models.services.ESoperation.IESQueryExecutor;
 import com.thomsonreuters.models.services.suggesterOperation.IPA.IPASuggester;
 import com.thomsonreuters.models.services.suggesterOperation.IPA.IPASuggesterHandler;
 
@@ -16,14 +14,8 @@ public class MainModule extends AbstractModule {
 	protected void configure() {
 		// Guice bindings goes here
 
-		bind(SuggesterConfigurationHandler.class).to(
-				SuggesterConfiguration.class).in(Singleton.class);
+		bind(SuggesterConfigurationHandler.class).to(SuggesterConfiguration.class).in(Singleton.class);
 		bind(SuggesterHandler.class).to(Suggester.class).in(Singleton.class);
-		
-		bind(IPASuggesterHandler.class).to(IPASuggester.class).in(
-				Singleton.class);
-
-		bind(IESQueryExecutor.class).to(ESQueryExecutor.class).in(
-				Singleton.class);
+		bind(IPASuggesterHandler.class).to(IPASuggester.class).in(Singleton.class);
 	}
 }
