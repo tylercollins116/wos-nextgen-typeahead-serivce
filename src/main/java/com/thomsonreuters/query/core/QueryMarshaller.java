@@ -51,7 +51,7 @@ public class QueryMarshaller {
 		SuggestData first = null;
 
 		int firstIndex = -1;
-		for (; firstIndex < data.length;) {
+		while ( firstIndex < data.length) {
 			++firstIndex;
 			if (first == null) {
 				first = data[firstIndex];
@@ -129,7 +129,7 @@ public class QueryMarshaller {
 
 			Object obj_ = objs.get(seq_1);
 			JSONObject finalObj = new JSONObject(obj_.toString());
-			String fielddata = (finalObj.getString("fields"));
+			String fielddata = finalObj.getString("fields");
 
 			for (String field : queryManagerInput.getReturnFields()) {
 
@@ -180,9 +180,12 @@ public class QueryMarshaller {
 	
 	private static String getHighLight(JSONObject finalObj, String searchField) {
 		try {
-			JSONObject highlightObject = new JSONObject((finalObj.getString("highlight")));
+			JSONObject highlightObject = new JSONObject(finalObj.getString("highlight"));
 			return highlightObject.getJSONArray(searchField).getString(0);
-		} catch (Exception e) { return null; }
+		} catch (Exception e) {
+			log.error("Marshaller error (getHighLight):", e.getMessage(), e);
+			return null; 
+		}
 	}
 
 
