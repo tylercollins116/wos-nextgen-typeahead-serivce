@@ -23,6 +23,7 @@ public class QueryManagerInput {
 	private String source = "";
 	private int maxExpansionPosition = 0;
 	private boolean highLight = false;
+	private String queryType = "";
 
 	public QueryManagerInput(ElasticEntityProperties eep, int from, int size, String queryTerm, String source) {
 		this.elasticSearchUrl = eep.getElasticSearchUrl(source);
@@ -41,6 +42,7 @@ public class QueryManagerInput {
 		this.queryTerm = queryTerm;
 		this.source = source;
 		this.maxExpansionPosition = 0;
+		this.setQueryType(eep.getQueryType());
 	}
 
 	public String getElasticSearchUrl() {
@@ -172,6 +174,9 @@ public class QueryManagerInput {
 	}
 	
 	public boolean increaseMaxExpansion() {
+		if(!isNgramsQuery()){ //If ngrams query, we don't use expansion
+			return false;
+		}
 		this.maxExpansionPosition = this.maxExpansionPosition + 1;
 		if(maxExpansionPosition < this.maxExpansion.length)
 			return true;
@@ -188,6 +193,21 @@ public class QueryManagerInput {
 
 	public void setHighLight(boolean highLight) {
 		this.highLight = highLight;
+	}
+
+	public String getQueryType() {
+		return queryType;
+	}
+
+	public void setQueryType(String queryType) {
+		this.queryType = queryType;
+	}
+	
+	public boolean isNgramsQuery() {
+		if("ngrams".equalsIgnoreCase(queryType)){
+			return true;
+		}
+		return false;
 	}
 	
 

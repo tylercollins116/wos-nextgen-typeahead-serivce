@@ -200,6 +200,7 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 			String slop = "3";
 			String host = "";
 			String port = "";
+			String queryType = "prefix";
 
 			String path = it.next().toString();
 			ElasticEntityProperties eep = new ElasticEntityProperties();
@@ -270,6 +271,11 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 				slop = ConfigurationManager.getConfigInstance().getString(
 						Property.ENTITY_PREFIX + path + ".slop");
 			}
+			if (ConfigurationManager.getConfigInstance().containsKey(
+					Property.ENTITY_PREFIX + path + ".querytype")) {
+				queryType = ConfigurationManager.getConfigInstance().getString(
+						Property.ENTITY_PREFIX + path + ".querytype", "prefix");
+			}
 
 			eep.setType(type);
 			eep.setSearchField(searchField);
@@ -281,6 +287,7 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 			eep.setSlop(slop);
 			eep.setHost(host);
 			eep.setPort(port);
+			eep.setQueryType(queryType);
 			tmpElasticEntityProperties.put(Property.ENTITY_PREFIX + path, eep);
 		}
 
