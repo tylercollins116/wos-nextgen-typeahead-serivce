@@ -263,8 +263,8 @@ task executeLocal(type: JavaExec) {
 }
 
 task runServer(dependsOn:[classes],type: JavaExec){
-    group = "1P Cache"
-    description = "Run 1P Cache Service"
+    group = "1P typeahead"
+    description = "Run 1P Typeahead Service"
 
     main = "netflix.karyon.KaryonRunner"
     classpath = sourceSets.main.runtimeClasspath
