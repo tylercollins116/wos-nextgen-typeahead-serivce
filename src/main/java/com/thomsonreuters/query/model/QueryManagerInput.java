@@ -174,9 +174,6 @@ public class QueryManagerInput {
 	}
 	
 	public boolean increaseMaxExpansion() {
-		if(!isNgramsQuery()){ //If ngrams query, we don't use expansion
-			return false;
-		}
 		this.maxExpansionPosition = this.maxExpansionPosition + 1;
 		if(maxExpansionPosition < this.maxExpansion.length)
 			return true;
