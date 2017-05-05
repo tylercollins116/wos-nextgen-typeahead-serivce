@@ -16,6 +16,7 @@ public class ElasticEntityProperties {
 	private int slop = 3;
 	private String host = "";
 	private String port="";
+	private String queryType = "prefix";
 
 	public String getType() {
 		return type;
@@ -106,7 +107,15 @@ public class ElasticEntityProperties {
 	public void setPort(String port) {
 		this.port = port;
 	}
-	
+
+	public String getQueryType() {
+		return queryType;
+	}
+
+	public void setQueryType(String queryType) {
+		this.queryType = queryType;
+	}
+
 	public String getElasticSearchUrl(String source) {
 		String indexPath = Property.ES_SEARCH_PATH.get(source);
 		if (this.host != null && this.host.length() > 5 && this.port!=null && this.port.length()>0) {
@@ -119,5 +128,6 @@ public class ElasticEntityProperties {
 			return "http://" + genericHost + ":" + genericPort + "/"+ indexPath + "/_search";
 		}
 	}
+
 
 }

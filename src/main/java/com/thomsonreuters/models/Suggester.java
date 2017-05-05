@@ -592,16 +592,26 @@ public class Suggester implements SuggesterHandler {
 
 	}
 
-	private SuggestData getSuggestionsDataCaller(QueryManagerInput queryManagerInput) throws Exception {
+	private SuggestData getSuggestionsDataCallerRecursive(QueryManagerInput queryManagerInput) throws Exception {
 
 		SuggestData data = QueryManager.query(queryManagerInput);
 		log.info("Expansion = {}", queryManagerInput.getExpansion());
 		if (data.suggestions.size() <= 0 && queryManagerInput.increaseMaxExpansion()) {
-			data = getSuggestionsDataCaller(queryManagerInput);
+			data = getSuggestionsDataCallerRecursive(queryManagerInput);
 		}
 		return data;
 	}
 
+	private SuggestData getSuggestionsDataCaller(QueryManagerInput queryManagerInput) throws Exception {
+		SuggestData suggestData = null;
+		if(queryManagerInput.isNgramsQuery()) {
+			suggestData = QueryManager.query(queryManagerInput);
+		}
+		else {
+			suggestData = getSuggestionsDataCallerRecursive(queryManagerInput);
+		}
+		return suggestData;
+	}
 
 	/**
 	 * provide suggest list and took is total count of hits

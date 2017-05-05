@@ -2,6 +2,8 @@ package com.thomsonreuters.models;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -169,9 +171,9 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 
 	}
 
-	private HashMap<String, String> getKeyValueFields(String[] values) {
+	private Map<String, String> getKeyValueFields(String[] values) {
 
-		HashMap<String, String> keyValueField = new HashMap<String, String>();
+		Map<String, String> keyValueField = new LinkedHashMap<>();
 
 		if (values.length > 0) {
 			for (String value : values) {
@@ -184,7 +186,7 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 
 	private void prepareESEntities() {
 
-		HashMap<String, ElasticEntityProperties> tmpElasticEntityProperties = new HashMap<>();
+		Map<String, ElasticEntityProperties> tmpElasticEntityProperties = new LinkedHashMap<>();
 		log.info("*****************************************");
 		log.info(" Starting process for Preparing ES entities ");
 
@@ -193,13 +195,14 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 			String type = "";
 			String[] searchField = null;
 			String[] returnFields = null;
-			HashMap<String, String> aliasFields = null;
-			HashMap<String, String> sortFields = null;
+			Map<String, String> aliasFields = null;
+			Map<String, String> sortFields = null;
 			String analyzer = "";
 			Integer[] maxExpansion = new Integer[] {};
 			String slop = "3";
 			String host = "";
 			String port = "";
+			String queryType = "prefix";
 
 			String path = it.next().toString();
 			ElasticEntityProperties eep = new ElasticEntityProperties();
@@ -270,6 +273,11 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 				slop = ConfigurationManager.getConfigInstance().getString(
 						Property.ENTITY_PREFIX + path + ".slop");
 			}
+			if (ConfigurationManager.getConfigInstance().containsKey(
+					Property.ENTITY_PREFIX + path + ".querytype")) {
+				queryType = ConfigurationManager.getConfigInstance().getString(
+						Property.ENTITY_PREFIX + path + ".querytype", "prefix");
+			}
 
 			eep.setType(type);
 			eep.setSearchField(searchField);
@@ -281,6 +289,7 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 			eep.setSlop(slop);
 			eep.setHost(host);
 			eep.setPort(port);
+			eep.setQueryType(queryType);
 			tmpElasticEntityProperties.put(Property.ENTITY_PREFIX + path, eep);
 		}
 

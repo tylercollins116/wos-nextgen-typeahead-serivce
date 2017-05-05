@@ -28,23 +28,16 @@ public class QueryBuilder {
 
 		esQuery += getSortingField(queryManagerInput.getSortFields());
 
-		esQuery += "\"query\":{\"constant_score\":{\"query\":{\"match_phrase_prefix\":{"
-				+ parsedSearchField
-				+ ":{\"query\":" + coatedQuery + ",";
+		esQuery += getQueryCore(queryManagerInput.getQueryType(), searchField, coatedQuery, 
+				analyzer, queryManagerInput.getSlop(), queryManagerInput.getExpansion());
 
-		if (analyzer != null && analyzer.trim().length() > 0) {
-			esQuery += "\"analyzer\":"
-					+ org.codehaus.jettison.json.JSONObject.quote(analyzer)
-					+ ",";
-		}
-
-		esQuery += "\"slop\":" + queryManagerInput.getSlop() + ",\"max_expansions\":" + queryManagerInput.getExpansion()
-				+ "}}}}},\"fields\":[" + sb.toString() + "]";
+		esQuery += ",\"fields\":[" + sb.toString() + "]";
 
 		if(queryManagerInput.isHighLight()) {
 			esQuery += ",\"highlight\": {\"fields\": { " + parsedSearchField + ": {}}}";
 			
 		}
+
 		esQuery += "}";
 		return esQuery;
 
@@ -82,5 +75,45 @@ public class QueryBuilder {
 				+ "\" } }");
 		return sb.toString();
 	
+	}
+	
+	private static String getQueryCore(String queryType, String searchField, String coatedQuery
+			, String analyzer, int slop, int expansion) {
+
+		String query = "\"query\":{";
+		
+		if("ngrams".equalsIgnoreCase(queryType)) {
+			query += "\"match\":{"
+					+ org.codehaus.jettison.json.JSONObject.quote(searchField)
+					+ ":{\"query\":" + coatedQuery + ","
+					+ "\"operator\": \"and\"";
+			
+			query += getAnalyzer(analyzer);
+
+			query += "}}";
+
+		}
+		else {
+			query += "\"constant_score\":{\"query\":{\"match_phrase_prefix\":{"
+					+ org.codehaus.jettison.json.JSONObject.quote(searchField)
+					+ ":{\"query\":" + coatedQuery + ",";
+
+			query += getAnalyzer(analyzer);
+
+			query += "\"slop\":" + slop + ",\"max_expansions\":" + expansion
+					+ "}}}}";
+		}
+		query += "}";
+
+		return query;
+	}
+	
+	private static String getAnalyzer(String analyzer) {
+		if (analyzer != null && analyzer.trim().length() > 0) {
+			return "\"analyzer\":"
+					+ org.codehaus.jettison.json.JSONObject.quote(analyzer)
+					+ ",";
+		}
+		return "";
 	}
 }
