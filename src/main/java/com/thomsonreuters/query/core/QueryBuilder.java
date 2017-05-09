@@ -21,6 +21,8 @@ public class QueryBuilder {
 			}
 			sb.append(org.codehaus.jettison.json.JSONObject.quote(field));
 		}
+		
+		String parsedSearchField = org.codehaus.jettison.json.JSONObject.quote(searchField);
 
 		String esQuery = "{\"from\":" + queryManagerInput.getFrom() + ",\"size\":" + queryManagerInput.getSize() + ",";
 
@@ -30,6 +32,11 @@ public class QueryBuilder {
 				analyzer, queryManagerInput.getSlop(), queryManagerInput.getExpansion());
 
 		esQuery += ",\"fields\":[" + sb.toString() + "]";
+
+		if(queryManagerInput.isHighLight()) {
+			esQuery += ",\"highlight\": {\"fields\": { " + parsedSearchField + ": {}}}";
+			
+		}
 
 		esQuery += "}";
 		return esQuery;

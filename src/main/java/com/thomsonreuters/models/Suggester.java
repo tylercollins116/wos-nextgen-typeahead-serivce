@@ -66,18 +66,18 @@ public class Suggester implements SuggesterHandler {
 	@Override
 	public List<SuggestData> lookup(String query, int n) {
 
-		return lookup("wos", query, n);
+		return lookup("wos", query, n, false);
 	}
 
 	@Override
-	public List<SuggestData> lookup(String path, String query, int n) {
+	public List<SuggestData> lookup(String path, String query, int n, boolean highLight) {
 
-		return lookup(path, query, n, null);
+		return lookup(path, query, n, null, highLight);
 
 	}
 
 	public List<SuggestData> lookup(String path, String query, int n,
-			Map<String, List<SuggestData.Suggestions>> preSearchedTermsInfo) {
+			Map<String, List<SuggestData.Suggestions>> preSearchedTermsInfo, boolean highLight) {
 		long startTime = -1L;
 
 		List<SuggestData> results = new ArrayList<SuggestData>();
@@ -88,7 +88,7 @@ public class Suggester implements SuggesterHandler {
 		/*************************************************************************************/
 		if (eep != null) {
 			try {
-				results.add(getSuggestionsDataWithCount(new QueryManagerInput(eep, 0, n, query, path)));
+				results.add(getSuggestionsDataWithCount(new QueryManagerInput(eep, 0, n, query, path, highLight)));
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -194,7 +194,6 @@ public class Suggester implements SuggesterHandler {
 				SuggestData suggestData = new SuggestData();
 				suggestData.source = path;
 
-				List<Map<String, String>> typeSuggestions = new ArrayList<Map<String, String>>();
 				try {
 
 					List<LookupResult> allResults = ((TRAnalyzingSuggesterExt) suggester)
@@ -269,7 +268,7 @@ public class Suggester implements SuggesterHandler {
 	 */
 	@Override
 	public List<SuggestData> lookup(String query, String source, int offset,
-			int size, String uid) {
+			int size, String uid, boolean highLight) {
 
 		List<SuggestData> results = new ArrayList<SuggestData>();
 
@@ -287,7 +286,7 @@ public class Suggester implements SuggesterHandler {
 
 			try {
 				
-				results.add(getSuggestionsDataWithCount(new QueryManagerInput(eep, offset, size, query, path)));
+				results.add(getSuggestionsDataWithCount(new QueryManagerInput(eep, offset, size, query, path, highLight)));
 			} catch (Exception e) {
 				log.error("elastic search error", e);
 			}
@@ -296,7 +295,7 @@ public class Suggester implements SuggesterHandler {
 			// unnecessary ends
 		} else {
 			try {
-				return (lookup(source, query, size, null));
+				return (lookup(source, query, size, null, highLight));
 			} catch (Exception e) {
 				log.error("Fail to execute message because of underline error on dictionary based ");
 			}
@@ -307,7 +306,7 @@ public class Suggester implements SuggesterHandler {
 	/** added **/
 	@Override
 	public List<SuggestData> lookup(String query, List<String> sources,
-			List<String> infos, int size, String uid) {
+			List<String> infos, int size, String uid, boolean highLight) {
 
 		/***************************************************/
 		/** preSearchedTermsInfo will never null **/
@@ -323,7 +322,7 @@ public class Suggester implements SuggesterHandler {
 
 		if (includePreSearch && uid != null && uid.trim().length() > 0) {
 
-			List<SuggestData> preSearchedTerms = lookup(query, size, uid, false);
+			List<SuggestData> preSearchedTerms = lookup(query, size, uid, false, highLight);
 
 			if (preSearchedTerms != null && preSearchedTerms.size() > 0) {
 
@@ -416,7 +415,7 @@ public class Suggester implements SuggesterHandler {
 						@Override
 						public List<SuggestData> call() throws Exception {
 							return lookup(path, query, size,
-									preSearchedTermsInfo);
+									preSearchedTermsInfo, highLight);
 						}
 					});
 
@@ -444,7 +443,7 @@ public class Suggester implements SuggesterHandler {
 
 	@Override
 	public List<SuggestData> lookup(String query, int size, String uid,
-			boolean all) {
+			boolean all, boolean highLight) {
 		// TODO Auto-generated method stub
 
 		
@@ -481,7 +480,7 @@ public class Suggester implements SuggesterHandler {
 						.processAndNormalizeToken(suggestion);
 
 				List<SuggestData> allSuggestdataForCategories = lookup(
-						"category", suggestion, 50);
+						"category", suggestion, 50, highLight);
 
 				for (SuggestData suggestdata : allSuggestdataForCategories) {
 					boolean include = false;
@@ -509,7 +508,7 @@ public class Suggester implements SuggesterHandler {
 				}
 
 				List<SuggestData> allSuggestdataForKeywords = lookup("wos",
-						suggestion, 50);
+						suggestion, 50, highLight);
 
 				for (SuggestData suggestdata : allSuggestdataForKeywords) {
 

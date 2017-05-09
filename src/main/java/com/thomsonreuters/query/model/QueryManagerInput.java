@@ -25,7 +25,7 @@ public class QueryManagerInput {
 	private boolean highLight = false;
 	private String queryType = "";
 
-	public QueryManagerInput(ElasticEntityProperties eep, int from, int size, String queryTerm, String source) {
+	public QueryManagerInput(ElasticEntityProperties eep, int from, int size, String queryTerm, String source, boolean highlight) {
 		this.elasticSearchUrl = eep.getElasticSearchUrl(source);
 		this.type = eep.getType();
 		this.searchField = eep.getSearchField();
@@ -42,6 +42,7 @@ public class QueryManagerInput {
 		this.queryTerm = queryTerm;
 		this.source = source;
 		this.maxExpansionPosition = 0;
+		this.highLight = highlight;
 		this.setQueryType(eep.getQueryType());
 	}
 

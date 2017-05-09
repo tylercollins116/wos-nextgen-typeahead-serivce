@@ -19,7 +19,7 @@ import com.thomsonreuters.models.services.suggesterOperation.ext.TRAnalyzingSugg
 import com.thomsonreuters.models.services.util.Blockable;
 import com.thomsonreuters.models.services.util.BlockingHashTable;
 import com.thomsonreuters.models.services.util.ElasticEntityProperties;
-import com.thomsonreuters.models.services.util.Property;
+
 
 public class SuggesterMainTest {
 
@@ -95,7 +95,7 @@ public class SuggesterMainTest {
 
 		List<SuggestData> allResults = null;
 		try {
-			allResults = suggester.lookup("organization", "ALBA IU", 5);
+			allResults = suggester.lookup("organization", "ALBA IU", 5, false);
 		} catch (Exception e) {
 			allResults = null;
 		}
@@ -110,17 +110,17 @@ public class SuggesterMainTest {
 		allResults = null;
 		try {
 
-			allResults = suggester.lookup("topic", "scr", 5);
+			allResults = suggester.lookup("topic", "scr", 5, false);
 			assertNotNull(allResults);
 			suggestion = allResults.get(0).suggestions.get(0).keyword;
 			assertEquals("scrapie", suggestion);
 
-			allResults = suggester.lookup("category", "scr", 5);
+			allResults = suggester.lookup("category", "scr", 5, false);
 			assertNotNull(allResults);
 			suggestion = allResults.get(0).suggestions.get(0).keyword;
 			assertEquals("scrapie", suggestion);
 
-			allResults = suggester.lookup("wos", "scr", 5);
+			allResults = suggester.lookup("wos", "scr", 5, false);
 			assertNotNull(allResults);
 			suggestion = allResults.get(0).suggestions.get(0).keyword;
 			assertEquals("scrapie", suggestion);
@@ -132,9 +132,9 @@ public class SuggesterMainTest {
 		try {
 			List<String> sources = Arrays.asList(new String[] { "wos",
 					"organization", "category", "topic" });
-			suggester.lookup("scr", sources, new ArrayList<String>(), 4, null);
+			suggester.lookup("scr", sources, new ArrayList<String>(), 4, null, false);
 
-			suggester.lookup("scr", 4, null, true);
+			suggester.lookup("scr", 4, null, true, false);
 
 		} catch (Exception e) {
 		}

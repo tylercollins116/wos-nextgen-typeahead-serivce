@@ -3,8 +3,12 @@ package com.thomsonreuters.models;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.codehaus.jackson.map.annotate.JsonSerialize;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class SuggestData {
 
 	@JsonProperty("source")
@@ -19,6 +23,7 @@ public class SuggestData {
 	@JsonProperty("suggestions")
 	public List<Suggestions> suggestions = new ArrayList<SuggestData.Suggestions>();
 
+	@JsonInclude(JsonInclude.Include.NON_NULL)
 	public class Suggestions {
 		@JsonProperty("keyword")
 		public String keyword;
@@ -26,6 +31,10 @@ public class SuggestData {
 		@JsonProperty("info")
 		public List<Info> info = new ArrayList<SuggestData.Info>();
 
+		@JsonProperty("highlight")
+		public String highlight;
+
+		
 		@Override
 		public boolean equals(Object obj) {
 			if (obj instanceof Suggestions) {
@@ -66,6 +75,7 @@ public class SuggestData {
 
 	}
 
+	@JsonInclude(JsonInclude.Include.NON_NULL)
 	public class Info {
 		@JsonProperty("key")
 		public String key;

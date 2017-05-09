@@ -71,7 +71,7 @@ public class HealthCheck implements HealthCheckHandler {
 		this.suggesterHandler = suggesterHandler;
 		this.ipaSuggesterHandler = ipaSuggesterHandler;
 
-		eiddo.addListener(new EiddoListener() {
+		this.eiddo.addListener(new EiddoListener() {
 
 			@Override
 			public void onRepoChainUpdated(List<File> repoDir) {
@@ -261,7 +261,7 @@ public class HealthCheck implements HealthCheckHandler {
 
 			} else {
 				List<SuggestData> results = suggesterHandler.lookup(
-						dictionaryName, "a", 2);
+						dictionaryName, "a", 2, false);
 				if (results.size() <= 0
 						|| results.get(0).suggestions.size() < 2) {
 
@@ -401,7 +401,7 @@ public class HealthCheck implements HealthCheckHandler {
 				key = key.replace(Property.ENTITY_PREFIX, "").trim();
 			}
 
-			List<SuggestData> results = suggesterHandler.lookup(key, "c", 2);
+			List<SuggestData> results = suggesterHandler.lookup(key, "c", 2, false);
 
 			if ((results == null || results.size() < 1)
 					|| (results.get(0) == null || results.get(0).suggestions

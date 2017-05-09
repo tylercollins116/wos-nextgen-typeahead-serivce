@@ -30,7 +30,7 @@ public class QueryMarshaller {
 		for (int i = 0; i < queryResults.size(); i++) {
 			
 			try {
-				data[i] = formatResponse(queryManagerInput, queryResults.get(i).getRight());
+				data[i] = formatResponse(queryManagerInput, queryResults.get(i).getLeft(), queryResults.get(i).getRight());
 			} catch (JSONException e) {
 				log.error("Marshaller error (parse):", e.getMessage(), e);
 			}			
@@ -51,7 +51,7 @@ public class QueryMarshaller {
 		SuggestData first = null;
 
 		int firstIndex = -1;
-		for (; firstIndex < data.length;) {
+		while ( firstIndex < data.length) {
 			++firstIndex;
 			if (first == null) {
 				first = data[firstIndex];
@@ -105,7 +105,7 @@ public class QueryMarshaller {
 		return first;
 	}
 	
-	private static SuggestData formatResponse(QueryManagerInput queryManagerInput, String response) throws JSONException {
+	private static SuggestData formatResponse(QueryManagerInput queryManagerInput, String searchField, String response) throws JSONException {
 
 		SuggestData suggestData = new SuggestData();
 		suggestData.source = queryManagerInput.getSource();
@@ -129,7 +129,7 @@ public class QueryMarshaller {
 
 			Object obj_ = objs.get(seq_1);
 			JSONObject finalObj = new JSONObject(obj_.toString());
-			String fielddata = (finalObj.getString("fields"));
+			String fielddata = finalObj.getString("fields");
 
 			for (String field : queryManagerInput.getReturnFields()) {
 
@@ -166,11 +166,27 @@ public class QueryMarshaller {
 					log.error("Marshaller error (formatResponse):", e.getMessage(), e);
 				}
 			}
-
+			if(queryManagerInput.isHighLight()) {
+				String highLight = getHighLight(finalObj, searchField);
+				if(highLight != null) {
+					suggestions.highlight = highLight;
+				}
+			}
 			suggestData.suggestions.add(suggestions);
 		}
 
 		return suggestData;
 	}
+	
+	private static String getHighLight(JSONObject finalObj, String searchField) {
+		try {
+			JSONObject highlightObject = new JSONObject(finalObj.getString("highlight"));
+			return highlightObject.getJSONArray(searchField).getString(0);
+		} catch (Exception e) {
+			log.error("Marshaller error (getHighLight):", e.getMessage(), e);
+			return null; 
+		}
+	}
+
 
 }
