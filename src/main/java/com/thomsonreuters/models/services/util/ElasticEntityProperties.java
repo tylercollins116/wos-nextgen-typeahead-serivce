@@ -17,6 +17,7 @@ public class ElasticEntityProperties {
 	private String host = "";
 	private String port="";
 	private String queryType = "prefix";
+	private Integer esMainVersion = 2;
 
 	public String getType() {
 		return type;
@@ -115,6 +116,10 @@ public class ElasticEntityProperties {
 	public void setQueryType(String queryType) {
 		this.queryType = queryType;
 	}
+
+	public Integer getEsMainVersion() { return esMainVersion; }
+
+	public void setEsMainVersion(Integer esMainVersion) { this.esMainVersion = esMainVersion; }
 
 	public String getElasticSearchUrl(String source) {
 		String indexPath = Property.ES_SEARCH_PATH.get(source);

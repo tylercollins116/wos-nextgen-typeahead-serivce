@@ -24,6 +24,7 @@ public class QueryManagerInput {
 	private int maxExpansionPosition = 0;
 	private boolean highLight = false;
 	private String queryType = "";
+	private Integer esMainVersion = 2;
 
 	public QueryManagerInput(ElasticEntityProperties eep, int from, int size, String queryTerm, String source, boolean highlight) {
 		this.elasticSearchUrl = eep.getElasticSearchUrl(source);
@@ -44,6 +45,7 @@ public class QueryManagerInput {
 		this.maxExpansionPosition = 0;
 		this.highLight = highlight;
 		this.setQueryType(eep.getQueryType());
+		this.esMainVersion = eep.getEsMainVersion();
 	}
 
 	public String getElasticSearchUrl() {
@@ -200,13 +202,17 @@ public class QueryManagerInput {
 	public void setQueryType(String queryType) {
 		this.queryType = queryType;
 	}
-	
+
+	public Integer getEsMainVersion() { return esMainVersion; }
+
+	public void setEsMainVersion(Integer esMainVersion) { this.esMainVersion = esMainVersion; }
+
 	public boolean isNgramsQuery() {
 		if("ngrams".equalsIgnoreCase(queryType)){
 			return true;
 		}
 		return false;
 	}
-	
+
 
 }

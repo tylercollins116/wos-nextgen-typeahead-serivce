@@ -31,7 +31,11 @@ public class QueryBuilder {
 		esQuery += getQueryCore(queryManagerInput.getQueryType(), searchField, coatedQuery, 
 				analyzer, queryManagerInput.getSlop(), queryManagerInput.getExpansion());
 
-		esQuery += ",\"fields\":[" + sb.toString() + "]";
+		if(queryManagerInput.getEsMainVersion() <= 2)
+			esQuery += ",\"fields\":[" + sb.toString() + "]";
+		else
+			esQuery += ",\"_source\":[" + sb.toString() + "]";
+
 
 		if(queryManagerInput.isHighLight()) {
 			esQuery += ",\"highlight\": {\"fields\": { " + parsedSearchField + ": {}}}";

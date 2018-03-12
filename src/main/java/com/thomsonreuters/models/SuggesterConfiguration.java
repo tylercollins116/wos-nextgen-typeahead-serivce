@@ -188,6 +188,11 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 
 		Map<String, ElasticEntityProperties> tmpElasticEntityProperties = new LinkedHashMap<>();
 		log.info("*****************************************");
+		Integer esVersion = ConfigurationManager.getConfigInstance().getInteger(Property.SEARCH_VERSION, 2);
+		log.info(" Set ES version :"+esVersion);
+		log.info("*****************************************");
+
+		log.info("*****************************************");
 		log.info(" Starting process for Preparing ES entities ");
 
 		Iterator it = Property.ES_SEARCH_PATH.keySet().iterator();
@@ -206,6 +211,7 @@ public class SuggesterConfiguration implements SuggesterConfigurationHandler {
 
 			String path = it.next().toString();
 			ElasticEntityProperties eep = new ElasticEntityProperties();
+			eep.setEsMainVersion(esVersion);
 			if (ConfigurationManager.getConfigInstance().containsKey(
 					Property.ENTITY_PREFIX + path + ".type")) {
 				type = ConfigurationManager.getConfigInstance().getString(

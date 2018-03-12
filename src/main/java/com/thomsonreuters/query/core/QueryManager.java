@@ -28,8 +28,10 @@ public class QueryManager {
 		}
 		
 		List<Pair<String, String>> results = QueryExecutor.execute(queries, queryManagerInput.getElasticSearchUrl());
-		
-		return QueryMarshaller.parse(queryManagerInput, results);
+		if(queryManagerInput.getEsMainVersion() <= 2)
+			return QueryMarshaller.parse(queryManagerInput, results);
+		else
+			return QueryMarshallerV5.parse(queryManagerInput, results);
 		
 	}
 	
