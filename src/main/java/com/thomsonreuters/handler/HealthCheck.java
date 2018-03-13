@@ -391,10 +391,13 @@ public class HealthCheck implements HealthCheckHandler {
 			return 500;
 		}
 
+		//Don't need to check specific indexes, if one is not working should not crash the entire service
+		/*
 		Set<String> registerKeys = suggesterConfigurationHandler
 				.getRegisteredElasticEntityNames();
 
 		boolean allSet = true;
+
 		for (String key : registerKeys) {
 
 			if (key.startsWith(Property.ENTITY_PREFIX)) {
@@ -423,7 +426,7 @@ public class HealthCheck implements HealthCheckHandler {
 		if (!allSet) {
 			return 500;
 		}
-
+		*/
 		return 200;
 	}
 }
