@@ -4,7 +4,7 @@ pipeline_dev_snapshot_v2.0-us-west-2:
   stages.0.clusters.0.application: dratypeahead
   stages.0.clusters.0.keyPair: KP_developer
   stages.0.clusters.0.iamRole: typehead
-  stages.0.clusters.0.tags.Name: dratypeahead
+  stages.0.clusters.0.tags: { 'Name': 'dratypeahead', 'telemetry': 'true', 'tr:appName': 'dra' }
   stages.0.clusters.0.account: tr-dev
   stages.0.clusters.0.securityGroups: ["sg-9013eaf4", "sg-af6030c8"]
   stages.0.clusters.0.freeFormDetails: "d0snapshot-r01"
@@ -19,7 +19,7 @@ pipeline_dev_stable_v2.0-us-west-2:
   stages.0.clusters.0.application: dratypeahead
   stages.0.clusters.0.keyPair: KP_developer
   stages.0.clusters.0.iamRole: typehead
-  stages.0.clusters.0.tags.Name: dratypeahead
+  stages.0.clusters.0.tags: { 'Name': 'dratypeahead', 'telemetry': 'true', 'tr:appName': 'dra' }
   stages.0.clusters.0.account: tr-dev
   stages.0.clusters.0.securityGroups: ["sg-9013eaf4", "sg-af6030c8"]
   stages.0.clusters.0.freeFormDetails: "d0stable-r01"
@@ -37,7 +37,7 @@ pipeline_promote_stable_to_perf_v1.0-us-west-2:
   stages.1.clusters.0.instanceType: t2.medium
   stages.1.clusters.0.freeFormDetails: "d0perf-r01"
   stages.1.clusters.0.securityGroups: ["sg-4d429129","sg-bef6b3d8"]
-  stages.1.clusters.0.tags.Name: dratypeahead
+  stages.1.clusters.0.tags: { 'Name': 'dratypeahead', 'telemetry': 'true', 'tr:appName': 'dra' }
   stages.1.clusters.0.capacity.desired: 3
   stages.1.clusters.0.capacity.max: 3
   stages.1.clusters.0.capacity.min: 3
@@ -53,7 +53,7 @@ pipeline_promote_stable_to_prod_v1.0-us-west-2:
   stages.1.clusters.0.freeFormDetails: "d0prod1-r01"
   stages.1.clusters.0.iamRole: defaultInstanceRole
   stages.1.clusters.0.securityGroups: ["sg-f5148393","sg-6f09e617","sg-0bca2b72"]
-  stages.1.clusters.0.tags.Name: dratypeahead
+  stages.1.clusters.0.tags: { 'Name': 'dratypeahead', 'telemetry': 'true', 'tr:appName': 'dra' }
   stages.1.clusters.0.capacity.desired: 3
   stages.1.clusters.0.capacity.max: 3
   stages.1.clusters.0.capacity.min: 3
