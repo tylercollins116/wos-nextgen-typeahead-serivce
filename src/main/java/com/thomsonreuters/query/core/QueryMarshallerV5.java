@@ -131,17 +131,34 @@ public class QueryMarshallerV5 {
 			String fielddata = finalObj.getString("_source");
 
 			for (String field : queryManagerInput.getReturnFields()) {
-
 				try {
-
-					JSONObject fieldObject = new JSONObject(fielddata);
-
-					if (!fieldObject.has(field)) {
-						fieldObject.put(field, new JSONArray());
+					String[] subfields = null;
+					if (field.contains(".")) {
+						subfields =  field.split("\\.");
+					} else {
+						subfields =  new String[] { field };
 					}
-
-					Object fieldValue = fieldObject.get(field);
-
+					
+					JSONObject fieldObject = new JSONObject(fielddata);
+					Object fieldValue = null;
+					if (subfields.length == 1) {
+						if (fieldObject.has(subfields[0])) {
+							fieldValue = fieldObject.get(subfields[0]);
+						}
+					} else {
+						for (String sfield : subfields) {
+							if (fieldObject.has(sfield)) {
+								Object nodeObj = fieldObject.get(sfield);
+								if (nodeObj instanceof JSONObject) {
+									fieldObject = (JSONObject) nodeObj;
+								} else {
+									fieldValue = nodeObj.toString();
+									break;
+								}
+							}
+						}
+					}
+					
 					if (fieldValue != null) {
 
 						Info info = suggestData.new Info();

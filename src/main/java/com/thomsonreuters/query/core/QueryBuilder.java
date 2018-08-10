@@ -98,14 +98,14 @@ public class QueryBuilder {
 
 		}
 		else {
-			query += "\"constant_score\":{\"query\":{\"match_phrase_prefix\":{"
+			query += "\"constant_score\":{\"filter\":{\"match_phrase_prefix\":{"
 					+ org.codehaus.jettison.json.JSONObject.quote(searchField)
 					+ ":{\"query\":" + coatedQuery + ",";
 
 			query += getAnalyzer(analyzer);
 
 			query += "\"slop\":" + slop + ",\"max_expansions\":" + expansion
-					+ "}}}}";
+					+ "}}},\"boost\": " + 1.2 + "}";
 		}
 		query += "}";
 
