@@ -23,20 +23,89 @@ public class QueryMarshaller {
 
 	private QueryMarshaller(){}
 	
-	public static SuggestData parse(QueryManagerInput queryManagerInput, String queryResults){
+	public static SuggestData parse(QueryManagerInput queryManagerInput, List<Pair<String, String>> queryResults){
 
-		SuggestData data = null;
-		try {
-			data = formatResponse(queryManagerInput, queryResults);
-		} catch (JSONException e) {
-			log.error("Marshaller error (parse):", e.getMessage(), e);
+		SuggestData[] data = new SuggestData[queryResults.size()];
+
+		for (int i = 0; i < queryResults.size(); i++) {
+			
+			try {
+				data[i] = formatResponse(queryManagerInput, queryResults.get(i).getLeft(), queryResults.get(i).getRight());
+			} catch (JSONException e) {
+				log.error("Marshaller error (parse):", e.getMessage(), e);
+			}			
 		}
-
-		return data;
+		if (data.length == 0) {
+			return new SuggestData();
+		} else if (data.length == 1) {
+			return data[0];
+		}
+		else {
+			return mergeFinalResult(data);
+		}
 
 	}
 
-	private static SuggestData formatResponse(QueryManagerInput queryManagerInput, String response) throws JSONException {
+	private static SuggestData mergeFinalResult(SuggestData[] data) {
+		Set<String> uniqueTerms = new HashSet<>();
+		SuggestData first = null;
+
+		int firstIndex = -1;
+		while ( firstIndex < data.length) {
+			++firstIndex;
+			if (first == null) {
+				first = data[firstIndex];
+			}
+			if (first != null) {
+				break;
+			}
+		}
+
+		if (first != null) {
+			for (Suggestions suggestion : first.suggestions) {
+				List<Info> infos = suggestion.info;
+				for (Info term : infos) {
+					/**
+					 * term_string is important in here its necessary to do
+					 * hardcoding in here
+					 **/
+					if (term.key.equalsIgnoreCase("term_string")) {
+						uniqueTerms.add(term.value);
+					}
+				}
+			}
+
+			for (int i = firstIndex + 1; i < data.length; i++) {
+				first.hits = first.hits + data[i].hits;
+				for (Suggestions suggestion : data[i].suggestions) {
+
+					List<Info> infos = suggestion.info;
+					for (Info term : infos) {
+						/**
+						 * term_string is important in here its necessary to
+						 * do hardcoding in here
+						 **/
+						if (term.key.equalsIgnoreCase("term_string")) {
+							if (!uniqueTerms.contains(term.value)) {
+								first.suggestions.add(suggestion);
+								uniqueTerms.add(term.value);
+							}
+
+						}
+					}
+
+				}
+
+			}
+
+		} else {
+			first = new SuggestData();
+		}
+		
+		return first;
+	}
+	
+	private static SuggestData formatResponse(QueryManagerInput queryManagerInput, String searchField, String response) throws JSONException {
 
 		SuggestData suggestData = new SuggestData();
 		suggestData.source = queryManagerInput.getSource();
@@ -98,7 +167,7 @@ public class QueryMarshaller {
 				}
 			}
 			if(queryManagerInput.isHighLight()) {
-				String highLight = getHighLight(finalObj, queryManagerInput.getSearchField()[0]);
+				String highLight = getHighLight(finalObj, searchField);
 				if(highLight != null) {
 					suggestions.highlight = highLight;
 				}

@@ -22,16 +22,26 @@ public class QueryMarshallerV5 {
 
 	private QueryMarshallerV5(){}
 	
-	public static SuggestData parse(QueryManagerInput queryManagerInput, String queryResult){
+	public static SuggestData parse(QueryManagerInput queryManagerInput, List<Pair<String, String>> queryResults){
 
-		SuggestData data = null;
-		try {
-			data = formatResponse(queryManagerInput, queryResult);
-		} catch (JSONException e) {
-			log.error("Marshaller error (parse):", e.getMessage(), e);
+		SuggestData[] data = new SuggestData[queryResults.size()];
+
+		for (int i = 0; i < queryResults.size(); i++) {
+			
+			try {
+				data[i] = formatResponse(queryManagerInput, queryResults.get(i).getLeft(), queryResults.get(i).getRight());
+			} catch (JSONException e) {
+				log.error("Marshaller error (parse):", e.getMessage(), e);
+			}			
 		}
-
-		return data;
+		if (data.length == 0) {
+			return new SuggestData();
+		} else if (data.length == 1) {
+			return data[0];
+		}
+		else {
+			return mergeFinalResult(data);
+		}
 
 	}
 
@@ -94,7 +104,7 @@ public class QueryMarshallerV5 {
 		return first;
 	}
 	
-	private static SuggestData formatResponse(QueryManagerInput queryManagerInput, String response) throws JSONException {
+	private static SuggestData formatResponse(QueryManagerInput queryManagerInput, String searchField, String response) throws JSONException {
 
 		SuggestData suggestData = new SuggestData();
 		suggestData.source = queryManagerInput.getSource();
@@ -173,7 +183,7 @@ public class QueryMarshallerV5 {
 				}
 			}
 			if(queryManagerInput.isHighLight()) {
-				String highLight = getHighLight(finalObj, queryManagerInput.getSearchField()[0]);
+				String highLight = getHighLight(finalObj, searchField);
 				if(highLight != null) {
 					suggestions.highlight = highLight;
 				}

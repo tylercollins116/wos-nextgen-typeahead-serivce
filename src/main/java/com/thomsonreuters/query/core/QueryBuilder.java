@@ -1,8 +1,6 @@
 package com.thomsonreuters.query.core;
 
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.thomsonreuters.query.model.QueryManagerInput;
 
@@ -10,7 +8,7 @@ public class QueryBuilder {
 
 	private QueryBuilder() {}
 	
-	public static String generate(QueryManagerInput queryManagerInput) {
+	public static String generate(QueryManagerInput queryManagerInput, String searchField) {
 
 		String analyzer = queryManagerInput.getAnalyzer();
 		String coatedQuery = org.codehaus.jettison.json.JSONObject.quote(queryManagerInput.getQueryTerm());
@@ -24,13 +22,13 @@ public class QueryBuilder {
 			sb.append(org.codehaus.jettison.json.JSONObject.quote(field));
 		}
 		
-		String parsedSearchFields = org.codehaus.jettison.json.JSONObject.quote(Stream.of(queryManagerInput.getSearchField()).collect(Collectors.joining(",")));
+		String parsedSearchField = org.codehaus.jettison.json.JSONObject.quote(searchField);
 
 		String esQuery = "{\"from\":" + queryManagerInput.getFrom() + ",\"size\":" + queryManagerInput.getSize() + ",";
 
 		esQuery += getSortingField(queryManagerInput.getSortFields());
 
-		esQuery += getQueryCore(queryManagerInput.getQueryType(), queryManagerInput.getSearchField(), coatedQuery,
+		esQuery += getQueryCore(queryManagerInput.getQueryType(), searchField, coatedQuery, 
 				analyzer, queryManagerInput.getSlop(), queryManagerInput.getExpansion());
 
 		if(queryManagerInput.getEsMainVersion() <= 2)
@@ -40,7 +38,7 @@ public class QueryBuilder {
 
 
 		if(queryManagerInput.isHighLight()) {
-			esQuery += ",\"highlight\": {\"fields\": { " + parsedSearchFields + ": {}}}";
+			esQuery += ",\"highlight\": {\"fields\": { " + parsedSearchField + ": {}}}";
 			
 		}
 
@@ -83,45 +81,32 @@ public class QueryBuilder {
 	
 	}
 	
-	private static String getQueryCore(String queryType, String[] searchFields, String coatedQuery
+	private static String getQueryCore(String queryType, String searchField, String coatedQuery
 			, String analyzer, int slop, int expansion) {
 
 		String query = "\"query\":{";
-
+		
 		if("ngrams".equalsIgnoreCase(queryType)) {
-			String boolQuery = "\"bool\": {";
-			boolQuery += "\"should\": [";
-			boolQuery += Stream.of(searchFields).map(searchField -> "{\"match\":{"
+			query += "\"match\":{"
 					+ org.codehaus.jettison.json.JSONObject.quote(searchField)
 					+ ":{\"query\":" + coatedQuery + ","
-					+ "\"operator\": \"and\""
-					+ getAnalyzer(analyzer)
-					+ "}}"
-					+ "}"
-			).collect(Collectors.joining(","));
-			boolQuery += "]";
-			boolQuery += ",\"minimum_should_match\": \"1\"";
-			boolQuery += "}";
-			query += boolQuery;
-		} else {
-			query += "\"constant_score\":{\"filter\":{";
-			String boolQuery = "\"bool\": {";
-			boolQuery += "\"should\": [";
-			boolQuery +=  Stream.of(searchFields).map(searchField ->
-					"{\"match_phrase_prefix\":{"
-							+ org.codehaus.jettison.json.JSONObject.quote(searchField)
-							+ ":{\"query\":" + coatedQuery + ","
-							+ getAnalyzer(analyzer)
-							+ "\"slop\":" + slop + ",\"max_expansions\":" + expansion
-					        + "}}}"
+					+ "\"operator\": \"and\"";
+			
+			query += getAnalyzer(analyzer);
 
-					).collect(Collectors.joining(","));
-			boolQuery += "]";
-			boolQuery += ",\"minimum_should_match\": \"1\"";
-			boolQuery += "}";
-			query += boolQuery + "} ,\"boost\": " + 1.2 + "}";
+			query += "}}";
+
 		}
+		else {
+			query += "\"constant_score\":{\"filter\":{\"match_phrase_prefix\":{"
+					+ org.codehaus.jettison.json.JSONObject.quote(searchField)
+					+ ":{\"query\":" + coatedQuery + ",";
 
+			query += getAnalyzer(analyzer);
+
+			query += "\"slop\":" + slop + ",\"max_expansions\":" + expansion
+					+ "}}},\"boost\": " + 1.2 + "}";
+		}
 		query += "}";
 
 		return query;
