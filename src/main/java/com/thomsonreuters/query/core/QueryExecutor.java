@@ -14,6 +14,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -35,40 +36,16 @@ public class QueryExecutor {
 	
 	private QueryExecutor() {}
 	
-	public static List<Pair<String, String>> execute(List<Pair<String, String>> queries, String host) {
-		
-		List<Pair<String, String>> results = new ArrayList<>(); 
-		FutureTask<Pair>[] workers = new FutureTask[queries.size()];
+	public static String execute(String query, String host) {
 
-		for (int i = 0; i < queries.size(); i++) {
-			String key = queries.get(i).getLeft();
-			String queryToExecute = queries.get(i).getRight();
-			workers[i] = (FutureTask<Pair>) executor.submit(
-						new Callable<Pair>() {
-							@Override
-							public Pair call() throws Exception {
-								try {
-									String result = executeQuery(host,queryToExecute);
-									return Pair.of(key, result);
-								} catch (IOException e) {
-									return Pair.of(key, null);
-								}
-							}}
-						);
-			executor.execute(workers[i]);
-
+		String result = null;
+		try {
+			result = executeQuery(host,query);
+		} catch (IOException e) {
+			log.error("execute error: {}", e.getMessage(), e);
 		}
 
-		for (int i = 0; i < workers.length; i++) {
-			try{
-				results.add(workers[i].get(1000, TimeUnit.MILLISECONDS));
-			}
-			catch(Exception e){
-				log.error("execute error: {}", e.getMessage(), e);
-			}
-		}
-		
-		return results;
+		return result;
 
 	}
 	
