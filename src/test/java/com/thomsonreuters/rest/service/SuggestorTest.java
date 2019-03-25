@@ -2,6 +2,8 @@ package com.thomsonreuters.rest.service;
 
 import java.io.IOException;
 
+import com.clarivate.eiddo.client.EiddoPropertiesLoader;
+import com.clarivate.karyon.JerseyBasicRoutingModule;
 import netflix.adminresources.resources.KaryonWebAdminModule;
 import netflix.karyon.Karyon;
 import netflix.karyon.KaryonBootstrap;
@@ -23,12 +25,9 @@ import com.netflix.governator.guice.BootstrapModule;
 import com.sun.jersey.test.framework.AppDescriptor;
 import com.sun.jersey.test.framework.JerseyTest;
 import com.sun.jersey.test.framework.WebAppDescriptor;
-import com.thomsonreuters.eiddo.client.EiddoPropertiesLoader;
-import com.thomsonreuters.events.karyon.EventsModule;
 import com.thomsonreuters.handler.HealthCheck;
 import com.thomsonreuters.injection.BootstrapInjectionModule;
 import com.thomsonreuters.injection.module.MainModule;
-import com.thomsonreuters.karyon.JerseyBasicRoutingModule;
 
 public class SuggestorTest extends JerseyTest {
 	private static final int PORT = 7001;

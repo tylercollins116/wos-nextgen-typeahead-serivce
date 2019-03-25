@@ -1,5 +1,12 @@
 package com.thomsonreuters.injection;
 
+import com.clarivate.eiddo.client.EiddoPropertiesLoader;
+import com.clarivate.events.karyon.EventsModule;
+import com.clarivate.karyon.JerseyBasicRoutingModule;
+import com.clarivate.karyon.ShutdownModule;
+import com.clarivate.logback.LogbackEiddoModule;
+import com.thomsonreuters.handler.HealthCheck;
+import com.thomsonreuters.injection.module.MainModule;
 import netflix.adminresources.resources.KaryonWebAdminModule;
 import netflix.karyon.KaryonBootstrap;
 import netflix.karyon.archaius.ArchaiusBootstrap;
@@ -8,13 +15,6 @@ import netflix.karyon.servo.KaryonServoModule;
 
 import com.google.inject.Singleton;
 import com.netflix.governator.annotations.Modules;
-import com.thomsonreuters.eiddo.client.EiddoPropertiesLoader;
-import com.thomsonreuters.events.karyon.EventsModule;
-import com.thomsonreuters.handler.HealthCheck;
-import com.thomsonreuters.injection.module.MainModule;
-import com.thomsonreuters.karyon.JerseyBasicRoutingModule;
-import com.thomsonreuters.karyon.ShutdownModule;
-import com.thomsonreuters.logback.LogbackEiddoModule;
 
 @ArchaiusBootstrap(loader = EiddoPropertiesLoader.class)
 @KaryonBootstrap(name = "1p-typeahead-service", healthcheck = HealthCheck.class)

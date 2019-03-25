@@ -14,6 +14,8 @@ import java.util.Set;
 
 import javax.annotation.PostConstruct;
 
+import com.clarivate.eiddo.client.EiddoClient;
+import com.clarivate.eiddo.client.EiddoListener;
 import netflix.karyon.health.HealthCheckHandler;
 
 import org.apache.lucene.search.suggest.Lookup;
@@ -28,8 +30,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.config.ConfigurationManager;
 import com.netflix.governator.annotations.Configuration;
-import com.thomsonreuters.eiddo.client.EiddoClient;
-import com.thomsonreuters.eiddo.client.EiddoListener;
 import com.thomsonreuters.models.SuggestData;
 import com.thomsonreuters.models.SuggesterConfigurationHandler;
 import com.thomsonreuters.models.SuggesterHandler;
