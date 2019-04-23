@@ -1,28 +1,3 @@
-apply plugin: 'java'
-apply plugin: 'eclipse'
-apply plugin: 'idea'
-apply plugin: 'distribution'
-apply plugin: 'java-library-distribution'
-apply plugin: 'os-package'
-apply plugin: 'org.sonarqube'
-apply plugin: 'net.researchgate.release'
-apply plugin: 'jacoco'
-
-sourceCompatibility = 1.8
-[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
-
-task wrapper(type: Wrapper) {
-    gradleVersion = '2.2'
-}
-
-def chosenEnv
-if ( System.getenv("POC_ENVIRONMENT") ) { chosenEnv = System.getenv("POC_ENVIRONMENT") } else { chosenEnv = "integration" }
-
-configurations.all {
-    resolutionStrategy.cacheDynamicVersionsFor 1, 'hours'
-    resolutionStrategy.cacheChangingModulesFor 1, 'hours'
-}
-
 buildscript {
     repositories {
         jcenter()
@@ -60,6 +35,37 @@ buildscript {
         classpath group: 'com.fasterxml.jackson.core',   name: 'jackson-databind',     version: '2.5.+'
         classpath group: 'com.fasterxml.jackson.core',   name: 'jackson-annotations',  version: '2.5.+'
     }
+}
+
+plugins {
+/*  Fix for windows gradle long classpath issue.
+    Fixes JavaExec tasks that error out with message "CreateProcess error=206, The filename or extension is too long"*/
+    id 'com.github.ManifestClasspath' version '0.1.0-RELEASE'
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'distribution'
+apply plugin: 'java-library-distribution'
+apply plugin: 'os-package'
+apply plugin: 'org.sonarqube'
+apply plugin: 'net.researchgate.release'
+apply plugin: 'jacoco'
+
+sourceCompatibility = 1.8
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.2'
+}
+
+def chosenEnv
+if ( System.getenv("POC_ENVIRONMENT") ) { chosenEnv = System.getenv("POC_ENVIRONMENT") } else { chosenEnv = "integration" }
+
+configurations.all {
+    resolutionStrategy.cacheDynamicVersionsFor 1, 'hours'
+    resolutionStrategy.cacheChangingModulesFor 1, 'hours'
 }
 
 allprojects {
