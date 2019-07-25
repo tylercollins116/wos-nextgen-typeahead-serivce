@@ -135,6 +135,9 @@ public class SuggestorResource {
 		 * &sources=wos&sources=countries&info=health&info=sports
 		 * 
 		 * **/
+
+		System.out.println("\n-------------\nsearchWithQueryParam preterms\n-------------\n");
+
 		return Response.ok(suggesterHandler.lookup(query, size, uid, showall, false)).build();
 	}
 	
@@ -151,6 +154,17 @@ public class SuggestorResource {
 			@DefaultValue("false") @QueryParam("showall") boolean showall) {
 
 		return Response.ok(ipaSuggesterHandler.lookup(path, query,size,countchild,showall)).build();
+	}
+
+	@ApiOperation(value = "Suggest check", notes = "Returns list of suggestion for query prefix")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "RESPONSE_OK") })
+
+	@Path("/tyler/{query}")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response tylerSearchQuery(@PathParam("query") String query) {
+
+		return Response.ok(suggesterHandler.lookup(query)).build();
 	}
 	
 }

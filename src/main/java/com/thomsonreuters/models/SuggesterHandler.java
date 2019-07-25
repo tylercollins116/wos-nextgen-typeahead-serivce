@@ -20,4 +20,7 @@ public interface SuggesterHandler {
 	
 	public List<SuggestData> lookup(String query, String source, int offset, 
 			int size, String uid, boolean highLight);
+
+	// Tyler defined function
+	public List<SuggestData> lookup(String query);
 }

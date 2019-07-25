@@ -12,15 +12,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static java.util.Arrays.asList;
+
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.util.CharArraySet;
 import org.apache.lucene.analysis.util.WordlistLoader;
+import org.apache.lucene.search.suggest.analyzing.AnalyzingInfixSuggester;
+import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
+import org.apache.lucene.search.suggest.analyzing.FuzzySuggester;
 import org.apache.lucene.search.suggest.FileDictionary;
 import org.apache.lucene.search.suggest.InputIterator;
 import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.store.DataInput;
 import org.apache.lucene.store.DataOutput;
+import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.IOUtils;
 import org.slf4j.Logger;
@@ -47,6 +54,9 @@ import com.thomsonreuters.models.services.util.DictionaryInfo;
 import com.thomsonreuters.models.services.util.GroupTerms;
 import com.thomsonreuters.models.services.util.PrepareDictionary;
 import com.thomsonreuters.models.services.util.Property;
+import com.thomsonreuters.models.services.util.ItemIterator;
+import com.thomsonreuters.models.services.util.Item;
+import com.thomsonreuters.models.services.util.JsonReader;
 
 public abstract class SuggesterHelper {
 
@@ -98,67 +108,116 @@ public abstract class SuggesterHelper {
 	}
 
 	public void initializeSuggesterList() throws IOException {
+		////////////////////////////////////////////////////////
+		////////////// Make a lookup object instance ///////////
+		// In this case it will be an AnalyzingInfixSuggester //
+		////////////////////////////////////////////////////////
+		// Define filename
+		String fn = "/Users/tylercollins/Documents/example.json";
 
-		if (s3Client == null) {
-			throw new IOException(
-					" S3Client found null pls initilize s3Client first");
+		// Read in from file and add to entities
+		JsonReader jsonReader = new JsonReader();
+		ItemIterator entitiesIter = null;
+		try {
+			entitiesIter = jsonReader.ReadJSON(fn);
+		} catch (Exception e){
+			System.out.println(e);
 		}
 
-		Iterator<String> keys = ConfigurationManager.getConfigInstance()
-				.getKeys();
+		// Build analyzing infix suggester object
+		final RAMDirectory indexDir = new RAMDirectory();
+		final WhitespaceAnalyzer analyzer = new WhitespaceAnalyzer();
+		Lookup lookupObj = new AnalyzingInfixSuggester(indexDir, analyzer, analyzer, 1, true);
+		lookupObj.build(entitiesIter);
 
-		String bucketName = null;
+		// Put an entry in the suggester list
+		suggesterList.put("prefixMatch", lookupObj);
 
-		Property property = new GroupTerms();
 
-		List<String> allDictionaryRelatedInfos = new ArrayList<String>();
+		// Build analyzing suggester object
+		final WhitespaceAnalyzer analyzer2 = new WhitespaceAnalyzer();
+		Lookup lookupObj2 = new AnalyzingSuggester(analyzer2);
+		lookupObj2.build(entitiesIter);
 
-		while (keys.hasNext()) {
-			String key = keys.next();
+		// Put an entry in the suggester list
+		suggesterList.put("anyPartMatch", lookupObj2);
 
-			if (property.isDictionaryRelated(key)) {
-				allDictionaryRelatedInfos.add(key);
-			}
-		}
 
-		property.groupTermsBasedOnDictionary(allDictionaryRelatedInfos,
-				dictionaryInfos);
+		// Build analyzing suggester object
+		final WhitespaceAnalyzer analyzer3 = new WhitespaceAnalyzer();
+		Lookup lookupObj3 = new FuzzySuggester(analyzer3);
+		lookupObj3.build(entitiesIter);
 
-		loadAllDictionaryProperyValues(dictionaryInfos);
+		// Put an entry in the suggester list
+		suggesterList.put("fuzzyMatch", lookupObj3);
 
-		keys = ConfigurationManager.getConfigInstance().getKeys();
-
-		while (keys.hasNext()) {
-			String key = keys.next();
-			if (property.isBucketName(key)) {
-				bucketName = ConfigurationManager.getConfigInstance()
-						.getString(key);
-				log.info("path to bucket : " + bucketName);
-
-			}
-		}
-
-		Set<String> dictionaries = dictionaryInfos.keySet();
-
-		for (String key : dictionaries) {
-
-			DictionaryInfo info = dictionaryInfos.get(key);
-
-			getStoredPathInfo();
-
-			String s3bucket = info.getInfos().get(property.S3_BUCKET_SUFFIX);
-
-			s3bucket = s3bucket == null ? bucketName : s3bucket;
-
-			String s3Path = info.getDictionaryPath();
-
-			if (s3bucket == null) {
-				s3bucket = bucketName;
-			}
-
-			StartLoadingProcess(info, bucketName, false);
-
-		}
+//		Iterator<String> keys = ConfigurationManager.getConfigInstance()
+//				.getKeys();
+//
+//
+//		System.out.println("\n--------------\nPRINT CONFIG KEYS");
+//		while (keys.hasNext())
+//			System.out.println(keys.next());
+//		System.out.println("--------------\n");
+//
+//
+//		if (s3Client == null) {
+//			throw new IOException(
+//					" S3Client found null pls initilize s3Client first");
+//		}
+//
+//		String bucketName = null;
+//
+//		Property property = new GroupTerms();
+//
+//		List<String> allDictionaryRelatedInfos = new ArrayList<String>();
+//
+//		while (keys.hasNext()) {
+//			String key = keys.next();
+//
+//			if (property.isDictionaryRelated(key)) {
+//				allDictionaryRelatedInfos.add(key);
+//			}
+//		}
+//
+//		property.groupTermsBasedOnDictionary(allDictionaryRelatedInfos,
+//				dictionaryInfos);
+//
+//		loadAllDictionaryProperyValues(dictionaryInfos);
+//
+//		keys = ConfigurationManager.getConfigInstance().getKeys();
+//
+//		while (keys.hasNext()) {
+//			String key = keys.next();
+//			if (property.isBucketName(key)) {
+//				bucketName = ConfigurationManager.getConfigInstance()
+//						.getString(key);
+//				log.info("path to bucket : " + bucketName);
+//
+//			}
+//		}
+//
+//		Set<String> dictionaries = dictionaryInfos.keySet();
+//
+//		for (String key : dictionaries) {
+//
+//			DictionaryInfo info = dictionaryInfos.get(key);
+//
+//			getStoredPathInfo();
+//
+//			String s3bucket = info.getInfos().get(property.S3_BUCKET_SUFFIX);
+//
+//			s3bucket = s3bucket == null ? bucketName : s3bucket;
+//
+//			String s3Path = info.getDictionaryPath();
+//
+//			if (s3bucket == null) {
+//				s3bucket = bucketName;
+//			}
+//
+//			StartLoadingProcess(info, bucketName, false);
+//
+//		}
 
 	}
 
