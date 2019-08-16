@@ -18,6 +18,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import com.thomsonreuters.models.services.util.TextNormalizer;
 import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.search.suggest.Lookup.LookupResult;
 import org.slf4j.Logger;
@@ -623,6 +624,12 @@ public class Suggester implements SuggesterHandler {
 	// NOTE ANY PART MATCH AND FUZZY MATCH ARE NOT WORKING AS INTENDED
 	// NEED TO REVIEW HOW THESE THINGS ARE INITIALIZED TO MAKE SURE THEY WORK
 	private List<Lookup.LookupResult> GetSuggestions(String query) {
+		// Make text normalizer
+		TextNormalizer tn = new TextNormalizer();
+
+		// Normalize query
+		String normalizedQuery = tn.NormalizeText(query);
+
 		// Create array of suggester keys
 		String [] suggesterKeysArr = {"prefixMatch", "anyPartMatch", "fuzzyMatch"};
 
@@ -644,7 +651,7 @@ public class Suggester implements SuggesterHandler {
 						.getDictionaryAnalyzer().getSuggesterList().get(suggesterKey_i);
 
 				// Get full results set
-				List<Lookup.LookupResult> tmpResults = suggester.lookup(query, false,
+				List<Lookup.LookupResult> tmpResults = suggester.lookup(normalizedQuery, false,
 						10 + results.size());
 
 				// Filter out already seen results
@@ -655,6 +662,12 @@ public class Suggester implements SuggesterHandler {
 
 				// Update seen keywords
 				seenKeywords.addAll(ExtractKeywords(filteredResults));
+
+				// TESTING
+				System.out.println("\ni=" + i);
+				for (Lookup.LookupResult res: filteredResults) {
+					System.out.println(res.key);
+				}
 
 				// Increment i
 				i++;
@@ -669,65 +682,91 @@ public class Suggester implements SuggesterHandler {
 	}
 
 
+//	// Tyler defined function
+//	@Override
+//	public List<SuggestData> lookup(String query) {
+//		// Get suggestions
+//		List<Lookup.LookupResult> results = GetSuggestions(query);
+//
+//		// Initialize empty list for SuggestData
+//		List<SuggestData> suggestDataList = new ArrayList<>();
+//
+//		////////////////////////////////
+//		// Make an item to go in list //
+//		// Init
+//		SuggestData suggestData = new SuggestData();
+//
+//		// Set source variable
+//		suggestData.source = "someSource";
+//
+//		// Set hits variable
+//		suggestData.hits = results.size();
+//
+//		// Set took variable
+//		suggestData.took = "took_take_taken";
+//
+//		// Make suggestions object for each suggestion
+//		for (Lookup.LookupResult res: results) {
+//			// Make a suggestions object
+//			SuggestData.Suggestions suggestionsObj = suggestData.new Suggestions();
+//
+//			// Set keyword variable of suggestionsObj
+//			suggestionsObj.keyword = res.key.toString();
+//
+////			// Make info object
+////			SuggestData.Info infoObj = suggestData.new Info();
+//
+////			// Set key and value variables of infoObj
+////			infoObj.key = "info_key";
+////			infoObj.value = "info_value";
+//
+////			// Set info variable of suggestionsObj
+////			suggestionsObj.info = new ArrayList<>(Arrays.asList(infoObj));
+//
+////			 Set info variable of suggestionsObj
+//			suggestionsObj.info = null;
+//
+//			// Set highlight variable of suggestionsObj
+//			suggestionsObj.highlight = "im_a_highlight";
+//
+//			// Add to suggestions variable
+//			suggestData.suggestions.add(suggestionsObj);
+//		}
+//
+//
+//		////////////////////////////////
+//
+//		// Add item to the list
+//		suggestDataList.add(suggestData);
+//
+//		// Return the list
+//		return (suggestDataList);
+//	}
+
+
 	// Tyler defined function
 	@Override
-	public List<SuggestData> lookup(String query) {
+	public List<String> lookup(String query) {
 		// Get suggestions
 		List<Lookup.LookupResult> results = GetSuggestions(query);
 
-		// Initialize empty list for SuggestData
-		List<SuggestData> suggestDataList = new ArrayList<>();
+		// Initialize keywords list
+		List<String> keywords = new ArrayList<>();
 
-		////////////////////////////////
-		// Make an item to go in list //
-		// Init
-		SuggestData suggestData = new SuggestData();
-
-		// Set source variable
-		suggestData.source = "someSource";
-
-		// Set hits variable
-		suggestData.hits = results.size();
-
-		// Set took variable
-		suggestData.took = "took_take_taken";
-
-		// Make suggestions object for each suggestion
+		// Fill in keywords list
 		for (Lookup.LookupResult res: results) {
-			// Make a suggestions object
-			SuggestData.Suggestions suggestionsObj = suggestData.new Suggestions();
+			// Extract keyword
+			String keywd = res.key.toString();
 
-			// Set keyword variable of suggestionsObj
-			suggestionsObj.keyword = res.key.toString();
-
-//			// Make info object
-//			SuggestData.Info infoObj = suggestData.new Info();
-
-//			// Set key and value variables of infoObj
-//			infoObj.key = "info_key";
-//			infoObj.value = "info_value";
-
-//			// Set info variable of suggestionsObj
-//			suggestionsObj.info = new ArrayList<>(Arrays.asList(infoObj));
-
-//			 Set info variable of suggestionsObj
-			suggestionsObj.info = null;
-
-			// Set highlight variable of suggestionsObj
-			suggestionsObj.highlight = "im_a_highlight";
-
-			// Add to suggestions variable
-			suggestData.suggestions.add(suggestionsObj);
+			// Add keyword to list
+			keywords.add(keywd);
 		}
 
+//		// Create SuggestDataSimple object
+//		SuggestDataSimple suggestDataSimple = new SuggestDataSimple(keywords);
 
-		////////////////////////////////
-
-		// Add item to the list
-		suggestDataList.add(suggestData);
-
-		// Return the list
-		return (suggestDataList);
+		// Return the finished object
+		return (keywords);
 	}
 
 	private class sortByCount implements Comparator<SuggestData.Suggestions> {

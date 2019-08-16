@@ -14,6 +14,7 @@ import java.util.Set;
 
 import static java.util.Arrays.asList;
 
+import com.thomsonreuters.models.services.util.*;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -48,15 +49,6 @@ import com.thomsonreuters.models.services.suggesterOperation.models.KeywordEntry
 import com.thomsonreuters.models.services.suggesterOperation.models.OrganizationEntry;
 import com.thomsonreuters.models.services.suggesterOperation.models.company.CompanyTypeaheadSuggester;
 import com.thomsonreuters.models.services.suggesterOperation.models.company.TechnicalTypeaheadSuggester;
-import com.thomsonreuters.models.services.util.Blockable;
-import com.thomsonreuters.models.services.util.BlockingHashTable;
-import com.thomsonreuters.models.services.util.DictionaryInfo;
-import com.thomsonreuters.models.services.util.GroupTerms;
-import com.thomsonreuters.models.services.util.PrepareDictionary;
-import com.thomsonreuters.models.services.util.Property;
-import com.thomsonreuters.models.services.util.ItemIterator;
-import com.thomsonreuters.models.services.util.Item;
-import com.thomsonreuters.models.services.util.JsonReader;
 
 public abstract class SuggesterHelper {
 
@@ -113,22 +105,35 @@ public abstract class SuggesterHelper {
 		// In this case it will be an AnalyzingInfixSuggester //
 		////////////////////////////////////////////////////////
 		// Define filename
-		String fn = "/Users/tylercollins/Documents/example.json";
+		String fn = "/Users/tylercollins/Documents/prefinstitution.csv";
+
+		// TESTING
+		System.out.println("Reading csv...");
 
 		// Read in from file and add to entities
-		JsonReader jsonReader = new JsonReader();
-		ItemIterator entitiesIter = null;
-		try {
-			entitiesIter = jsonReader.ReadJSON(fn);
-		} catch (Exception e){
-			System.out.println(e);
+		CsvReader csvReader = new CsvReader();
+		List<InputIterator> entitiesIterList = new ArrayList<>();
+		for (int i=0; i<3; i++) {
+			try {
+				// Make entities iterator
+				InputIterator entitiesIter = csvReader.ReadCsv(fn);
+
+				// Add iterator to list
+				entitiesIterList.add(entitiesIter);
+
+			} catch (Exception e) {
+				System.out.println(e);
+			}
 		}
+
+		// TESTING
+		System.out.println("Building analyzers...");
 
 		// Build analyzing infix suggester object
 		final RAMDirectory indexDir = new RAMDirectory();
 		final WhitespaceAnalyzer analyzer = new WhitespaceAnalyzer();
 		Lookup lookupObj = new AnalyzingInfixSuggester(indexDir, analyzer, analyzer, 1, true);
-		lookupObj.build(entitiesIter);
+		lookupObj.build(entitiesIterList.get(0));
 
 		// Put an entry in the suggester list
 		suggesterList.put("prefixMatch", lookupObj);
@@ -136,8 +141,8 @@ public abstract class SuggesterHelper {
 
 		// Build analyzing suggester object
 		final WhitespaceAnalyzer analyzer2 = new WhitespaceAnalyzer();
-		Lookup lookupObj2 = new AnalyzingSuggester(analyzer2);
-		lookupObj2.build(entitiesIter);
+		Lookup lookupObj2 = new AnalyzingSuggester(analyzer2, analyzer2);
+		lookupObj2.build(entitiesIterList.get(1));
 
 		// Put an entry in the suggester list
 		suggesterList.put("anyPartMatch", lookupObj2);
@@ -145,11 +150,14 @@ public abstract class SuggesterHelper {
 
 		// Build analyzing suggester object
 		final WhitespaceAnalyzer analyzer3 = new WhitespaceAnalyzer();
-		Lookup lookupObj3 = new FuzzySuggester(analyzer3);
-		lookupObj3.build(entitiesIter);
+		Lookup lookupObj3 = new FuzzySuggester(analyzer3, analyzer3);
+		lookupObj3.build(entitiesIterList.get(2));
 
 		// Put an entry in the suggester list
 		suggesterList.put("fuzzyMatch", lookupObj3);
+
+		// TESTING
+		System.out.println("Finished building analyzers...");
 
 //		Iterator<String> keys = ConfigurationManager.getConfigInstance()
 //				.getKeys();

@@ -17,6 +17,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -163,8 +164,21 @@ public class SuggestorResource {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response tylerSearchQuery(@PathParam("query") String query) {
+		String h1_k = "Access-Control-Request-Headers";
+		String h1_v = "X-Requested-With, accept, content-type";
 
-		return Response.ok(suggesterHandler.lookup(query)).build();
+		String h2_k = "Access-Control-Allow-Methods";
+		String h2_v = "GET";
+
+		String h3_k = "Access-Control-Allow-Origin";
+		String h3_v = "*";
+
+				ResponseBuilder responseBuilder = Response.ok(suggesterHandler.lookup(query))
+												.header(h1_k, h1_v)
+												.header(h2_k, h2_v)
+												.header(h3_k, h3_v);
+
+		return responseBuilder.build();
 	}
 	
 }

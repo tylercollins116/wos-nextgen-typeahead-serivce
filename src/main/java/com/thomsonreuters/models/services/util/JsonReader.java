@@ -1,5 +1,6 @@
 package com.thomsonreuters.models.services.util;
 
+import org.apache.lucene.search.suggest.InputIterator;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -13,7 +14,7 @@ import com.thomsonreuters.models.services.util.ItemIterator;
 import com.thomsonreuters.models.services.util.Item;
 
 public class JsonReader {
-    public ItemIterator ReadJSON(String fn) throws Exception {
+    public InputIterator ReadJSON(String fn) throws Exception {
         // Init parser
         JSONParser parser = new JSONParser();
 
