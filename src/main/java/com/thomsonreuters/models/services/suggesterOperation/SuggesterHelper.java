@@ -105,7 +105,7 @@ public abstract class SuggesterHelper {
 		// In this case it will be an AnalyzingInfixSuggester //
 		////////////////////////////////////////////////////////
 		// Define filename
-		String fn = "/Users/tylercollins/Documents/prefinstitution.csv";
+		String fn = "/home/ubuntu/tyler/prefinstitution.csv";
 
 		// TESTING
 		System.out.println("Reading csv...");
